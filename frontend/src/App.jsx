@@ -1,39 +1,40 @@
-import { useState } from 'react'
-import './App.css'
+import { Route, Routes } from "react-router-dom";
+import "./App.css";
+import Landing_Page from "./user/pages/Landing_Page";
+import Login from "./user/pages/Login";
+import User_Dashboard from "./user/pages/User_Dashboard";
+import User_Appointment from "./user/pages/User_Appointment";
+import Feedback from "./user/pages/Feedback";
+import About_us from "./user/pages/About_us";
+import User_Upload_Requirements from "./user/components/User_Upload_Requirements";
+import Appointment_Confirmation from "./user/pages/Appointment_Confirmation";
+import Settings from "./user/pages/Settings";
+import Profile from "./user/pages/Profile";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
-      {/* Navbar */}
-      <nav className="navbar">
-        <div className="nav-logo">
-          <a href="/" className="nav-link">Unicare</a>
-        </div>
-        <ul className="nav-menu">
-          <li className="nav-item">
-            <a href="/" className="nav-link">Home</a>
-          </li>
-          <li className="nav-item">
-            <a href="/about" className="nav-link">About</a>
-          </li>
-          <li className="nav-item">
-            <a href="/contact" className="nav-link">Contact</a>
-          </li>
-          <li className="nav-item">
-            <a href="/login" className="nav-link">Login</a>
-          </li>
-        </ul>
-      </nav>
-
-      {/* Landing Page */}
-      <div className="container">
-        <h1>Welcome to BukSU Dental Clinic</h1>
-        <p>This is the landing page. More content will be added soon!</p>
-      </div>
+      <Routes>
+        {/* User Routes */}
+        <Route path="/" element={<Landing_Page />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<User_Dashboard />} />
+        <Route path="/appointment" element={<User_Appointment />} />
+        <Route path="/feedback" element={<Feedback />} />
+        <Route path="/about-us" element={<About_us />} />
+        <Route
+          path="/upload-requirements"
+          element={<User_Upload_Requirements />}
+        />
+        <Route
+          path="/Appointment-Confirmation"
+          element={<Appointment_Confirmation />}
+        />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<Profile />} />
+      </Routes>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
