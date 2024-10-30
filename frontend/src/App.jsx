@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import "./App.css";
-import Landing_Page from "./user/pages/Landing_Page";
-import Login from "./user/pages/Login";
+import Landing_Page from "./user/pages/DentalClinicLanding";
+import Login from "./user/pages/PatientLogin";
 import User_Dashboard from "./user/pages/User_Dashboard";
 import User_Appointment from "./user/pages/User_Appointment";
 import Feedback from "./user/pages/Feedback";
@@ -13,7 +13,7 @@ import Profile from "./user/pages/Profile";
 
 function App() {
   return (
-    <>
+    <>  
       <Routes>
         {/* User Routes */}
         <Route path="/" element={<Landing_Page />} />

@@ -1,0 +1,235 @@
+/* Global Styles */
+:root {
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color-scheme: light dark;
+    color: rgba(255, 255, 255, 0.388);
+    background-color: #242424;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  a {
+    font-weight: 500;
+    color: #646cff;
+    text-decoration: inherit;
+  }
+  
+  a:hover {
+    color: #535bf2;
+  }
+  
+  .bg-light-blue-300 {
+    background-color: #3c85de; /* Light blue color */
+  }
+  
+  body {
+    margin: 0;
+    height: 100vh; /* Ensure body covers full height */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #242424; /* Default background color */
+  }
+  
+  h1 {
+    font-size: 3.2em;
+    line-height: 1.1;
+  }
+  
+  button {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.6em 1.2em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: #1a1a1a;
+    cursor: pointer;
+    transition: border-color 0.25s;
+  }
+  
+  button:hover {
+    border-color: #646cff;
+  }
+  
+  button:focus,
+  button:focus-visible {
+    outline: 4px auto -webkit-focus-ring-color;
+  }
+  
+  /* Hero Section Background */
+  .bg-hero {
+    background-image: url('./assets/background.png'); /* Path to your hero image */
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    height: 100vh; /* Full viewport height */
+    width: 100vw; /* Full viewport width */
+    overflow: hidden; /* Prevent content overflow */
+    display: flex; /* Use flexbox for centering content */
+    flex-direction: column; /* Stack content vertically */
+  }
+  
+  /* Solid White Background Overlay */
+  .bg-hero::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(51, 51, 51, 0.491); /* Fully transparent background */
+    z-index: 0; /* Send the overlay behind the content */
+  }
+  
+  
+  .bg-hero > * {
+    position: relative; /* Ensure content appears above the overlay */
+    z-index: 1; /* Bring the content above the white overlay */
+  }
+  
+  /* BSU Logo */
+  .logo-bsu {
+    background-image: url('./assets/bsu.gif'); /* Path to your BSU logo */
+    background-size: contain; /* Ensure the logo scales correctly */
+    background-repeat: no-repeat;
+    opacity: 0.1; 
+    width: 25%; /* Use percentage for responsiveness */
+    max-width: 400px; /* Max width for larger screens */
+    height: auto; /* Auto height for better proportions */
+    display: inline-block; /* Ensures proper sizing */
+    margin: 0 auto; /* Centering */
+  }
+  
+  /* UniCare Logo */
+  .logo-uniCare {
+    background-image: url('./assets/unicare.png'); /* Add the correct path to your logo */
+    background-size: contain; /* Ensure the logo scales correctly */
+    background-repeat: no-repeat;
+    width: 30px; /* Set width for UniCare logo */
+    height: 30px; /* Set height for UniCare logo */
+    display: inline-block; /* Ensures proper sizing */
+  }
+  
+  /* Icon Buttons: Map and Facebook */
+  .map-container {
+    background-image: url('./assets/maps.png'); /* Ensure the correct path to your maps icon */
+    background-size: contain; /* Scale image to fit container */
+    background-repeat: no-repeat;
+    border: none; /* Remove any border */
+    cursor: pointer; /* Change cursor to pointer */
+    display: inline-block; /* Align with text */
+    width: 30px; /* Same size as maps icon */
+    height: 26px; /* Same size as maps icon */
+    background-color: transparent; /* Ensure no background color */
+  }
+  
+  /* Facebook Icon */
+  .fb-icon {
+    background-image: url('./assets/fb.png'); /* Path to Facebook icon */
+    background-size: contain; /* Scale image to fit container */
+    background-repeat: no-repeat;
+    border: none; /* Remove any border */
+    cursor: pointer; /* Change cursor to pointer */
+    display: inline-block; /* Align with text */
+    width: 25px; /* Same size as maps icon */
+    height: 25px; /* Same size as maps icon */
+    background-color: transparent; /* Ensure no background color */
+  }
+  
+  /* Responsive Design */
+  @media (prefers-color-scheme: light) {
+    :root {
+      color: #213547;
+      background-color: #ffffff00;
+    }
+    
+    a:hover {
+      color: #747bff;
+    }
+  
+    /* Override default styles for light mode */
+    body {
+      background-color: #ffffff0b;
+    }
+    
+    h1 {
+      color: #1a365d; /* Optional: Set a specific color for the heading */
+    }
+    
+    button {
+      background-color: #f9f9f9;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    h1 {
+      font-size: 2em; /* Adjust heading size for smaller screens */
+    }
+  
+    .logo-bsu {
+      width: 50%; /* Make BSU logo responsive */
+    }
+  
+    .logo-uniCare {
+      width: 40px; /* Larger UniCare logo on smaller screens */
+      height: 40px; /* Larger UniCare logo on smaller screens */
+    }
+  }
+  
+  /* Patient */
+  .lOGO-bsu {
+    background-image: url('./assets/bsu.gif'); /* Path to BSU logo */
+    width: 64px; /* Adjust size as needed */
+    height: 64px; /* Adjust size as needed */
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.6; 
+  }
+  
+  .logo-unicare {
+    background-image: url('./assets/unicare.png'); /* Path to UniCare logo */
+    width: 64px; /* Ensure same size as BSU logo */
+    height: 64px; /* Ensure same size as BSU logo */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color: transparent; /* Ensure no background color */
+  }
+  
+  /* Left Section Background */
+  .left-section {
+    position: relative; /* Needed for positioning the overlay and logos */
+    background-image: url('./assets/background.png'); /* Path to your background image */
+    background-size: cover; /* Cover the entire section */
+    background-position: center; /* Center the background image */
+    background-repeat: no-repeat; /* Prevent the background from repeating */
+    height: 100vh; /* Full viewport height */
+  }
+  
+  /* Overlay */
+  .left-section::before {
+    content: ''; /* Empty content for the overlay */
+    position: absolute; /* Position it absolutely within the left-section */
+    top: 0; /* Cover the top */
+    left: 0; /* Cover the left */
+    right: 0; /* Cover the right */
+    bottom: 0; /* Cover the bottom */
+    background-color: rgba(169, 169, 169, 0.491); /* White with 50% transparency */
+    z-index: 1; /* Ensure the overlay is above the background image */
+  }
+  
+  /* Logo Container */
+  .logo-container {
+    position: relative; /* Allows logos to be positioned above the overlay */
+    z-index: 2; /* Ensure logos are above the overlay */
+  }
+  
+  .university-text {
+    color: #071b55; /* Color code for UniCare text */
+  }
+  
