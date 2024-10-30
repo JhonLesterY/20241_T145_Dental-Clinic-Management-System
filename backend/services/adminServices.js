@@ -66,33 +66,52 @@ async function loginAdmin(req, res) {
 
 
 // Get all patients
-async function getAllPatients() {
-    try {
+async function getAllPatients(req, res) {
+    try {   
         const patients = await Patient.find({});
-        return patients;
+        return res.status(200).json(patients); // Send the patients as a response
     } catch (error) {
-        throw new Error('Failed to retrieve patients');
-    }
-}
-
-// Get all dentists
-async function getAllDentists() {
-    try {
-        const dentists = await Dentist.find({});
-        return dentists;
-    } catch (error) {
-        throw new Error('Failed to retrieve dentists');
+        return res.status(500).json({ message: 'Failed to retrieve patients: ' + error.message });
     }
 }
 
 // Delete a patient
-async function deletePatient(patientId) {
+async function deletePatient(req, res) {
+    const { patient_id } = req.params;
     try {
-        const patient = await Patient.findByIdAndDelete(patientId);
-        if (!patient) throw new Error('Patient not found');
-        return patient;
+        const patient = await Patient.findOneAndDelete({ patient_id: Number(patient_id) });
+        if (!patient) {
+            return res.status(404).json({ message: 'Patient not found' });
+        }
+        return res.status(200).json({ message: 'Patient deleted successfully' });
     } catch (error) {
-        throw new Error('Failed to delete patient');
+        return res.status(500).json({ message: 'Failed to delete patient: ' + error.message });
+    }
+}
+
+async function addDentist(req, res) {
+    const { name, email, password, phoneNumber } = req.body; // Remove specialization
+
+    try {
+        const existingDentist = await Dentist.findOne({ email });
+        if (existingDentist) {
+            return res.status(400).json({ message: 'Dentist already exists' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newDentist = new Dentist({
+            name,
+            email,
+            password: hashedPassword,
+            phoneNumber
+        });
+
+        await newDentist.save();
+
+        res.status(201).json({ message: 'Dentist added successfully', dentist: newDentist });
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to add dentist: ' + error.message });
     }
 }
 
@@ -108,7 +127,7 @@ async function deleteDentist(dentistId) {
 }
 
 // Get all appointments
-async function getAllAppointments() {
+async function getAllAppointments(req, res) {
     try {
         const appointments = await Appointment.find({});
         return appointments;
@@ -205,7 +224,6 @@ async function deleteInventoryItem(itemId) {
 module.exports = {
     loginAdmin,
     getAllPatients,
-    getAllDentists,
     deletePatient,
     deleteDentist,
     getAllAppointments,
@@ -217,4 +235,5 @@ module.exports = {
     updateInventoryItem,
     deleteInventoryItem,
     registerAdmin,
+    addDentist,
 };

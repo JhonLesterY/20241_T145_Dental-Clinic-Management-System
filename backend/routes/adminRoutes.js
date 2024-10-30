@@ -8,8 +8,8 @@ A_route.post('/login', adminService.loginAdmin);
 
 // User and Appointment Management  
 A_route.get('/patients', adminService.getAllPatients);
-A_route.get('/dentists', adminService.getAllDentists);
 A_route.delete('/patients/:patient_id', adminService.deletePatient);
+A_route.post('/add-dentist', adminService.addDentist);
 A_route.delete('/dentists/:dentist_id', adminService.deleteDentist);    
 A_route.get('/appointments', adminService.getAllAppointments);
 A_route.post('/appointments/reminders', adminService.sendReminders);

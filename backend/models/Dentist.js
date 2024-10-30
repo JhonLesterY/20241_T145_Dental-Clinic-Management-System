@@ -16,10 +16,6 @@ const dentistSchema = new Schema({
         type: String,
         required: true
     },
-    specialization: {
-        type: String,
-        required: true
-    },
     phoneNumber: {
         type: String,
         required: true

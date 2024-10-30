@@ -25,12 +25,14 @@ P_route.post('/login', async (req, res) => {
 // Book Appointment
 P_route.post('/:patient_id/appointments', async (req, res) => {
     try {
-        const result = await patientService.bookAppointment(req.params.patient_id, req.body);
+        const patientId = req.params.patient_id; // Should be defined
+        const result = await patientService.bookAppointment(patientId, req.body);
         res.status(200).json(result);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 });
+
 
 // Get All Appointments
 P_route.get('/:patient_id/appointments', async (req, res) => {

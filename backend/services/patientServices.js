@@ -16,9 +16,14 @@ async function registerPatient(patientData) {
             throw new Error('Patient with this email already exists.');
         }
 
+        // Generate an incrementing patient_id
+        const latestPatient = await Patient.findOne().sort({ patient_id: -1 }); // Get the patient with the highest patient_id
+        const newpatient_id = latestPatient ? latestPatient.patient_id + 1 : 1;  // If no patients, start at 1
+
         // Hash the password before saving it
         const hashedPassword = await bcrypt.hash(patientData.password, 10);
         const newPatient = new Patient({
+            patient_id: newpatient_id,
             name: patientData.name,
             email: patientData.email,
             password: hashedPassword,
@@ -32,6 +37,7 @@ async function registerPatient(patientData) {
         throw new Error(error.message);
     }
 }
+
 
 // Login an existing patient
 async function loginPatient({ email, password }) {
@@ -57,11 +63,11 @@ async function loginPatient({ email, password }) {
 }
 
 // Book a new appointment for a patient
-async function bookAppointment(patientId, appointmentData) {
+async function bookAppointment(patien_id, appointmentData) {
     try {
         const appointment = new Appointment({
             ...appointmentData,
-            patientId,  // Associate the appointment with the patient
+            patient_id,  // Associate the appointment with the patient
         });
 
         const savedAppointment = await appointment.save(); // Save the appointment to the database
@@ -72,9 +78,9 @@ async function bookAppointment(patientId, appointmentData) {
 }
 
 // Get all appointments for a specific patient
-async function getAppointments(patientId) {
+async function getAppointments(patient_id) {
     try {
-        const appointments = await Appointment.find({ patientId });
+        const appointments = await Appointment.find({ patient_id });
         return appointments;
     } catch (error) {
         throw new Error(error.message);
@@ -82,10 +88,10 @@ async function getAppointments(patientId) {
 }
 
 // Update a patient's appointment
-async function updateAppointment(patientId, appointmentId, updateData) {
+async function updateAppointment(patient_id, appointmentId, updateData) {
     try {
         const updatedAppointment = await Appointment.findOneAndUpdate(
-            { _id: appointmentId, patientId },
+            { _id: appointmentId, patient_id },
             updateData,
             { new: true }  // Return the updated appointment
         );
@@ -99,10 +105,10 @@ async function updateAppointment(patientId, appointmentId, updateData) {
 }
 
 // Get consultation history for a specific patient
-async function getConsultationHistory(patientId) {
+async function getConsultationHistory(patient_id) {
     try {
         const consultations = await Appointment.find({ 
-            patientId, 
+            patient_id, 
             consultation: { $exists: true } 
         });
         return consultations;
@@ -112,11 +118,11 @@ async function getConsultationHistory(patientId) {
 }
 
 // Submit feedback from a patient
-async function submitFeedback(patientId, feedbackData) {
+async function submitFeedback(patient_id, feedbackData) {
     try {
         const feedback = new Feedback({
             ...feedbackData,
-            patientId,  // Associate the feedback with the patient
+            patient_id,  // Associate the feedback with the patient
         });
 
         const savedFeedback = await feedback.save(); // Save feedback to the database

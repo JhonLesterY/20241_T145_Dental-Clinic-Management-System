@@ -40,7 +40,7 @@ const User_Appointment = () => {
                   <input type="radio" name="myRadio" />
                   <div>8:00 - 10:00 AM</div>
                 </div>
-                <div className="text-red-500 p-1 ">Fully Booked</div>
+                <div className="text-green-500 p-1 ">Available Slots</div>
               </div>
 
               <div className="border mt-2 mx-[19rem]"></div>
@@ -52,7 +52,7 @@ const User_Appointment = () => {
                   <input type="radio" name="myRadio" />
                   <div>10:30 - 12:30 NN</div>
                 </div>
-                <div className="text-red-500 p-1 font-se">Fully Booked</div>
+                <div className="text-green-500 p-1 font-se">Available Slots</div>
               </div>
 
               <div className="border mt-2 mx-[19rem]"></div>
@@ -64,7 +64,7 @@ const User_Appointment = () => {
                   <input type="radio" name="myRadio" />
                   <div>1:00 - 3:00 PM</div>
                 </div>
-                <div className="text-green-500 p-1 ">Available Slots:2</div>
+                <div className="text-green-500 p-1 ">Available Slots</div>
               </div>
 
               <div className="border mt-2 mx-[19rem]"></div>
@@ -74,7 +74,7 @@ const User_Appointment = () => {
                   <input type="radio" name="myRadio" />
                   <div>3:00 - 5:00 PM</div>
                 </div>
-                <div className="text-green-500 p-1 ">Available Slots:2</div>
+                <div className="text-green-500 p-1 ">Available Slots</div>
               </div>
 
               <div className="border mt-2 mx-[19rem]"></div>
