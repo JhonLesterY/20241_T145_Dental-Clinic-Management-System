@@ -2,10 +2,6 @@ const express = require('express');
 const A_route = express.Router();   
 const adminService = require('../services/adminServices');
 
-// Admin Login
-A_route.post('/register', adminService.registerAdmin);
-A_route.post('/login', adminService.loginAdmin);
-
 // User and Appointment Management  
 A_route.get('/patients', adminService.getAllPatients);
 A_route.delete('/patients/:patient_id', adminService.deletePatient);

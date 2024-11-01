@@ -38,30 +38,6 @@ async function registerPatient(patientData) {
     }
 }
 
-
-// Login an existing patient
-async function loginPatient({ email, password }) {
-    try {
-        // Find patient by email
-        const patient = await Patient.findOne({ email });
-        if (!patient) {
-            throw new Error('Patient not found.');
-        }
-
-        // Compare passwords
-        const isMatch = await bcrypt.compare(password, patient.password);
-        if (!isMatch) {
-            throw new Error('Incorrect password.');
-        }
-
-        // Generate a JWT token
-        const token = jwt.sign({ id: patient._id }, secretKey, { expiresIn: '1h' });
-        return { token, patient };
-    } catch (error) {
-        throw new Error(error.message);
-    }
-}
-
 // Book a new appointment for a patient
 async function bookAppointment(patien_id, appointmentData) {
     try {
@@ -134,7 +110,6 @@ async function submitFeedback(patient_id, feedbackData) {
 
 module.exports = {
     registerPatient,
-    loginPatient,
     bookAppointment,
     getAppointments,
     updateAppointment,

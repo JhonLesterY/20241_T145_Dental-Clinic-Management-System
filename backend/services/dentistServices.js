@@ -10,29 +10,7 @@ const secretKey = "your_jwt_secret_key";
 
 // Login a dentist
 module.exports = {
-    loginDentist: async (req, res) => {
-        const { email, password } = req.body;
-        try {
-            // Find dentist by email
-            const dentist = await Dentist.findOne({ email });
-            if (!dentist) {
-                return res.status(404).send('Dentist not found');
-            }
-
-            // Compare passwords
-            const isMatch = await bcrypt.compare(password, dentist.password);
-            if (!isMatch) {
-                return res.status(400).send('Incorrect password');
-            }
-
-            // Generate a JWT token
-            const token = jwt.sign({ id: dentist._id }, secretKey, { expiresIn: '1h' });
-            res.status(200).json({ token, dentist });
-        } catch (error) {
-            res.status(500).send('Server error: ' + error.message);
-        }
-    },
-
+   
     getAppointments: async (req, res) => {
         const dentistId = req.params.dentist_id;
         try {

@@ -9,62 +9,6 @@ const jwt = require('jsonwebtoken');
 // Secret key for JWT
 const secretKey = "your_jwt_secret_key"; // Store securely in environment variables
 
-
-// Register Admin
-async function registerAdmin(req, res) {
-    const { username, email, password } = req.body;
-    
-    try {
-        // Check if admin already exists
-        const existingAdmin = await Admin.findOne({ email });
-        if (existingAdmin) {
-            return res.status(400).json({ message: 'Admin already exists' });
-        }
-
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create a new admin
-        const newAdmin = new Admin({
-            username,
-            email,
-            password: hashedPassword
-        });
-
-        // Save to database
-        await newAdmin.save();
-
-        res.status(201).json({ message: 'Admin registered successfully' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-}
-
-
-// Admin Login
-async function loginAdmin(req, res) {
-    const { email, password } = req.body;
-
-    try {
-        const admin = await Admin.findOne({ email });
-        if (!admin) {
-            return res.status(404).json({ message: 'Admin not found' });
-        }
-
-        const isMatch = await bcrypt.compare(password, admin.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Incorrect password' });
-        }
-
-        const token = jwt.sign({ id: admin._id }, secretKey, { expiresIn: '1h' });
-
-        return res.status(200).json({ token, admin });
-    } catch (error) {
-        return res.status(500).json({ message: error.message });
-    }
-}
-
-
 // Get all patients
 async function getAllPatients(req, res) {
     try {   
@@ -222,7 +166,6 @@ async function deleteInventoryItem(itemId) {
 }
 
 module.exports = {
-    loginAdmin,
     getAllPatients,
     deletePatient,
     deleteDentist,
@@ -234,6 +177,5 @@ module.exports = {
     addInventoryItem,
     updateInventoryItem,
     deleteInventoryItem,
-    registerAdmin,
     addDentist,
 };

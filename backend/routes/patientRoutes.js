@@ -8,16 +8,7 @@ P_route.post('/register', async (req, res) => {
         const result = await patientService.registerPatient(req.body);
         res.status(200).json(result);
     } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-});
-
-// Patient Login
-P_route.post('/login', async (req, res) => {
-    try {
-        const result = await patientService.loginPatient(req.body);
-        res.status(200).json(result);
-    } catch (error) {
+        console.error("Error during registration:", error.message);
         res.status(400).json({ error: error.message });
     }
 });

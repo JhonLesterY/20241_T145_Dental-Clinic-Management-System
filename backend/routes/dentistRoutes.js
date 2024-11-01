@@ -2,9 +2,6 @@ const express = require('express');
 const D_route = express.Router();
 const dentistService = require('../services/dentistServices');
 
-// Dentist Login
-D_route.post('/login', dentistService.loginDentist);
-
 // Appointment and Consultation Management
 D_route.get('/:dentist_id/appointments', dentistService.getAppointments);
 D_route.get('/:dentist_id/consultation-history', dentistService.getConsultationHistory);

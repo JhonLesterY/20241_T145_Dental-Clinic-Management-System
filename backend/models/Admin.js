@@ -3,6 +3,11 @@ const Schema = mongoose.Schema;
 
 // Define the admin schema
 const adminSchema = new Schema({
+    fullname: {
+        type: String,
+        required: true,
+        unique: true
+    },
     email: {
         type: String,
         required: true,
