@@ -3,9 +3,11 @@ const app = express();
 const connectDB = require('./db'); 
 const cors = require('cors');
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:5173'],// Frontend origin
+    origin: ['http://localhost:3000', 'http://localhost:5173'],
     credentials: true
 }));
+
+require('dotenv').config();
 
 connectDB();
 
@@ -22,6 +24,12 @@ app.use('/auth', authRoutes);
 app.use('/patients', patientRoutes);
 app.use('/admin', adminRoutes);
 app.use('/dentists', dentistRoutes);
+app.use((req, res, next) => {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    next();
+});
+
 
 const PORT = process.env.PORT || 5000;
 

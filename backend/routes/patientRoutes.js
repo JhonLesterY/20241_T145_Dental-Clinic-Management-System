@@ -13,6 +13,17 @@ P_route.post('/register', async (req, res) => {
     }
 });
 
+P_route.post('/google-signup', async (req, res) => {
+    const { idToken } = req.body;
+
+    try {
+        const result = await patientService.registerWithGoogle(idToken);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
 // Book Appointment
 P_route.post('/:patient_id/appointments', async (req, res) => {
     try {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate} from 'react-router-dom'; // Import Link for navigation
+import { GoogleLogin } from '@react-oauth/google';
 import "../App.css";
 
 
@@ -11,7 +12,12 @@ const PatientSignup = () => {
   const navigate = useNavigate();
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      console.error("Passwords do not match");
+      return;
+    } 
     
+
     try {
       const response = await fetch('/patients/register', {
         method: 'POST',
@@ -38,6 +44,37 @@ const PatientSignup = () => {
       console.error("Error:", error);
     }
   };
+
+  // Handle successful Google Sign-up
+  const handleGoogleSignUp = async (response) => {
+    const { credential: idToken } = response;
+  
+    try {
+        const res = await fetch('/patients/google-signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+              idToken,
+              phoneNumber: 'N/A',
+              password: 'N/A'
+             })
+        });
+        
+        const data = await res.json();
+        if (res.ok) {
+            console.log("Google signup successful:", data);
+            navigate('/login');
+        } else {
+            console.error("Google signup failed:", data.error);
+        }
+    } catch (error) {
+        console.error("Error during Google signup:", error);
+    }
+  
+  };
+
   
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden">
@@ -130,6 +167,12 @@ const PatientSignup = () => {
                   Sign Up
                 </button>
               </div>
+              <div className="text-center my-4 text-white">OR</div>
+              <GoogleLogin
+                onSuccess={handleGoogleSignUp}
+                onError={() => console.log("Google sign up failed")}
+                useOneTap={false}
+            />
             </form>
 
             {/* Improved Already have an account section */}

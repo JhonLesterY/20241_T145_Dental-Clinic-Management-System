@@ -19,11 +19,11 @@ const patientSchema = new Schema({
     },
     password: {
         type: String,
-        required: true
+        required: false
     },
     phoneNumber: {
         type: String,
-        required: true
+        required: false
     },
     createdAt: {
         type: Date,

@@ -8,7 +8,6 @@ const jwt = require('jsonwebtoken');
 // Secret key for JWT
 const secretKey = "your_jwt_secret_key";
 
-// Login a dentist
 module.exports = {
    
     getAppointments: async (req, res) => {

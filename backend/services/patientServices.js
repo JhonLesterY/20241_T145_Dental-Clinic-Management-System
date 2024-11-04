@@ -1,3 +1,4 @@
+const { OAuth2Client } = require('google-auth-library'); 
 const Patient = require('../models/Patient');  // Patient model
 const Appointment = require('../models/Appointment');  // Appointment model
 const Feedback = require('../models/Feedback');  // Feedback model
@@ -5,7 +6,10 @@ const bcrypt = require('bcryptjs');  // For password encryption
 const jwt = require('jsonwebtoken');  // For generating tokens
 
 // Secret key for JWT
-const secretKey = "your_jwt_secret_key"; // Store securely in environment variable
+const secretKey = process.env.JWT_SECRET_KEY;; // Store securely in environment variable
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+
+const client = new OAuth2Client(googleClientId);
 
 // Register a new patient
 async function registerPatient(patientData) {
@@ -33,6 +37,48 @@ async function registerPatient(patientData) {
         // Save the new patient to the database
         await newPatient.save();
         return newPatient;  // Return the newly created patient
+    } catch (error) {
+        throw new Error(error.message);
+    }
+}
+
+async function registerWithGoogle(idToken) {
+    try {
+        // Verify Google ID token
+        const ticket = await client.verifyIdToken({
+            idToken,
+            audience: googleClientId,
+        });
+        const payload = ticket.getPayload();
+
+        if (!payload) {
+            throw new Error("Invalid Google ID token");
+        }
+
+        // Extract user info from Google token
+        const { email, name } = payload;
+
+        // Check if patient already exists
+        let patient = await Patient.findOne({ email });
+
+        if (!patient) {
+            // If no patient exists, create new
+            const latestPatient = await Patient.findOne().sort({ patient_id: -1 });
+            const newpatient_id = latestPatient ? latestPatient.patient_id + 1 : 1;
+
+            patient = new Patient({
+                patient_id: newpatient_id,
+                name,
+                email,
+                password: null, // No password needed for Google-authenticated users
+            });
+
+            await patient.save();
+        }
+
+        // Generate JWT token
+        const token = jwt.sign({ patientId: patient._id }, secretKey, { expiresIn: '1h' });
+        return { patient, token };
     } catch (error) {
         throw new Error(error.message);
     }
@@ -110,6 +156,7 @@ async function submitFeedback(patient_id, feedbackData) {
 
 module.exports = {
     registerPatient,
+    registerWithGoogle,
     bookAppointment,
     getAppointments,
     updateAppointment,
