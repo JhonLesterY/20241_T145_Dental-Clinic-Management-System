@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate} from 'react-router-dom'; // Import Link for navigation
 import { GoogleLogin } from '@react-oauth/google';
+import googleLogo from '../images/google.png'; // Import your Google logo image
 import "../App.css";
 
 
@@ -74,6 +75,15 @@ const PatientSignup = () => {
     }
   
   };
+
+  const CustomButton = ({ children, onClick }) => (
+    <button
+      className="w-full flex items-center justify-center space-x-2 border border-gray-300 bg-white py-3 rounded-lg hover:bg-gray-50 transition-colors"
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
 
   
   return (

@@ -11,6 +11,8 @@ A_route.get('/appointments', adminService.getAllAppointments);
 A_route.post('/appointments/reminders', adminService.sendReminders);
 
 // Calendar and Report Management
+// Add a new admin
+A_route.post('/create', adminService.createAdmin);
 A_route.post('/calendar', adminService.updateCalendar);
 A_route.get('/reports', adminService.getReports);
 

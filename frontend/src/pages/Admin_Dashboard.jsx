@@ -1,23 +1,12 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faThLarge, 
-  faFileAlt, 
-  faCalendarAlt, 
-  faClipboardList, 
-  faComments, 
-  faCog, 
-  faBell, 
-  faTooth, 
-  faChartLine,  
-  faClipboardCheck, 
-  faSearch 
-} from '@fortawesome/free-solid-svg-icons';
-
+import { faThLarge, faFileAlt, faCalendarAlt, faClipboardList, faComments, faCog, faBell, faTooth, faChartLine, faClipboardCheck, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newAdminData, setNewAdminData] = useState({ fullname: '', email: '', password: '' });
 
   // Example patient data for demonstration
   const patientData = [
@@ -32,8 +21,35 @@ const AdminDashboard = () => {
   );
 
   // Handle search input change
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
+  const handleSearchChange = (e) => setSearchQuery(e.target.value);
+
+  // Toggle the modal visibility
+  const toggleModal = () => setIsModalOpen(!isModalOpen);
+
+  // Handle form inputs for new admin
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewAdminData((prevData) => ({ ...prevData, [name]: value }));
+  };
+
+  // Submit the form to add a new admin
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('http://localhost:5000/admin/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAdminData),
+      });
+      if (response.ok) {
+        alert('Admin added successfully');
+        toggleModal(); // Close modal on success
+      } else {
+        console.error('Failed to add admin');
+      }
+    } catch (error) {
+      console.error('Error adding admin:', error);
+    }
   };
 
   return (
@@ -94,13 +110,17 @@ const AdminDashboard = () => {
             ))}
           </ul>
         </nav>
+
+        {/* Add Admin Button */}
+        <button onClick={toggleModal} className="mt-6 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          Add Admin
+        </button>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 bg-gray-100">
         {/* Main Navbar */}
         <div className="flex items-center justify-between bg-white p-4 shadow-md">
-          {/* UniCare Logo */}
           <div className="flex items-center">
             <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
             <span className="ml-2 text-2xl font-bold text-gray-800">Dashboard</span>
@@ -118,57 +138,50 @@ const AdminDashboard = () => {
             />
           </div>
 
-          {/* Notification Button */}
           <button className="p-2 rounded-full bg-gray-200 hover:bg-gray-300">
             <FontAwesomeIcon icon={faBell} className="text-xl text-gray-600" />
           </button>
         </div>
 
-        {/* Main Content Area */}
-        <div className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white rounded-lg shadow-md p-6 flex items-center">
-              <FontAwesomeIcon icon={faChartLine} className="text-3xl mr-4 text-gray-700" />
-              <h2 className="text-3xl font-bold mb-4">Generate Report</h2>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-6 flex items-center">
-              <FontAwesomeIcon icon={faClipboardCheck} className="text-3xl mr-4 text-gray-700" />
-              <h2 className="text-3xl font-bold mb-4">Accomplishment Report</h2>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6 col-span-2">
-            <h2 className="text-3xl font-bold mb-4">Patient History Information</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-200">
-                    <th className="text-2xl px-4 py-2 text-left">ID</th>
-                    <th className="text-2xl px-4 py-2 text-left">Name</th>
-                    <th className="text-2xl px-4 py-2 text-left">Appointment</th>
-                    <th className="text-2xl px-4 py-2 text-left">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredPatients.length > 0 ? (
-                    filteredPatients.map((patient) => (
-                      <tr key={patient.id} className="border-b hover:bg-gray-100">
-                        <td className="px-4 py-2">{patient.id}</td>
-                        <td className="px-4 py-2">{patient.name}</td>
-                        <td className="px-4 py-2">{patient.appointment}</td>
-                        <td className="px-4 py-2">{patient.status}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="4" className="text-center py-4">No patients found</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+        {/* Add Admin Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded shadow-lg w-96">
+              <h2 className="text-2xl font-bold mb-4">Add New Admin</h2>
+              <form onSubmit={handleSubmit}>
+                <input
+                  type="text"
+                  name="fullname"
+                  placeholder="Full Name"
+                  onChange={handleInputChange}
+                  value={newAdminData.fullname}
+                  required
+                  className="w-full p-2 mb-2 border border-white-300 rounded bg-white "
+                />
+                <input
+                  type="email"
+                  name="email"  
+                  placeholder="Email"
+                  onChange={handleInputChange}
+                  value={newAdminData.email}
+                  required
+                  className="w-full p-2 mb-2 border border-gray-300 rounded"
+                />
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Password"
+                  onChange={handleInputChange}
+                  value={newAdminData.password}
+                  required
+                  className="w-full p-2 mb-2 border border-gray-300 rounded"
+                />
+                <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded mt-4">Add Admin</button>
+                <button type="button" onClick={toggleModal} className="ml-2 bg-gray-300 py-2 px-4 rounded mt-4">Cancel</button>
+              </form>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

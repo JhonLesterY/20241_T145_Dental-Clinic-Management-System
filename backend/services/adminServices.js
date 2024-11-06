@@ -9,6 +9,32 @@ const jwt = require('jsonwebtoken');
 // Secret key for JWT
 const secretKey = "your_jwt_secret_key"; // Store securely in environment variables
 
+async function createAdmin(req, res) {
+    try {
+        // Step 1: Find the latest admin_id and increment it
+        const lastAdmin = await Admin.findOne().sort({ admin_id: -1 });
+        const newAdminId = lastAdmin ? lastAdmin.admin_id + 1 : 1;
+
+        // Step 2: Hash the password
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
+        // Step 3: Create the new admin with the hashed password
+        const newAdmin = new Admin({
+            admin_id: newAdminId,
+            fullname: req.body.fullname,
+            email: req.body.email,
+            password: hashedPassword,
+            role: 'admin', // Default role as admin
+        });
+
+        // Save the new admin to the database
+        await newAdmin.save();
+        res.status(201).json({ message: 'Admin created successfully', admin: newAdmin });
+    } catch (error) {
+        console.error('Failed to create admin:', error);
+        res.status(500).json({ message: 'Failed to create admin: ' + error.message });
+    }
+}
 // Get all patients
 async function getAllPatients(req, res) {
     try {   
@@ -178,4 +204,5 @@ module.exports = {
     updateInventoryItem,
     deleteInventoryItem,
     addDentist,
+    createAdmin,
 };
