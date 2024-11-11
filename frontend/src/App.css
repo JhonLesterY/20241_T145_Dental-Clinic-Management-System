@@ -98,14 +98,14 @@ button:focus-visible {
 
 /* BSU Logo - Larger and Transparent */
 .logo-bsu {
-background-image: url('./assets/bsu.gif'); /* Path to your BSU logo */
+background-image: url('./assets/buksulogo.png'); /* Path to your BSU logo */
 background-size: contain; /* Maintain aspect ratio */
 background-repeat: no-repeat;
 opacity: 0.1; /* Increase transparency */
 width: 400px; /* Larger width */
 height: 400px; /* Larger height */
 display: inline-block;
-margin: 0 auto;
+margin: 0%;
 }
 
 .logo-bsu {
@@ -203,7 +203,7 @@ margin: 0 auto;
 
 /* Patient */
 .lOGO-bsu {
-  background-image: url('./assets/bsu.gif'); /* Path to BSU logo */
+  background-image: url('./assets/buksulogo.png'); /* Path to BSU logo */
   width: 64px; /* Adjust size as needed */
   height: 64px; /* Adjust size as needed */
   background-size: contain;
@@ -240,6 +240,7 @@ margin: 0 auto;
   bottom: 0; /* Cover the bottom */
   background-color: rgba(169, 169, 169, 0.491); /* White with 50% transparency */
   z-index: 1; /* Ensure the overlay is above the background image */
+  opacity: 0.2;
 }
 
 /* Logo Container */
@@ -250,39 +251,4 @@ margin: 0 auto;
 
 .university-text {
   color: #071b55; /* Color code for UniCare text */
-}
-
-.google-login-button {
-  /* Your custom styles here */
-  background-color: #17db4e;
-  color: #444;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 10px 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  img {
-    width: 20px; /* Adjust the width as needed */
-    height: 20px;
-    margin-right: 10px;
-  }
-}
-
-/* Example styles for the logout button */
-.logout-button {
-  padding: 10px 20px;
-  background-color: #d9534f;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-left: 95%;
-  margin-top: 5%;
-}
-
-.logout-button:hover {
-  background-color: #c9302c;
 }
