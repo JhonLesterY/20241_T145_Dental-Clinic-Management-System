@@ -1,79 +1,92 @@
-import React, { useState } from 'react';
-import { Link, useNavigate} from 'react-router-dom'; // Import Link for navigation
-import { GoogleLogin } from '@react-oauth/google';
-import "../App.css";
-
-
-const PatientSignup = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const navigate = useNavigate();
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      console.error("Passwords do not match");
-      return;
-    } 
-    
-
-    try {
-      const response = await fetch('/patients/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          phoneNumber: 'Optional phone number field if needed',
-        })
-      });
+  import React, { useState } from 'react';
+  import { Link, useNavigate} from 'react-router-dom'; // Import Link for navigation
+  import { GoogleLogin } from '@react-oauth/google';
+  import "../App.css";
   
-      const data = await response.json();
+
+  const PatientSignup = () => {
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const navigate = useNavigate();
+
+    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{9,16}$/;
+
+    const validatePassword = (password) => {
+      return passwordPattern.test(password);
+    };
+
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      if (password !== confirmPassword) {
+        console.error("Passwords do not match");
+        return;
+      } 
       
-      if (response.ok) {
-        console.log("Signup successful", data);
-        navigate('/login');
-      } else {
-        console.error("Signup failed", data.error);
+      if (!validatePassword(password)) {
+        console.error("Password must be 9-16 characters and include uppercase, lowercase, number, and special character.");
+        return;
       }
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  };
 
-  // Handle successful Google Sign-up
-  const handleGoogleSignUp = async (response) => {
-    const { credential: idToken } = response;
-  
-    try {
-        const res = await fetch('/patients/google-signup', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-              idToken,
-              phoneNumber: 'N/A',
-              password: 'N/A'
-             })
+      try {
+        const response = await fetch('http://localhost:5000/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+            phoneNumber: 'Optional phone number field if needed',
+          })
         });
+    
+        const data = await response.json();
         
-        const data = await res.json();
-        if (res.ok) {
-            console.log("Google signup successful:", data);
-            navigate('/login');
+        if (response.ok) {
+          console.log("Signup successful", data);
+          navigate('/login');
         } else {
-            console.error("Google signup failed:", data.error);
+          console.error("Signup failed", data.error);
         }
-    } catch (error) {
-        console.error("Error during Google signup:", error);
-    }
-  
-  };
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    };
+
+    // Handle successful Google Sign-up
+    const handleGoogleSignUp = async (response) => {
+      const { credential: idToken } = response;
+    
+      try {
+          const res = await fetch('http://localhost:5000/auth/google-signup', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ 
+                idToken,
+                phoneNumber: 'N/A',
+                password: 'N/A'
+              })
+          });
+          
+          const data = await res.json();
+          if (res.ok) {
+              console.log("Google signup successful:", data);
+              navigate('/login');
+          } else {
+              console.error("Google signup failed:", data.error);
+          }
+      } catch (error) {
+          console.error("Error during Google signup:", error);
+      }
+    
+    };
+
 
   
   return (

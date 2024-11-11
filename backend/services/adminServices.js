@@ -1,25 +1,63 @@
-const Admin = require('../models/Admin'); // Assuming you have an Admin model
+const Admin = require('../models/Admin');
 const Patient = require('../models/Patient');
 const Dentist = require('../models/Dentist');
 const Appointment = require('../models/Appointment');
 const Inventory = require('../models/Inventory');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const { logActivity } = require('../services/activitylogServices');
 
 // Secret key for JWT
-const secretKey = "your_jwt_secret_key"; // Store securely in environment variables
+const secretKey = process.env.JWT_SECRET_KEY; // Store securely in environment variables
 
-// Get all patients
+async function createAdmin(req, res) {
+    try {
+        const existingAdmin = await Admin.findOne({ email: req.body.email });
+        if (existingAdmin) {
+            return res.status(400).json({ message: 'Admin with this fullname already exists.' });
+        }
+
+        const lastAdmin = await Admin.findOne().sort({ admin_id: -1 });
+        const newAdminId = lastAdmin ? lastAdmin.admin_id + 1 : 1;
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
+        const newAdmin = new Admin({
+            admin_id: newAdminId,
+            fullname: req.body.fullname,
+            email: req.body.email,
+            password: hashedPassword,
+            role: 'admin',
+        });
+
+        await newAdmin.save();
+
+        // Log activity
+        await logActivity(req.user.id, req.user.role, 'createAdmin', { adminId: newAdmin._id });
+
+        res.status(201).json({ message: 'Admin created successfully', admin: newAdmin });
+    } catch (error) {
+        console.error('Failed to create admin:', error);
+        res.status(500).json({ message: 'Failed to create admin: ' + error.message });
+    }
+}
+
 async function getAllPatients(req, res) {
-    try {   
+    try {
         const patients = await Patient.find({});
-        return res.status(200).json(patients); // Send the patients as a response
+        
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'getAllPatients',
+            details: { count: patients.length }
+        });
+
+        return res.status(200).json(patients);
     } catch (error) {
         return res.status(500).json({ message: 'Failed to retrieve patients: ' + error.message });
     }
 }
 
-// Delete a patient
 async function deletePatient(req, res) {
     const { patient_id } = req.params;
     try {
@@ -27,14 +65,23 @@ async function deletePatient(req, res) {
         if (!patient) {
             return res.status(404).json({ message: 'Patient not found' });
         }
-        return res.status(200).json({ message: 'Patient deleted successfully' });
+
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'deletePatient',
+            details: { patient_id: patient_id, name: patient.name }
+        });
+
+        res.status(200).json({ message: 'Patient deleted successfully' });
     } catch (error) {
-        return res.status(500).json({ message: 'Failed to delete patient: ' + error.message });
+        res.status(500).json({ message: 'Failed to delete patient: ' + error.message });
     }
 }
 
 async function addDentist(req, res) {
-    const { name, email, password, phoneNumber } = req.body; // Remove specialization
+    const { name, email, password, phoneNumber } = req.body;
 
     try {
         const existingDentist = await Dentist.findOne({ email });
@@ -53,117 +100,222 @@ async function addDentist(req, res) {
 
         await newDentist.save();
 
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'addDentist',
+            details: { dentist_id: newDentist._id, name: newDentist.name, email: newDentist.email }
+        });
+
         res.status(201).json({ message: 'Dentist added successfully', dentist: newDentist });
     } catch (error) {
         res.status(500).json({ message: 'Failed to add dentist: ' + error.message });
     }
 }
 
-// Delete a dentist
-async function deleteDentist(dentistId) {
+async function deleteDentist(dentistId, req) {
     try {
         const dentist = await Dentist.findByIdAndDelete(dentistId);
         if (!dentist) throw new Error('Dentist not found');
+
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'deleteDentist',
+            details: { dentist_id: dentistId, name: dentist.name }
+        });
+
         return dentist;
     } catch (error) {
         throw new Error('Failed to delete dentist');
     }
 }
 
-// Get all appointments
 async function getAllAppointments(req, res) {
     try {
         const appointments = await Appointment.find({});
-        return appointments;
+
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'getAllAppointments',
+            details: { count: appointments.length }
+        });
+
+        return res.status(200).json(appointments);
     } catch (error) {
-        throw new Error('Failed to retrieve appointments');
+        res.status(500).json({ message: 'Failed to retrieve appointments: ' + error.message });
     }
 }
 
-// Send reminders for appointments (you can customize this logic)
-async function sendReminders() {
+async function sendReminders(req, res) {
     try {
         const appointments = await Appointment.find({ reminderSent: false, date: { $gte: new Date() } });
         
-        // Logic to send reminders, e.g., via email or SMS
-        // Example: Loop through appointments and send reminder
-
         appointments.forEach(appointment => {
-            // Implement your reminder logic here (e.g., using a third-party service)
+            // Implement your reminder logic here
             appointment.reminderSent = true;
             appointment.save();
         });
 
-        return { message: 'Reminders sent successfully' };
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'sendReminders',
+            details: { sentCount: appointments.length }
+        });
+
+        return res.status(200).json({ message: 'Reminders sent successfully' });
     } catch (error) {
-        throw new Error('Failed to send reminders');
+        res.status(500).json({ message: 'Failed to send reminders: ' + error.message });
     }
 }
 
-// Update the calendar (you can store calendar events in a collection, or use an existing service)
-async function updateCalendar(calendarData) {
+async function updateCalendar(req, res) {
     try {
+        const calendarData = req.body;
         // Assuming there is a Calendar model
         const calendar = new Calendar(calendarData);
         await calendar.save();
-        return calendar;
+
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'updateCalendar',
+            details: { calendarData }
+        });
+
+        return res.status(200).json(calendar);
     } catch (error) {
-        throw new Error('Failed to update calendar');
+        res.status(500).json({ message: 'Failed to update calendar: ' + error.message });
     }
 }
 
-// Get reports (you can customize the report generation logic)
-async function getReports() {
+async function getReports(req, res) {
     try {
-        const reports = {}; // Example: You can generate various reports such as revenue, appointments, etc.
-        return reports;
+        const reports = {}; // Example: Generate reports here
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'getReports',
+            details: { reportType: 'general' } // Adjust details as necessary
+        });
+
+        return res.status(200).json(reports);
     } catch (error) {
-        throw new Error('Failed to generate reports');
+        res.status(500).json({ message: 'Failed to generate reports: ' + error.message });
     }
 }
 
-// Get all inventory items
-async function getInventory() {
+async function getInventory(req, res) {
     try {
         const inventory = await Inventory.find({});
-        return inventory;
+
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'getInventory',
+            details: { count: inventory.length }
+        });
+
+        return res.status(200).json(inventory);
     } catch (error) {
-        throw new Error('Failed to retrieve inventory');
+        res.status(500).json({ message: 'Failed to retrieve inventory: ' + error.message });
     }
 }
 
-// Add an inventory item
-async function addInventoryItem(inventoryData) {
+async function addInventoryItem(req, res) {
     try {
+        const inventoryData = req.body;
         const newItem = new Inventory(inventoryData);
         await newItem.save();
-        return newItem;
+
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'addInventoryItem',
+            details: { itemId: newItem._id, itemName: newItem.name }
+        });
+
+        return res.status(201).json(newItem);
     } catch (error) {
-        throw new Error('Failed to add inventory item');
+        res.status(500).json({ message: 'Failed to add inventory item: ' + error.message });
     }
 }
 
-// Update an inventory item
-async function updateInventoryItem(itemId, updateData) {
+async function updateInventoryItem(req, res) {
+    const { itemId } = req.params;
+    const updateData = req.body;
+
     try {
         const item = await Inventory.findByIdAndUpdate(itemId, updateData, { new: true });
         if (!item) throw new Error('Item not found');
-        return item;
+
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'updateInventoryItem',
+            details: { itemId: itemId, itemName: item.name }
+        });
+
+        return res.status(200).json(item);
     } catch (error) {
-        throw new Error('Failed to update inventory item');
+        res.status(500).json({ message: 'Failed to update inventory item: ' + error.message });
     }
 }
 
-// Delete an inventory item
-async function deleteInventoryItem(itemId) {
+async function deleteInventoryItem(req, res) {
+    const { itemId } = req.params;
+
     try {
         const item = await Inventory.findByIdAndDelete(itemId);
         if (!item) throw new Error('Item not found');
-        return item;
+
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'deleteInventoryItem',
+            details: { itemId: itemId, itemName: item.name }
+        });
+
+        return res.status(200).json({ message: 'Inventory item deleted successfully' });
     } catch (error) {
-        throw new Error('Failed to delete inventory item');
+        return res.status(500).json({ message: 'Failed to delete inventory item: ' + error.message });
     }
-}
+};
+
+async function getActivityLogs(req, res) {
+    const { page = 1, limit = 10 } = req.query; // Accept pagination parameters from query
+
+    try {
+        const logs = await ActivityLog.find()
+            .sort({ timestamp: -1 }) // Sort logs by newest first
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+
+        const totalLogs = await ActivityLog.countDocuments();
+
+        res.status(200).json({
+            logs,
+            totalPages: Math.ceil(totalLogs / limit),
+            currentPage: page,
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to retrieve activity logs: ' + error.message });
+    }
+};
+
+
 
 module.exports = {
     getAllPatients,
@@ -178,4 +330,6 @@ module.exports = {
     updateInventoryItem,
     deleteInventoryItem,
     addDentist,
+    createAdmin,
+    getActivityLogs,
 };

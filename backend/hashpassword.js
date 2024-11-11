@@ -2,7 +2,7 @@
 const bcrypt = require('bcryptjs');
 
 // Replace with the password you want to hash
-const plainPassword = 'dentist123';
+const plainPassword = 'admin69';
 const saltRounds = 10;
 
 bcrypt.hash(plainPassword, saltRounds, (err, hashedPassword) => {

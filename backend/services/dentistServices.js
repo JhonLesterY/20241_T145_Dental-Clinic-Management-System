@@ -2,11 +2,6 @@ const Dentist = require('../models/Dentist');
 const Appointment = require('../models/Appointment');
 const Consultation = require('../models/Consultation');
 const Feedback = require('../models/Feedback');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-
-// Secret key for JWT
-const secretKey = "your_jwt_secret_key";
 
 module.exports = {
    
