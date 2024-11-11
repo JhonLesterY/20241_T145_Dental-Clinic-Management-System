@@ -1,7 +1,28 @@
 // authRoutes.js
 const express = require('express');
 const router = express.Router();
-const { normalLogin, googleLogin } = require('../services/authServices');
+const { normalLogin, googleLogin, registerUser, registerWithGoogle } = require('../services/authServices');
+
+router.post('/register', async (req, res) => {
+    try {
+        const result = await registerUser(req.body);
+        res.status(200).json(result);
+    } catch (error) {
+        console.error("Error during registration:", error.message);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+router.post('/google-signup', async (req, res) => {
+    const { idToken } = req.body;
+
+    try {
+        const result = await registerWithGoogle(idToken);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
 
 // Login endpoint for normal email/password login
 router.post('/login', async (req, res) => {
@@ -22,7 +43,8 @@ router.post('/login', async (req, res) => {
 
 // Login endpoint for Google OAuth login
 router.post('/google-login', async (req, res) => {
-    const { googleToken } = req.body;
+    const googleToken = req.body.googleToken || req.headers.authorization?.split(' ')[1];
+
 
     if (!googleToken) {
         console.error("Token missing in request body");
