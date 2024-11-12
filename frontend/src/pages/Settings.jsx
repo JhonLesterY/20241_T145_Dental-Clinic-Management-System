@@ -1,36 +1,50 @@
 import Dashboard from "../components/Dashboard";
+import User_Header from "../components/User_Header";
 
 const Settings = () => {
   return (
     <>
-      <div className="flex">
-        <div>
-          <Dashboard />
-        </div>
+      <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
+        <Dashboard />
+      </div>
 
-        <div className="grid justify-center  mx-auto ">
-          <div className="ml-48">
-            {/* Header */}
-            <div className="h-[3rem]  pt-3 text-center font-semibold text-lg">
-              Settings
+        {/* Main Content */}
+      <div className="flex-1 flex flex-col p-2">
+        {/* Header */}
+        <User_Header />
+
+          <div className="space-y-4 mt-10 mx-auto w-full max-w-5xl">
+            {/* Switch Theme */}
+            <div className="border shadow-md p-5 rounded-xl mb-1.5">
+              <div className="flex justify-between items-center">
+                <span>Switch Theme</span>
+                <button className="px-4 py-2 rounded-full bg-yellow-400">Dark Mode</button>
+              </div>
             </div>
-          </div>
 
-          <div>General Settings</div>
-
-          <div className="mt-16">
-            {/* content */}
-
-            <div className="">
-              <div className="border shadow-md p-5 rounded-xl mb-1.5">
-                <div>Switch Theme</div>
+            {/* Notification Settings */}
+            <div className="border shadow-md p-5 rounded-xl mb-1.5">
+              <div className="flex justify-between items-center">
+                <span>Notification Settings</span>
+                <button className="text-blue-500">Edit</button>
               </div>
-              <div className="border shadow-md p-5 rounded-xl mb-1.5">
-                Notification Settings
+            </div>
+
+            {/* Help */}
+            <div className="border shadow-md p-5 rounded-xl mb-1.5">
+              <div className="flex justify-between items-center">
+                <span>Help</span>
+                <button className="text-blue-500">View</button>
               </div>
-              <div className="border shadow-md p-5 rounded-xl mb-1.5">Help</div>
-              <div className="border shadow-md p-5 rounded-xl mb-1.5">
-                Privacy Policy
+            </div>
+
+            {/* Privacy Policy */}
+            <div className="border shadow-md p-5 rounded-xl mb-1.5">
+              <div className="flex justify-between items-center">
+                <span>Privacy Policy</span>
+                <button className="text-blue-500">View</button>
               </div>
             </div>
           </div>
