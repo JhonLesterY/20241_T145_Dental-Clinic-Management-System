@@ -40,42 +40,72 @@ async function createAdmin(req, res) {
     }
 }
 
-async function getAllPatients(req, res) {
+const getAllPatients = async (req) => {
     try {
-        const patients = await Patient.find({});
+        const patients = await Patient.find();
         
-        // Log activity
-        await logActivity({
-            userId: req.user._id,
-            userRole: 'admin',
-            action: 'getAllPatients',
-            details: { count: patients.length }
-        });
+        // Debug logs
+        console.log('User from request:', req.user);
+        console.log('User ID:', req.user.id);
+        
+        // Make sure we have the user info
+        if (!req.user || !req.user.id) {
+            throw new Error('User information not available');
+        }
 
-        return res.status(200).json(patients);
+        // Log activity with proper parameters
+        await logActivity(
+            req.user.id,      // User ID from request
+            'admin',          // Role
+            'getAllPatients', // Action
+            { count: patients.length }
+        );
+        
+        return patients;
     } catch (error) {
-        return res.status(500).json({ message: 'Failed to retrieve patients: ' + error.message });
+        console.error('Error in getAllPatients:', error);
+        throw error;
     }
-}
+};
 
 async function deletePatient(req, res) {
     const { patient_id } = req.params;
+
     try {
-        const patient = await Patient.findOneAndDelete({ patient_id: Number(patient_id) });
+        // Debug logs
+        console.log('Delete request params:', req.params);
+        console.log('User from request:', req.user);
+        
+        // Validate user authentication
+        if (!req.user) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
+
+        // Convert patient_id to number and validate
+        const numericId = Number(patient_id);
+        if (isNaN(numericId)) {
+            return res.status(400).json({ message: 'Invalid patient ID format' });
+        }
+
+        const patient = await Patient.findOneAndDelete({ patient_id: numericId });
         if (!patient) {
             return res.status(404).json({ message: 'Patient not found' });
         }
 
-        // Log activity
-        await logActivity({
-            userId: req.user._id,
-            userRole: 'admin',
-            action: 'deletePatient',
-            details: { patient_id: patient_id, name: patient.name }
-        });
+        // Log activity with the decoded user data
+        await logActivity(
+            req.user.id,      // From the decoded JWT token
+            req.user.role,    // From the decoded JWT token
+            'deletePatient',  // Action
+            {                 // Details
+                patient_id: numericId,
+                name: patient.name || patient.fullname
+            }
+        );
 
         res.status(200).json({ message: 'Patient deleted successfully' });
     } catch (error) {
+        console.error('Delete error:', error);
         res.status(500).json({ message: 'Failed to delete patient: ' + error.message });
     }
 }

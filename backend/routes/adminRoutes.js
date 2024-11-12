@@ -5,8 +5,16 @@ const { authenticateAdmin } = require('../middleware/authMiddleware');
 
 
 // User and Appointment Management  
-A_route.get('/patients', adminService.getAllPatients);
-A_route.delete('/patients/:patient_id', adminService.deletePatient);
+A_route.get('/patients', authenticateAdmin, async (req, res) => {
+    try {
+        const patients = await adminService.getAllPatients(req);
+        res.status(200).json(patients);
+    } catch (error) {
+        console.error('Error fetching patients:', error);
+        res.status(500).json({ message: 'Failed to fetch patients' });
+    }
+});
+A_route.delete('/patients/:patient_id', authenticateAdmin, adminService.deletePatient);
 A_route.post('/add-dentist', adminService.addDentist);
 A_route.delete('/dentists/:dentist_id', adminService.deleteDentist);    
 A_route.get('/appointments', adminService.getAllAppointments);

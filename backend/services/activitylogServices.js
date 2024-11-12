@@ -1,17 +1,28 @@
-// services/activitylogServices.js
 const ActivityLog = require('../models/ActivityLog');
 
-async function logActivity(userId, userRole, action, details = {}) {
-    const logEntry = new ActivityLog({ userId, userRole, action, details });
-    console.log(`Logging activity for ${userRole} with ID ${userId}, action: ${action}`);
+const logActivity = async (userId, userRole, action, details = {}) => {
+    try {
+        // Debug logs
+        console.log('Logging activity with:', {
+            userId,
+            userRole,
+            action,
+            details
+        });
 
-     try {
-        await logEntry.save();
-        console.log(`Logged activity: ${action} by ${userRole} with ID ${userId}`);
+        const log = new ActivityLog({
+            userId,
+            userRole,
+            action,
+            details
+        });
+
+        await log.save();
+        console.log('Activity logged successfully');
     } catch (error) {
-        console.error('Failed to log activity:', error);
+        console.error('Failed to log activity:', error.message);
+        // Don't throw the error - just log it
     }
-}
-
+};
 
 module.exports = { logActivity };

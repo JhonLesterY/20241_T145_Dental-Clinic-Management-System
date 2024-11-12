@@ -12,6 +12,8 @@ const AdminDashboard = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [newAdminData, setNewAdminData] = useState({ fullname: '', email: '', password: '' });
   const [deleteUserData, setDeleteUserData] = useState({ email: '' });
+  const [patients, setPatients] = useState([]);
+    const [error, setError] = useState(null);
 
   const handleSearchChange = (e) => setSearchQuery(e.target.value);
   const toggleModal = () => setIsModalOpen(!isModalOpen);
@@ -93,6 +95,73 @@ const AdminDashboard = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
+
+  const handleDeletePatient = async (patientId) => {
+    try {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        console.log('Deleting patient with ID:', patientId);
+
+        const response = await fetch(`http://localhost:5000/admin/patients/${patientId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include' // Add this line
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to delete patient');
+        }
+
+        // Success
+        alert('Patient deleted successfully');
+        fetchAllPatients(); // Refresh the list
+    } catch (error) {
+        console.error('Delete error:', error);
+        alert(error.message);
+    }
+};
+
+const fetchAllPatients = async () => {
+  try {
+      const token = sessionStorage.getItem('token');
+      console.log('Fetching patients...');
+
+      const response = await fetch('http://localhost:5000/admin/patients', {
+          method: 'GET',
+          headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+          },
+          credentials: 'include'
+      });
+
+      if (response.ok) {
+          const data = await response.json();
+          console.log('Raw patients data:', JSON.stringify(data, null, 2)); // Log the full data structure
+          setPatients(data);
+      } else {
+          const errorData = await response.json();
+          console.error('Error fetching patients:', errorData);
+          setError(errorData.message || 'Failed to fetch patients');
+      }
+  } catch (error) {
+      console.error('Fetch error:', error);
+      setError('Error fetching patients');
+  }
+};
+
+useEffect(() => {
+  fetchAllPatients();
+}, []);
+
+
   return (
     <div className="flex h-screen w-screen">
       {/* Sidebar */}
@@ -149,7 +218,6 @@ const AdminDashboard = () => {
         <button onClick={toggleDeleteModal} className="mt-4 w-full bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded">
           Delete User
         </button>
-
         <button onClick={handleLogout} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
           Logout
         </button>
@@ -176,6 +244,89 @@ const AdminDashboard = () => {
             <FontAwesomeIcon icon={faBell} className="text-xl text-gray-600" />
           </button>
         </div>
+
+        {/* Add this new section for patients list */}
+        <div className="p-6">
+    {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+        </div>
+    )}
+    
+    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="p-4 border-b">
+            <h3 className="text-2xl font-bold">Patient List</h3>
+        </div>
+        
+        <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                    <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Patient ID
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {patients && patients.length > 0 ? (
+                      patients.map((patient) => {
+                          // Log the patient object to see its structure
+                          console.log('Current patient object:', patient);
+                          
+                          // Safely get the patient ID
+                          const patientId = patient?.patient_id || patient?._id;
+                          
+                          if (!patientId) {
+                              console.error('Patient without ID:', patient);
+                              return null; // Skip rendering this row
+                          }
+
+                          return (
+                              <tr key={patientId} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
+                                      {patientId}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
+                                      {patient?.fullname || patient?.name || 'No Name'}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
+                                      {patient?.email || 'No Email'}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium bg-white">
+                                      <button
+                                          onClick={() => {
+                                              console.log('Delete clicked for patient:', patientId);
+                                              handleDeletePatient(patientId);
+                                          }}
+                                          className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
+                                      >
+                                          Delete
+                                      </button>
+                                  </td>
+                              </tr>
+                          );
+                      })
+                  ) : (
+                      <tr>
+                          <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                              {Array.isArray(patients) ? 'No patients found' : 'Loading patients...'}
+                          </td>
+                      </tr>
+                  )}
+              </tbody>
+            </table>
+        </div>
+    </div>  
+</div>
 
         {/* Add Admin Modal */}
         {isModalOpen && (
