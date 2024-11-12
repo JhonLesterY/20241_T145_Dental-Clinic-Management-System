@@ -11,89 +11,102 @@ const User_Feedback = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const response = await fetch('http://localhost:5000/feedback', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, message })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, message }),
       });
 
       if (response.ok) {
         setFeedbackSuccess(true);
         setEmail('');
         setMessage('');
+        setTimeout(() => setFeedbackSuccess(false), 3000);
       } else {
-        console.error("Failed to send feedback");
+        console.error('Failed to send feedback');
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error('Error:', error);
     }
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left side with background image and title */}
-      <div className="w-1/2 bg-cover bg-center relative" style={{ backgroundImage: `url(${buksubg})` }}>
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Left Side with Image and Heading */}
+      <div
+        className="md:w-1/2 w-full bg-cover bg-center relative"
+        style={{ backgroundImage: `url(${buksubg})` }}
+      >
         <div className="absolute inset-0 bg-blue-900 bg-opacity-50"></div>
-        <div className="relative z-10 flex flex-col items-center justify-center h-full p-8">
-          <img className="w-14 mb-4" src={Logo} alt="dental-logo" />
-          <h1 className="text-5xl text-white font-bold text-center leading-tight">
-            We Value Your Feedback
-          </h1>
+        <div className="relative z-10 flex flex-col items-center justify-center h-full p-8 text-center">
+          <img className="w-16 mb-6" src={Logo} alt="dental-logo" />
+          <h1 className="text-4xl md:text-5xl text-white font-bold">We Value Your Feedback</h1>
+          <p className="mt-4 text-lg text-white">Your input helps us improve our services!</p>
         </div>
       </div>
 
-      {/* Right side with feedback form */}
-      <div className="w-1/2 bg-blue-900 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md relative">
-          {/* Back to Dashboard Button */}
-          <Link to="/Dashboard" className="absolute top-4 right-4 text-blue-500 hover:underline">
-            Back
+      {/* Right Side with Form */}
+      <div className="md:w-1/2 w-full bg-blue-900 flex items-center justify-center p-10">
+        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg relative">
+          {/* Back Button */}
+          <Link to="/Dashboard" className="absolute top-4 left-4 text-blue-500 hover:text-blue-700 flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="text-lg">Back</span>
           </Link>
 
-          <header className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold text-blue-900">Feedback</h2>
-            <button className="bg-gray-100 p-2 rounded-full hover:bg-gray-200">
-              <img className="w-6" src={bell} alt="Notifications" />
+          {/* Header */}
+          <header className="flex justify-between items-center mb-10 p-6">
+            <h2 className="text-3xl font-semibold text-blue-900">Feedback</h2>
+            <button className="bg-gray-200 p-2 rounded-full hover:bg-gray-300">
+              <img className="w-5" src={bell} alt="Notifications" />
             </button>
           </header>
 
-          {feedbackSuccess && <p className="text-green-600">Feedback sent successfully!</p>}
+          {feedbackSuccess && (
+            <div className="bg-green-100 text-green-700 p-4 rounded-md mb-4">
+              Feedback sent successfully!
+            </div>
+          )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Feedback Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm text-gray-600 mb-1">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email
+              </label>
               <input
                 type="email"
                 id="email"
-                name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-3 border bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your email"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="message" className="block text-sm text-gray-600 mb-1">Message</label>
+              <label htmlFor="message" className="block text-sm font-medium text-gray-700">
+                Message
+              </label>
               <textarea
                 id="message"
-                name="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full p-3 border bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
+                placeholder="Your feedback"
                 required
               ></textarea>
             </div>
 
             <button
               type="submit"
-              className="w-full py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
-              Send
+              Send Feedback
             </button>
           </form>
         </div>
