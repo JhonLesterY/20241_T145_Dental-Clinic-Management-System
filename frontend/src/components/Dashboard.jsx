@@ -23,11 +23,6 @@ const Dashboard = () => {
               Appointment
             </NavLink>
           </li>
-          <li>
-            <NavLink to="/services" activeClassName="text-white" className="hover:text-gray-200">
-              Services
-            </NavLink>
-          </li>
         </ul>
       </div>
 
