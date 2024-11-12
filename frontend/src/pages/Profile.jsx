@@ -9,8 +9,8 @@ const Profile = () => {
       <Dashboard />
 
       {/* Main Profile Content */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-[#003367] text-white p-8">
-        <div className="w-full max-w-lg p-8 bg-white text-gray-800 rounded-lg shadow-lg">
+      <div className="flex-1 flex flex-col items-center justify-center  bg-blue-900 text-white p-8">
+        <div className="w-full max-w-2xl p-8 bg-white text-gray-800 rounded-lg shadow-lg">
           {/* Profile Header */}
           <User_Profile_Header />
 
@@ -111,7 +111,7 @@ const Profile = () => {
             <div className="mt-6">
               <button
                 type="button"
-                className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors font-semibold"
+                className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
               >
                 Logout
               </button>
