@@ -17,23 +17,23 @@ const Settings = () => {
 
           <div className="space-y-4 mt-10 mx-auto w-full max-w-5xl">
             {/* Switch Theme */}
-            <div className="border shadow-md p-5 rounded-xl mb-1.5">
+            <div className="border shadow-md p-5 rounded-xl mb-1.5 text-black">
               <div className="flex justify-between items-center">
                 <span>Switch Theme</span>
-                <button className="px-4 py-2 rounded-full bg-yellow-400">Dark Mode</button>
+                <button className="px-4 py-2 rounded-full bg-yellow-400 text-black">Dark Mode</button>
               </div>
             </div>
 
             {/* Notification Settings */}
-            <div className="border shadow-md p-5 rounded-xl mb-1.5">
+            <div className="border shadow-md p-5 rounded-xl mb-1.5 text-black">
               <div className="flex justify-between items-center">
                 <span>Notification Settings</span>
-                <button className="text-blue-500">Edit</button>
+                <button className="text-blue-500 text-black">Edit</button>
               </div>
             </div>
 
             {/* Help */}
-            <div className="border shadow-md p-5 rounded-xl mb-1.5">
+            <div className="border shadow-md p-5 rounded-xl mb-1.5 text-black">
               <div className="flex justify-between items-center">
                 <span>Help</span>
                 <button className="text-blue-500">View</button>
@@ -41,7 +41,7 @@ const Settings = () => {
             </div>
 
             {/* Privacy Policy */}
-            <div className="border shadow-md p-5 rounded-xl mb-1.5">
+            <div className="border shadow-md p-5 rounded-xl mb-1.5 text-black">
               <div className="flex justify-between items-center">
                 <span>Privacy Policy</span>
                 <button className="text-blue-500">View</button>
