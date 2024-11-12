@@ -15,7 +15,7 @@ const Settings = () => {
         {/* Header */}
         <User_Header />
 
-          <div className="space-y-4 mt-10 mx-auto w-full max-w-5xl">
+          <div className="space-y-4 mt-10 mx-auto w-full  max-w-5xl">
             {/* Switch Theme */}
             <div className="border shadow-md p-5 rounded-xl mb-1.5 text-black">
               <div className="flex justify-between items-center">
