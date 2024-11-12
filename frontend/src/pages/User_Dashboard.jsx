@@ -1,92 +1,65 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Dashboard from "../components/Dashboard";
 import User_Header from "../components/User_Header";
 import dentist from "/src/images/dentist.jpeg";
 import dentalchair from "/src/images/Dental_Chair_.jpg";
 
 const User_Dashboard = () => {
-
-  const navigate = useNavigate();
-  const handleLogout = () => {
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('role');
-    navigate('/login'); // Redirect to login page after logout
-  };
-
-  useEffect(() => {
-    const handleBeforeUnload = (event) => {
-      // Display confirmation message when the user tries to close the tab or navigate away
-      const message = "Are you sure you want to leave? You will be logged out.";
-      event.returnValue = message; // Standard for most browsers
-      return message; // For some older browsers
-    };
-
-    // Add the event listener
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    // Cleanup the event listener when the component is unmounted
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
-
   return (
-    <>
-      <div className="flex">
-        <div>
-          
-          <Dashboard />
-          
-        </div>
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
+        <Dashboard />
+      </div>
 
-        <div className="justify-center  mx-auto o verflow-x-hidden">
-          <div className="ml-48">
-            <User_Header />
-           
-          </div>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col p-2">
+        {/* Header */}
+        <User_Header />
 
-          <div className="mt-16">
-            <div className="grid gap-44 w-fit grid-cols-2 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 mx-auto">
-              {/* Image 1 */}
-              <div className="border shadow-md mb-3 rounded-xl cursor-pointer">
-                <div className="">
-                  <img
-                    className="object-cover p-3 max-w-lg aspect-square"
-                    src={dentist}
-                    alt="img"
-                  />
-                </div>
-                <p className="text-wrap max-w-md p-3">
-                  The university dental clinic is a organization that provides
-                  free dental care services for BukSU students and Personnel.
+
+        {/* Dashboard Content */}
+        <div className="flex flex-col items-center mt-10 mx-auto w-full max-w-5xl">
+          <h2 className="text-3xl font-semibold text-[#003367] mb-8 text-center">
+            Welcome to Your Dashboard
+          </h2>
+          
+
+          {/* Info Cards */}
+          <div className="grid gap-6 w-full grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
+            {/* Card 1 */}
+            <div className="bg-white border shadow-md rounded-xl cursor-pointer transform hover:scale-105 transition-transform duration-200 ease-in-out">
+              <img
+                className="object-cover rounded-t-xl w-full h-64"
+                src={dentist}
+                alt="Dentist services provided at the university clinic"
+              />
+              <div className="p-4">
+                <p className="text-gray-700 text-base">
+                  The university dental clinic is an organization that provides
+                  free dental care services for BukSU students and personnel.
                 </p>
               </div>
+            </div>
 
-              {/* Image 2 */}
-
-              <div className="border shadow-md mb-3 rounded-xl cursor-pointer">
-                <div className="">
-                  <img
-                    className="object-cover p-3 max-w-lg aspect-square"
-                    src={dentalchair}
-                    alt="img"
-                  />
-                </div>
-                <p className="text-wrap max-w-md p-3">
-                  The university dental clinic offers various services like
-                  tooth extraction, consultation, and flouride varnish.
+            {/* Card 2 */}
+            <div className="bg-white border shadow-md rounded-xl cursor-pointer transform hover:scale-105 transition-transform duration-200 ease-in-out">
+              <img
+                className="object-cover rounded-t-xl w-full h-64"
+                src={dentalchair}
+                alt="Dental chair and equipment used in university clinic services"
+              />
+              <div className="p-4">
+                <p className="text-gray-700 text-base">
+                  The university dental clinic offers various services such as
+                  tooth extraction, consultation, and fluoride varnish
+                  applications.
                 </p>
               </div>
-              
             </div>
           </div>
-          <button onClick={handleLogout} className="logout-button">
-            Logout
-      </button>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
