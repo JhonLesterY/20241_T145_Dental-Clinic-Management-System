@@ -6,13 +6,13 @@ const User_Pagintation = () => {
       <div className="flex justify-between">
         <NavLink
           to="/appointment"
-          className="cursor-pointer shadow-sm mb-5 hover:shadow-lg rounded-xl px-5 py-2 text-white bg-customblue"
+          className="cursor-pointer shadow-sm mb-5 hover:shadow-lg rounded-xl px-5 py-2 m-5 text-white bg-customblue"
         >
           Back
         </NavLink>
         <NavLink
           to="/upload-requirements"
-          className="cursor-pointer shadow-sm mb-5 hover:shadow-lg rounded-xl px-5 py-2 text-white bg-customblue"
+          className="cursor-pointer shadow-sm mb-5 hover:shadow-lg rounded-xl px-5 py-2  m-5 text-white bg-customblue"
         >
           Next
         </NavLink>

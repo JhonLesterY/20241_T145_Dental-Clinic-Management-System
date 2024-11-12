@@ -17,7 +17,7 @@ const Appointment_Confirmation = () => {
         <User_Header_Appointment />
 
         {/* Content Section */}
-        <div className="w-full max-w-3xl mt-6 p-4">
+        <div className="w-full max-w-4xl mt-6 p-4">
           <div className="bg-white p-6 shadow-lg rounded-xl text-gray-800">
             <h1 className="text-2xl font-semibold text-[#003367] mb-4 text-center">
               Appointment Confirmation

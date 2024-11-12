@@ -32,7 +32,7 @@ const User_Appointment = () => {
           </div>
 
           {/* Appointment Slot Section */}
-          <div className="w-full bg-white p-6 rounded-xl shadow-lg max-w-md">
+          <div className="w-full bg-white p-6 rounded-xl shadow-lg max-w-2xl">
             <div className="flex items-center justify-between mb-4">
               <div className="text-lg font-medium text-gray-700">October 18, 2024</div>
               <div className="text-lg font-medium text-gray-700">Friday</div>
