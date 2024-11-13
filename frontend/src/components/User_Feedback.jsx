@@ -50,11 +50,11 @@ const User_Feedback = () => {
       <div className="md:w-1/2 w-full bg-blue-900 flex items-center justify-center p-10">
         <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg relative">
           {/* Back Button */}
-          <Link to="/Dashboard" className="absolute top-4 left-4 text-blue-500 hover:text-blue-700 flex items-center space-x-2">
+          <Link to="/Dashboard" className="absolute top-4 left-4 text-blue-500 hover:text-blue-700 flex items-center space-x-2 text-blue-900">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="text-lg">Back</span>
+            <span className="text-lg text-blue-900">Back</span>
           </Link>
 
           {/* Header */}
@@ -104,7 +104,7 @@ const User_Feedback = () => {
 
             <button
               type="submit"
-              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition transform hover:scale-105 transition-transform duration-200 ease-in-out"
             >
               Send Feedback
             </button>

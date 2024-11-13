@@ -41,6 +41,7 @@ const About_us = () => {
           </div>
         </div>
 
+
         {/* Footer */}
         <div className="space-y-4 mt-20 mx-auto w-full max-w-5xl">
           <Footer />

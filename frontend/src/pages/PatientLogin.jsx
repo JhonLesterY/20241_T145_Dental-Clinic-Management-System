@@ -89,7 +89,7 @@ const Login = () => {
               <div className="logo-bsu w-12 h-12 bg-cover bg-center"></div>
               <div className="logo-unicare w-12 h-12 bg-cover bg-center"></div>
             </div>
-            <h1 className="text-4xl font-bold leading-tight">
+            <h1 className="text-4xl font-bold leading-tight text-white">
               University Dental Clinic Management System
             </h1>
           </div>

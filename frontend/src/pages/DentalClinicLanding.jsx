@@ -7,11 +7,11 @@ const DentalClinicLanding = () => {
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden">
       {/* Navigation Bar */}
-      <nav className="bg-blue-300 p-4 flex justify-between items-center shadow-md">
+      <nav className="bg-blue-900 p-4 flex justify-between items-center shadow-md">
         <div className="flex items-center space-x-4">
           {/* UniCare Logo */}
           <div className="logo-unicare w-10 h-10 bg-cover bg-center"></div>
-          <span className="text-black font-bold text-lg">UniCare</span>
+          <span className="text-black font-bold text-white text-lg">UniCare</span>
 
         </div>
         <div className="flex items-center space-x-4">
@@ -37,7 +37,7 @@ const DentalClinicLanding = () => {
         
         <div className="relative z-10 flex flex-col items-center justify-center h-full p-8 space-y-6">
           <div className="text-white text-center max-w-lg">
-            <h1 className="text-5xl font-bold mb-2 leading-snug">
+            <h1 className="text-5xl font-bold mb-2 leading-snug text-white">
               Welcome to<br />
               BukSU Dental <br />
               Clinic!

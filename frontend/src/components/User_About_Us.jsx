@@ -4,11 +4,14 @@ import Logo from "/src/images/Dental_logo.png";
 const User_About_Us = () => {
   return (
     <>
-      <header className="text-gray-600 body-font ">
-        <div className="  grid grid-cols-2 p-2 mx-4 flex-col md:flex-row">
-          <div className="flex justify-self-start title-font font-medium items-center text-gray-900 mb-4 md:mb-0">
-            <img className="w-11 cursor-pointer" src={Logo} alt="dental-logo" />
-            <Link to="/dashboard" className="ml-3 text-xl cursor-pointer">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col p-2">
+        {/* User Header directly in the User_Dashboard */}
+        <header className="text-gray-600 body-font shadow-md">
+          <div className="flex items-center justify-between p-1 mx-auto w-full max-w-5xl">
+            <div className="flex items-center">
+              <img className="w-11 cursor-pointer" src={Logo} alt="dental-logo" />
+            <Link to="/dashboard" className="ml-3 text-xl font-semibold text-[#003367] cursor-pointer">
               About Us
             </Link>
           </div>
@@ -16,6 +19,7 @@ const User_About_Us = () => {
       </header>
 
       <div className="border w-[95rem] mx-auto"></div>
+      </div>
     </>
   );
 };

@@ -1,6 +1,6 @@
 import Dashboard from "../components/Dashboard";
 import User_Header_Appointment from "../components/User_Header_Appointment";
-import User_Pagintation from "../components/User_Pagintation";
+import { NavLink } from "react-router-dom";
 
 const User_Appointment = () => {
   return (
@@ -16,24 +16,23 @@ const User_Appointment = () => {
         <User_Header_Appointment />
 
         {/* Appointment Content */}
-        <div className="flex flex-col items-center mt-10 mx-auto w-full max-w-5xl">
-          <h2 className="text-3xl font-semibold text-[#003367] mb-8 text-center">
+        <div className="flex flex-col items-center mt-5 mx-auto w-full max-w-5xl">
+          <h2 className="text-3xl font-semibold text-[#003367] mb-6 text-center">
             Book Your Appointment
           </h2>
 
           {/* Date Section */}
-          <div className="flex flex-col items-center mb-8">
+          <div className="flex flex-col items-center mb-4">
             <div className="flex gap-2 items-center">
               <div className="border rounded-md px-2 py-1 bg-gray-200 text-gray-700">
-                Today
-              </div>
-              <div className="text-lg text-gray-800 font-medium">October 15, 2024</div>
+                Today October 15, 2024
             </div>
+          </div>
           </div>
 
           {/* Appointment Slot Section */}
-          <div className="w-full bg-white p-6 rounded-xl shadow-lg max-w-2xl">
-            <div className="flex items-center justify-between mb-4">
+          <div className="w-full bg-white p-6 rounded-xl shadow-lg max-w-3xl ">
+            <div className="flex items-center justify-between mb-5">
               <div className="text-lg font-medium text-gray-700">October 18, 2024</div>
               <div className="text-lg font-medium text-gray-700">Friday</div>
             </div>
@@ -57,9 +56,20 @@ const User_Appointment = () => {
             ))}
           </div>
 
-          {/* Pagination */}
-          <div className="mt-8">
-            <User_Pagintation />
+          {/* Pagination Section */}
+          <div className="flex justify-between w-full mt-8 max-w-3xl">
+            <NavLink
+              to="/dashboard"
+              className="cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-5 py-2 text-white bg-customblue transform hover:scale-105 transition-transform duration-200 ease-in-out"
+            >
+              Back
+            </NavLink>
+            <NavLink
+              to="/upload-requirements"
+              className="cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-5 py-2 text-white bg-customblue transform hover:scale-105 transition-transform duration-200 ease-in-out"
+            >
+              Next
+            </NavLink>
           </div>
         </div>
       </div>
