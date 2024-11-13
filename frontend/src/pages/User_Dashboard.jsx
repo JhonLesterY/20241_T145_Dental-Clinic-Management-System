@@ -54,7 +54,7 @@ const User_Dashboard = () => {
             {/* Card 1 */}
             <div className="bg-white border shadow-md rounded-xl cursor-pointer transform hover:scale-105 transition-transform duration-200 ease-in-out">
               <img
-                className="object-cover rounded-t-xl w-full h-64"
+                className="object-cover rounded-t-xl w-full h-80"
                 src={dentist}
                 alt="Dentist services provided at the university clinic"
               />
@@ -69,7 +69,7 @@ const User_Dashboard = () => {
             {/* Card 2 */}
             <div className="bg-white border shadow-md rounded-xl cursor-pointer transform hover:scale-105 transition-transform duration-200 ease-in-out">
               <img
-                className="object-cover rounded-t-xl w-full h-64"
+                className="object-cover rounded-t-xl w-full h-80"
                 src={dentalchair}
                 alt="Dental chair and equipment used in university clinic services"
               />

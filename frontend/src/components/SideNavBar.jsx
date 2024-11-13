@@ -1,61 +1,50 @@
 import { NavLink } from "react-router-dom";
+import User from "/src/images/user.png";
 
-export default function SideNavBar() {
+const Dashboard = () => {
   return (
-    <>
-      {/* Navbar */}
-      <nav className="h-screen fixed bg-customblue text-slate-200 w-[15rem] justify-items-center ">
-        <NavLink to="/">
-          <h1 className="text-2xl font-semibold mb-9">Unicare</h1>
+    <div className="h-full fixed text-center bg-customblue text-slate-200 w-[15rem] flex flex-col justify-between">
+      {/* Navbar Header */}
+      <div>
+        <NavLink to="/dashboard">
+          <div className="text-2xl pt-5 font-semibold mb-3">Unicare</div>
+          <div className="border w-44 mx-auto mb-9"></div>
         </NavLink>
-        <ul>
-          <li className="cursor-pointer mb-2">
-            <NavLink to="/" className=" font-medium text-lg">
-              Home
+
+        {/* Navigation Links */}
+        <ul className="space-y-4 font-medium text-lg">
+          <li>
+            <NavLink to="/admin-dashboard" activeClassName="text-white" className="hover:text-gray-200">
+              Dashboard
             </NavLink>
           </li>
-          <li className="mb-2  font-medium text-lg">
-            <NavLink to="/about-us">About</NavLink>
+          <li>
+            <NavLink to="/admin-viewAppointment" activeClassName="text-white" className="hover:text-gray-200">
+              View Appointment
+            </NavLink>
           </li>
-
-          <li className=" font-medium text-lg">
-            <NavLink>Contact</NavLink>
-          </li>
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <li className=" font-medium text-lg">
-            <NavLink to="/login">Login</NavLink>
+          <li>
+            <NavLink to="/admin-calendar" activeClassName="text-white" className="hover:text-gray-200">
+              Calendar
+            </NavLink>
           </li>
         </ul>
-      </nav>
-    </>
+      </div>
+
+      {/* Bottom Links */}
+     <div className="flex flex-col items-center space-y-3 pb-6 border-t border-gray-600 pt-4">
+        <NavLink to="/admin-inventory" activeClassName="text-white" className="hover:text-gray-200">
+         Inventory
+        </NavLink>
+        <NavLink to="/admin-view-feedback" activeClassName="text-white" className="hover:text-gray-200">
+          View Feedback
+        </NavLink>
+        <NavLink to="/admin-settings" activeClassName="text-white" className="hover:text-gray-200">
+          Settings
+        </NavLink>
+      </div>
+    </div>
   );
-}
+};
+
+export default Dashboard;

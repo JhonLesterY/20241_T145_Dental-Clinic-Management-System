@@ -31,13 +31,13 @@ const User_Appointment = () => {
           </div>
 
           {/* Appointment Slot Section */}
-          <div className="w-full bg-white p-6 rounded-xl shadow-lg max-w-3xl ">
+          <div className="w-full bg-white p-6 rounded-xl shadow-lg max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-5">
               <div className="text-lg font-medium text-gray-700">October 18, 2024</div>
               <div className="text-lg font-medium text-gray-700">Friday</div>
             </div>
 
-            <div className="border-t my-4"></div>
+            <div className="border-t my-4 border shadow-md"></div>
 
             {/* Slot Options */}
             {[
@@ -46,7 +46,7 @@ const User_Appointment = () => {
               { time: "1:00 - 3:00 PM", status: "Available Slots" },
               { time: "3:00 - 5:00 PM", status: "Available Slots" },
             ].map((slot, index) => (
-              <div key={index} className="flex justify-between items-center py-3">
+              <div key={index} className="flex justify-between items-center py-4 mb-4 border-b last:border-b-0">
                 <div className="flex items-center gap-2">
                   <input type="radio" name="appointmentSlot" className="form-radio text-blue-500" />
                   <div className="text-gray-700 font-medium">{slot.time}</div>
@@ -56,17 +56,18 @@ const User_Appointment = () => {
             ))}
           </div>
 
+
           {/* Pagination Section */}
-          <div className="flex justify-between w-full mt-8 max-w-3xl">
+          <div className="flex justify-between w-full mt-10 max-w-4xl">
             <NavLink
               to="/dashboard"
-              className="cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-5 py-2 text-white bg-customblue transform hover:scale-105 transition-transform duration-200 ease-in-out"
+              className="cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-5 py-2 bg-[#003367] text-white transform hover:scale-105 transition-transform duration-200 ease-in-out"
             >
               Back
             </NavLink>
             <NavLink
               to="/upload-requirements"
-              className="cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-5 py-2 text-white bg-customblue transform hover:scale-105 transition-transform duration-200 ease-in-out"
+              className="cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-5 py-2 bg-[#003367] text-white transform hover:scale-105 transition-transform duration-200 ease-in-out"
             >
               Next
             </NavLink>
