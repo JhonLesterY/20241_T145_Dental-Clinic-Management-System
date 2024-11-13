@@ -1,10 +1,10 @@
 import { NavLink, Link } from "react-router-dom";
-import Dashboard from "../components/Dashboard";
+import Dashboard from "../components/Home";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import magnify from "/src/images/magnifying-glass.png";
 
-const Appointment_Confirmation = () => {
+const DentistDashboard = () => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
@@ -97,4 +97,4 @@ const Appointment_Confirmation = () => {
   );
 };
 
-export default Appointment_Confirmation;
+export default DentistDashboard;
