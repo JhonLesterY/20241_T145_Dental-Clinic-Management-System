@@ -40,6 +40,9 @@ app.use((err, req, res, next) => {
     console.error("Unhandled Error:", err.message);
     res.status(500).json({ message: "An internal server error occurred" });
 });
+app.get('/test', (req, res) => {
+    res.json({ message: 'Server is working' });
+  });
 
 // Define the port and start the server
 const PORT = process.env.PORT || 5000;

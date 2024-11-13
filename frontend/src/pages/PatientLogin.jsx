@@ -1,5 +1,6 @@
 //Login Page
-import React, { useState } from 'react';
+import ReCAPTCHA from "react-google-recaptcha";
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 
@@ -9,71 +10,136 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isVerified, setIsVerified] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const recaptchaRef = useRef();
   const navigate = useNavigate();
+
+  const handleRecaptchaChange = (value) => {
+    console.log("reCAPTCHA value changed:", value ? "token received" : "token cleared");
+    setIsVerified(!!value);
+  };
+
+  const handleGoogleClick = () => {
+    if (!isVerified) {
+      setError('Please complete the reCAPTCHA verification first');
+      return;
+    }
+    googleLogin();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/auth/login', {
+        const token = recaptchaRef.current.getValue();
+        if (!token) {
+            setError('Please complete the reCAPTCHA verification');
+            return;
+        }
+
+        console.log('Sending request with token:', token); // Debug log
+
+        const response = await fetch('http://localhost:5000/auth/login', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                email, 
+                password, 
+                recaptchaToken: token // Make sure this matches what backend expects
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Login failed');
+        }
+
+        sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("role", data.user.role);
+
+        switch (data.user.role) {
+            case 'admin':
+                navigate('/admin-dashboard');
+                break;
+            case 'dentist':
+                navigate('/dentist-dashboard');
+                break;
+            case 'patient':
+                navigate('/dashboard');
+                break;
+            default:
+                setError('Invalid role type');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        setError(error.message || 'An error occurred during login');
+        recaptchaRef.current.reset();
+    }
+};
+
+const googleLogin = useGoogleLogin({
+  onSuccess: async (tokenResponse) => {
+    try {
+      const recaptchaToken = recaptchaRef.current.getValue();
+      if (!recaptchaToken) {
+        setError('Please complete the reCAPTCHA verification');
+        return;
+      }
+
+      console.log("Google login response:", tokenResponse);
+      
+      const res = await fetch('http://localhost:5000/auth/google-login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          access_token: tokenResponse.access_token,
+          recaptchaToken: recaptchaToken // Add the reCAPTCHA token
+        })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        sessionStorage.setItem("token", data.token);
-        sessionStorage.setItem("role", data.role);
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to login with Google');
+      }
 
-        console.log("Token saved:", localStorage.getItem("token")); // Check token
-        console.log("Role saved:", localStorage.getItem("role"));   
-
-        if (data.role === 'admin') navigate('/admin-dashboard');
-        else if (data.role === 'patient') navigate('/dashboard');
-        else if (data.role === 'dentist') navigate('/dentist-dashboard');
-      } else {
-        setError('Invalid email or password');
+      // Handle successful login
+      sessionStorage.setItem("token", data.token);
+      sessionStorage.setItem("role", data.user.role);
+      switch (data.user.role) {
+        case 'admin':
+          navigate('/admin-dashboard');
+          break;
+        case 'dentist':
+          navigate('/dentist-dashboard');
+          break;
+        case 'patient':
+          navigate('/dashboard');
+          break;
+        default:
+          setError('Invalid role type');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setError('An error occurred during login.');
+      console.error('Google login error:', error);
+      setError(error.message || 'Failed to login with Google');
+      recaptchaRef.current?.reset();
+      setIsVerified(false);
     }
-  };
-
-  const googleSignIn = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        const response = await fetch('http://localhost:5000/auth/google-login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${tokenResponse.access_token}` // Include the token here
-          },
-          body: JSON.stringify({ token: tokenResponse.access_token })
-        });
-  
-        if (response.ok) {
-          const data = await response.json();
-          // Redirect based on user role
-          if (data.role === 'admin'){
-            console.log("Navigating to admin dashboard");
-            navigate('/admin-dashboard');}
-          else if (data.role === 'patient') navigate('/dashboard');
-          else if (data.role === 'dentist') navigate('/dentist-dashboard');
-        } else {
-          setError('Google sign-in failed.');
-        }
-      } catch (error) {
-        console.error('Google sign-in error:', error);
-        setError('An error occurred with Google sign-in.');
-      }
-    },
-    onError: () => {
-      setError('Google sign-in failed.');
-    },
-  });
+  },
+  onError: () => {
+    console.error('Google login failed');
+    setError('Failed to login with Google');
+    recaptchaRef.current?.reset();
+    setIsVerified(false);
+  }
+});
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-100">
@@ -123,6 +189,15 @@ const Login = () => {
                 required
               />
 
+             {/* Add reCAPTCHA */}
+             <div className="flex justify-center">
+        <ReCAPTCHA
+          ref={recaptchaRef}
+          sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+          onChange={handleRecaptchaChange}
+        />
+      </div>
+
               <div className="flex items-center justify-between text-sm text-gray-700">
                 <Link to="/forgot-password" className="hover:underline">
                   Forgot Password?
@@ -134,9 +209,14 @@ const Login = () => {
               </div>
 
               <button
-                type="submit"
-                className="w-full bg-[#003367] text-white py-3 rounded-lg hover:bg-blue-800 transition-colors font-semibold"
-              >
+        type="submit"
+        disabled={!isVerified}
+        className={`w-full py-3 rounded-lg font-semibold ${
+          isVerified 
+            ? 'bg-[#003367] text-white hover:bg-blue-800' 
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+        }`}
+      >
                 Continue
               </button>
             </form>
@@ -146,9 +226,13 @@ const Login = () => {
             </div>
 
             <button
-              onClick={() => googleSignIn()}
-              className="w-full flex justify-center items-center space-x-2 border border-gray-300 bg-white py-3 rounded-lg hover:bg-gray-100 transition-colors"
-            >
+      onClick={handleGoogleClick}
+      type="button"
+      disabled={!isVerified}
+      className={`w-full flex justify-center items-center space-x-2 border border-gray-300 
+        ${isVerified ? 'bg-white hover:bg-gray-100' : 'bg-gray-100 cursor-not-allowed'} 
+        py-3 rounded-lg transition-colors`}
+    >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
@@ -167,9 +251,14 @@ const Login = () => {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              <span className="text-blue-800">Continue with Google</span>
+              <span className={isVerified ? 'text-blue-800' : 'text-gray-500'}>
+                Continue with Google</span>
             </button>
-
+            {error && (
+                <div className="text-red-500 text-sm mt-2">
+                    {error}
+                </div>
+            )}
           </div>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -13,6 +14,13 @@ const AdminDashboard = () => {
   const [newAdminData, setNewAdminData] = useState({ fullname: '', email: '', password: '' });
   const [deleteUserData, setDeleteUserData] = useState({ email: '' });
   const [patients, setPatients] = useState([]);
+  const [showDentistModal, setShowDentistModal] = useState(false);
+    const [dentistFormData, setDentistFormData] = useState({
+      name: '',
+      email: '',
+      password: '',
+      phoneNumber: ''
+    });
     const [error, setError] = useState(null);
 
   const handleSearchChange = (e) => setSearchQuery(e.target.value);
@@ -128,6 +136,34 @@ const AdminDashboard = () => {
     }
 };
 
+const handleCreateDentist = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await fetch('http://localhost:5000/admin/add-dentist', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+      },
+      body: JSON.stringify(dentistFormData)
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      setShowDentistModal(false);
+      setDentistFormData({ name: '', email: '', password: '', phoneNumber: '' });
+      // Optionally refresh your dentist list here
+      alert('Dentist created successfully!');
+    } else {
+      setError(data.message || 'Failed to create dentist');
+    }
+  } catch (error) {
+    setError('Failed to create dentist');
+    console.error('Error:', error);
+  }
+};
+
 const fetchAllPatients = async () => {
   try {
       const token = sessionStorage.getItem('token');
@@ -214,6 +250,11 @@ useEffect(() => {
         {/* Add Admin and Logout Button */}
         <button onClick={toggleModal} className="mt-4 mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
           Add Admin
+        </button>
+        <button
+          onClick={() => setShowDentistModal(true)}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          Create Dentist
         </button>
         <button onClick={toggleDeleteModal} className="mt-4 w-full bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded">
           Delete User
@@ -391,6 +432,90 @@ useEffect(() => {
             </div>
           </div>
         )}
+         {/* Create Dentist Modal */}
+    {showDentistModal && (
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="mt-3">
+            <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Create New Dentist</h3>
+            <form onSubmit={handleCreateDentist}>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={dentistFormData.name}
+                  onChange={(e) => setDentistFormData({
+                    ...dentistFormData,
+                    name: e.target.value
+                  })}
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <input
+                  type="email"
+                  placeholder="Email"
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={dentistFormData.email}
+                  onChange={(e) => setDentistFormData({
+                    ...dentistFormData,
+                    email: e.target.value
+                  })}
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <input
+                  type="password"
+                  placeholder="Password"
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={dentistFormData.password}
+                  onChange={(e) => setDentistFormData({
+                    ...dentistFormData,
+                    password: e.target.value
+                  })}
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <input
+                  type="tel"
+                  placeholder="Phone Number"
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={dentistFormData.phoneNumber}
+                  onChange={(e) => setDentistFormData({
+                    ...dentistFormData,
+                    phoneNumber: e.target.value
+                  })}
+                  required
+                />
+              </div>
+              {error && (
+                <div className="mb-4 text-red-500 text-sm">
+                  {error}
+                </div>
+              )}
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDentistModal(false)}
+                  className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                >
+                  Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    )}
 
       </div>
     </div>

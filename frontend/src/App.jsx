@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router-dom";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import About_us from "./pages/About_us";
 import Landing_Page from "./pages/DentalClinicLanding";
 import Login from "./pages/PatientLogin";
@@ -19,9 +20,12 @@ import ViewAppointment from "./pages/Admin_ViewAppointment";
 import Confirmation from "./pages/Appointment_Confirmation";
 import ProtectedRoutes from "./components/protectedRoutes";
 import ForgotPassword from "./pages/ForgotPassword";
+import DentistDashboard from "./pages/Dentist_Dashboard";
 
 function App() {
+  console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
   return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
     <>  
       <Routes>
        
@@ -44,7 +48,7 @@ function App() {
        
         {/* Protected Routes for Admins */}
           <Route element={<ProtectedRoutes accountType="admin" />}>
-            
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/admin-calendar" element={<Calendar />} />
             <Route path="/admin-inventory" element={<Inventory />} />
             <Route path="/admin-profile" element={<Admin_profile />} />
@@ -52,9 +56,15 @@ function App() {
             <Route path="/admin-viewAppointment" element={<ViewAppointment />} />
             <Route path="/appointment-confirmation" element={<Confirmation />} />
           </Route>
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          
+
+          <Route element={<ProtectedRoutes accountType="dentist" />}>
+            <Route path="/dentist-dashboard" element={<DentistDashboard />} />
+          </Route>
       </Routes>
+
     </>
+    </GoogleOAuthProvider>
   );
 }
 

@@ -15,7 +15,7 @@ A_route.get('/patients', authenticateAdmin, async (req, res) => {
     }
 });
 A_route.delete('/patients/:patient_id', authenticateAdmin, adminService.deletePatient);
-A_route.post('/add-dentist', adminService.addDentist);
+A_route.post('/add-dentist', authenticateAdmin, adminService.addDentist);
 A_route.delete('/dentists/:dentist_id', adminService.deleteDentist);    
 A_route.get('/appointments', adminService.getAllAppointments);
 A_route.post('/appointments/reminders', adminService.sendReminders);

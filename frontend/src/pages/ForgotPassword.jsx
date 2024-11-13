@@ -13,20 +13,33 @@ const ForgotPassword = () => {
     setError('');
 
     try {
+      console.log('Attempting password reset for email:', email);
+      
       const response = await fetch('/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
 
+      const data = await response.json();
+      console.log('Server response:', data);
+
       if (response.ok) {
+        console.log('Password reset email sent successfully');
         setMessage('A password reset link has been sent to your email.');
       } else {
-        setError('Email not found. Please try again.');
+        console.error('Server error:', data.error || 'Unknown error');
+        setError(data.error || 'Email not found. Please try again.');
       }
     } catch (error) {
       console.error('Password reset error:', error);
-      setError('An error occurred. Please try again later.');
+      if (error instanceof TypeError) {
+        console.error('Network error:', error.message);
+        setError('Network error. Please check your connection.');
+      } else {
+        console.error('Unexpected error:', error.message);
+        setError('An unexpected error occurred. Please try again later.');
+      }
     }
   };
 

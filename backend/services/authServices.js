@@ -1,12 +1,51 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const axios = require('axios'); 
 const Patient = require('../models/Patient');
 const Admin = require('../models/Admin');
 const Dentist = require('../models/Dentist');
 
 const secretKey = process.env.JWT_SECRET_KEY;
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const verifyRecaptcha = async (token) => {
+    try {
+        console.log('Starting reCAPTCHA verification...'); // Debug log
+
+        if (!process.env.RECAPTCHA_SECRET_KEY) {
+            console.error('RECAPTCHA_SECRET_KEY is missing');
+            return false;
+        }
+
+        if (!token) {
+            console.error('No reCAPTCHA token provided');
+            return false;
+        }
+
+        const response = await axios({
+            method: 'post',
+            url: 'https://www.google.com/recaptcha/api/siteverify',
+            params: {
+                secret: process.env.RECAPTCHA_SECRET_KEY,
+                response: token
+            },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+
+        console.log('reCAPTCHA verification response:', response.data); // Debug log
+
+        return response.data.success;
+    } catch (error) {
+        console.error('reCAPTCHA verification error:', error.message);
+        if (error.response) {
+            console.error('Error response:', error.response.data);
+        }
+        return false;
+    }
+};
 
 async function registerUser(userData) {
     try {
@@ -74,112 +113,152 @@ async function registerUser(userData) {
     }
 }
 
-async function registerWithGoogle(idToken) {
+async function registerWithGoogle(payload) {
     try {
-        // Verify Google ID token
-        const ticket = await client.verifyIdToken({
-            idToken,
-            audience: googleClientId,
+        const { email, name, sub: googleId, picture } = payload;
+        
+        // Check if user exists in any role
+        const existingAdmin = await Admin.findOne({ email });
+        const existingDentist = await Dentist.findOne({ email });
+        const existingPatient = await Patient.findOne({ email });
+
+        if (existingAdmin || existingDentist || existingPatient) {
+            throw new Error('A user with this email already exists.');
+        }
+
+        // Create new patient account
+        const latestPatient = await Patient.findOne().sort({ patient_id: -1 });
+        const newPatientId = latestPatient ? latestPatient.patient_id + 1 : 1;
+
+        const newPatient = new Patient({
+            patient_id: newPatientId,
+            name: name,
+            email: email,
+            googleId: googleId,
+            profilePicture: picture,
+            phoneNumber: '', // This can be updated later
+            role: 'patient'
         });
-        const payload = ticket.getPayload();
-
-        if (!payload) {
-            throw new Error("Invalid Google ID token");
-        }
-
-        // Extract user info from Google token
-        const { email, name } = payload;
-
-        // Check if patient already exists
-        let patient = await Patient.findOne({ email });
-
-        if (!patient) {
-            // If no patient exists, create new with incrementing patient_id
-            const latestPatient = await Patient.findOne().sort({ patient_id: -1 });
-            const newPatientId = latestPatient ? latestPatient.patient_id + 1 : 1;
-
-            patient = new Patient({
-                patient_id: newPatientId,
-                name,
-                email,
-                password: null, // No password needed for Google-authenticated users
-            });
-
-            await patient.save();
-        }
+        await newPatient.save();
 
         // Generate JWT token
-        const token = jwt.sign({ patientId: patient._id }, secretKey, { expiresIn: '24h' });
-        return { patient, token };
+        const token = jwt.sign(
+            { id: newPatient._id, role: 'patient' },
+            process.env.JWT_SECRET_KEY,
+            { expiresIn: '24h' }
+        );
+
+        return {
+            token,
+            user: {
+                id: newPatient._id,
+                email: newPatient.email,
+                name: newPatient.name,
+                role: 'patient',
+                profilePicture: picture
+            }
+        };
     } catch (error) {
+        console.error('Google registration error:', error);
         throw new Error(error.message);
     }
 }
 
-
 // Normal Login Function
-async function normalLogin({ email, password }) {
+async function normalLogin({ email, password, recaptchaToken }) {
     try {
-        console.log("Normal login attempt for:", email);
+        console.log('Starting normal login process...'); // Debug log
+        
+        // Verify reCAPTCHA first
+        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+        console.log('reCAPTCHA validation result:', isRecaptchaValid); // Debug log
+        
+        if (!isRecaptchaValid) {
+            throw new Error('reCAPTCHA verification failed');
+        }
 
-        // Find user in any of the roles
-        const user = await Patient.findOne({ email }) || await Admin.findOne({ email }) || await Dentist.findOne({ email });
+
+        // Find user in any collection without domain restrictions
+        const admin = await Admin.findOne({ email });
+        const dentist = await Dentist.findOne({ email });
+        const patient = await Patient.findOne({ email });
+
+        // Get the user and their role
+        let user = admin || dentist || patient;
+        let role = admin ? 'admin' : dentist ? 'dentist' : patient ? 'patient' : null;
+
         if (!user) {
-            console.error("User not found:", email);
             throw new Error('User not found');
         }
 
-        // Determine user role
-        const role = user instanceof Patient ? 'patient' : user instanceof Admin ? 'admin' : 'dentist';
-        console.log("User role identified as:", role);
-
-        // Compare password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            console.error("Incorrect password for:", email);
             throw new Error('Incorrect password');
         }
 
-        // Generate JWT token
-        const token = jwt.sign({ id: user._id, role }, secretKey, { expiresIn: '24h' });
-        return { token, user: { id: user._id, email: user.email }, role };
+        const token = jwt.sign(
+            { 
+                id: user._id, 
+                role 
+            }, 
+            secretKey, 
+            { expiresIn: '24h' }
+        );
+
+        return { 
+            token, 
+            user: { 
+                id: user._id, 
+                email: user.email,
+                name: user instanceof Patient ? user.name : user.fullname,
+                role 
+            } 
+        };
     } catch (error) {
         console.error("Normal login error:", error.message);
-        throw new Error(error.message);
+        throw error;
     }
 }
-
-async function googleLogin({ googleToken }) {
+async function loginWithGoogle(payload, recaptchaToken) {
     try {
-        console.log("Google login attempt with token:", googleToken);
 
-        // Verify Google token and retrieve user data
-        const ticket = await client.verifyIdToken({
-            idToken: googleToken,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-        const payload = ticket.getPayload();
-        const email = payload.email;
+        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+        if (!isRecaptchaValid) {
+            throw new Error('reCAPTCHA verification failed');
+        }
+        const { email, sub: googleId } = payload;
+        
+        // Check if user exists in patient collection
+        const patient = await Patient.findOne({ email });
 
-        // Find user in any of the roles
-        const user = await Patient.findOne({ email }) || await Admin.findOne({ email }) || await Dentist.findOne({ email });
-        if (!user) {
-            console.error("User not found:", email);
-            throw new Error('User not found');
+        if (!patient) {
+            throw new Error('User not registered. Please sign up first.');
         }
 
-        // Determine user role
-        const role = user instanceof Patient ? 'patient' : user instanceof Admin ? 'admin' : 'dentist';
-        console.log("User role identified as:", role);
+        // Generate JWT token with role
+        const token = jwt.sign(
+            { 
+                id: patient._id, 
+                role: 'patient'  // Explicitly set the role
+            },
+            process.env.JWT_SECRET_KEY,
+            { expiresIn: '24h' }
+        );
 
-        // Generate JWT token
-        const token = jwt.sign({ id: user._id, role }, secretKey, { expiresIn: '24h' });
-        return { token, user: { id: user._id, email: user.email }, role };
+        return {
+            token,
+            user: {
+                id: patient._id,
+                email: patient.email,
+                name: patient.name,
+                role: 'patient',  // Explicitly set the role
+                profilePicture: patient.profilePicture
+            }
+        };
     } catch (error) {
-        console.error("Google login error:", error.message);
+        console.error('Google login error:', error);
         throw new Error(error.message);
     }
 }
 
-
-module.exports = { normalLogin, googleLogin, registerUser, registerWithGoogle };
+module.exports = { normalLogin, loginWithGoogle, registerUser, registerWithGoogle };
