@@ -9,7 +9,7 @@ const Dentist_Profile = () => {
       <Home />
 
       {/* Main Profile Content */}
-      <div className="flex-1 flex flex-col items-center justify-center  bg-blue-900 text-white p-8">
+      <div className="flex-1 flex flex-col items-center justify-center bg-blue-900 text-white p-8">
         <div className="w-full max-w-2xl p-8 bg-white text-gray-800 rounded-lg shadow-lg">
           {/* Profile Header */}
           <User_Profile_Header />
@@ -22,6 +22,7 @@ const Dentist_Profile = () => {
               alt="User Profile"
             />
           </div>
+
           <div className="text-center text-2xl font-semibold mb-4">
             William James Moriarty
           </div>
@@ -60,7 +61,10 @@ const Dentist_Profile = () => {
               </div>
               <div className="flex-1">
                 <label className="block text-gray-600">Suffix</label>
-                <select className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" defaultValue="None">
+                <select
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  defaultValue="None"
+                >
                   <option value="None">None</option>
                   <option value="Jr.">Jr.</option>
                   <option value="II">II</option>
@@ -93,7 +97,10 @@ const Dentist_Profile = () => {
             <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-gray-600">Sex at Birth*</label>
-                <select className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" defaultValue="Male">
+                <select
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  defaultValue="Male"
+                >
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                 </select>

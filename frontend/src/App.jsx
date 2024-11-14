@@ -22,6 +22,9 @@ import ProtectedRoutes from "./components/protectedRoutes";
 import ForgotPassword from "./pages/ForgotPassword";
 import DentistDashboard from "./pages/Dentist_Dashboard";
 import Dentist_ViewConsultation from "./pages/Dentist_ViewConsultation";
+import Dentist_AddConsultation from "./pages/Dentist_AddConsultation";
+import Dentist_Settings from "./pages/Dentist_Settings";
+import Dentist_Profile from "./pages/Dentist_Profile";
 
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
@@ -62,6 +65,9 @@ function App() {
           <Route element={<ProtectedRoutes accountType="dentist" />}>
             <Route path="/dentist-dashboard" element={<DentistDashboard />} />
             <Route path="/dentist-viewConsultation" element={<Dentist_ViewConsultation />} />
+            <Route path="/dentist-addConsultation" element={<Dentist_AddConsultation />} />
+            <Route path="/dentist-settings" element={<Dentist_Settings />} />
+            <Route path="/dentist-profile" element={<Dentist_Profile />} />
           </Route>
       </Routes>
 
