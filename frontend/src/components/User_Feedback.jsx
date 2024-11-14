@@ -43,22 +43,22 @@ const User_Feedback = () => {
           <img className="w-16 mb-6" src={Logo} alt="dental-logo" />
           <h1 className="text-4xl md:text-5xl text-white font-bold">We Value Your Feedback</h1>
           <p className="mt-4 text-lg text-white">Your input helps us improve our services!</p>
-        </div>
-      </div>
 
+      {/* Back Button */}
+      <Link 
+  to="/Dashboard" 
+  className="absolute top-4 left-4 flex items-center space-x-2 text-white bg-[#003367] border border-blue-900 rounded-xl px-4 py-2 hover:bg-blue-700 transition transform hover:scale-105 transition-transform duration-200 ease-in-out"
+>
+  <span className="text-lg">Back</span>
+</Link>
+          </div>
+          </div>
+      
       {/* Right Side with Form */}
       <div className="md:w-1/2 w-full bg-blue-900 flex items-center justify-center p-10">
         <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg relative">
-          {/* Back Button */}
-          <Link to="/Dashboard" className="absolute top-4 left-4 text-blue-500 hover:text-blue-700 flex items-center space-x-2 text-blue-900">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="text-lg text-blue-900">Back</span>
-          </Link>
-
           {/* Header */}
-          <header className="flex justify-between items-center mb-10 p-6">
+          <header className="flex justify-between items-center mb-2 p-6">
             <h2 className="text-3xl font-semibold text-blue-900">Feedback</h2>
             <button className="bg-gray-200 p-2 rounded-full hover:bg-gray-300">
               <img className="w-5" src={bell} alt="Notifications" />
