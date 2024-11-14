@@ -61,7 +61,7 @@ const AdminCalendar = () => {
                     {/* Main Content Area */}
                     <div className="flex flex-col items-center mb-4">
                         <div className="flex gap-2 items-center">
-                            <div className="border rounded-md px-2 py-1 bg-gray-200 text-gray-700">
+                            <div className="border rounded-md px-2 py-1 bg-white-gray border shadow-md text-gray-700">
                                 Today: October 2024
                             </div>
                         </div>
@@ -81,7 +81,7 @@ const AdminCalendar = () => {
 
                         {/* Days of the month */}
                         {daysInMonth.map((day) => (
-                            <div key={day} className="bg-white border border-gray-300 p-3 text-2xl font-semibold text-center rounded-lg transition duration-200 hover:bg-blue-100 w-16">
+                            <div key={day} className="bg-white-gray border shadow-lg border-gray-300 p-3 text-2xl font-semibold text-center rounded-lg transition duration-200 hover:bg-blue-100 w-16">
                                 {day}
                             </div>
                         ))}

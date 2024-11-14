@@ -78,7 +78,7 @@ const AdminInventory = () => {
                     {/* Inventory Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                         {inventoryItems.map((item) => (
-                            <div key={item.name} className="bg-white border border-gray-300 p-4 rounded-lg shadow-md text-center hover:scale-105 transform transition-all duration-200 ease-in-out">
+                            <div key={item.name} className="bg-white-gray border shadow-lg border-gray-300 p-4 rounded-lg shadow-md text-center hover:scale-105 transform transition-all duration-200 ease-in-out">
                                 <img src={item.image} alt={item.name} className="h-20 mx-auto mb-2 object-cover" />
                                 <h3 className="text-lg font-semibold">{item.name}</h3>
                             </div>
