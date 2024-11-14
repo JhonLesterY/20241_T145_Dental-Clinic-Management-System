@@ -1,33 +1,30 @@
 import Dashboard from "../components/Dashboard";
 import User_Profile from "/src/images/user.png";
-import User_Profile_Header from "../components/User_Profile_Header";
 
 const Profile = () => {
   return (
-    <div className="flex h-screen w-screen bg-gray-100 overflow-hidden">
+    <div className="flex h-screen w-screen bg-gray-50 overflow-hidden">
       {/* Sidebar */}
       <Dashboard />
 
       {/* Main Profile Content */}
-      <div className="flex-1 flex flex-col items-center justify-center  bg-blue-900 text-white p-8">
+      <div className="flex-1 flex flex-col items-center justify-center bg-gray-100 text-white p-8">
         <div className="w-full max-w-2xl p-8 bg-white text-gray-800 rounded-lg shadow-lg">
-          {/* Profile Header */}
-          <User_Profile_Header />
-
+         
           {/* Profile Image */}
           <div className="flex justify-center mb-6">
             <img
-              className="h-24 w-24 rounded-full border-4 border-gray-300"
+              className="h-24 w-24 rounded-full border-4 shadow-lg"
               src={User_Profile}
               alt="User Profile"
             />
           </div>
-          <div className="text-center text-2xl font-semibold mb-4">
+          <div className="text-center text-2xl font-semibold text-blue-900">
             William James Moriarty
           </div>
 
           {/* Profile Form */}
-          <form className="space-y-4">
+          <form className="space-y-5 mt-8">
             {/* First and Middle Name */}
             <div className="flex gap-4">
               <div className="flex-1">

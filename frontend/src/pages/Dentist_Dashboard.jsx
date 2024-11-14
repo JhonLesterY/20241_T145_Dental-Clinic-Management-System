@@ -37,13 +37,19 @@ const DentistDashboard = () => {
                           />
                         </div>
 
-                        {/* Bell Icon */}
-                        <div className="flex items-center">
-                            <button className="bg-gray-100 border-0 p-3 rounded-full hover:bg-gray-200">
-                                <img className="w-6" src={bell} alt="Notifications" />
-                            </button>
-                        </div>
-                    </div>
+                        {/* Notifications and Profile Icons */}
+            <div className="flex items-center space-x-8">
+              <button className="bg-gray-100 p-3 rounded-full hover:bg-gray-200 transition">
+                <img className="w-6" src={bell} alt="Notifications" />
+              </button>
+              <a
+                href="/dentist-profile"
+                className="bg-gray-100 p-3 rounded-full hover:bg-gray-200 transition"
+              >
+                <img className="w-6" src={userIcon} alt="Profile" />
+              </a>
+            </div>
+          </div>
                 </header>
 
                 {/* Divider */}
