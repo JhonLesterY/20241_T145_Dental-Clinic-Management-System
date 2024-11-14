@@ -6,7 +6,7 @@ import magnify from "/src/images/magnifying-glass.png";
 
 const Appointment_Confirmation = () => {
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
         <Dashboard />
@@ -15,7 +15,7 @@ const Appointment_Confirmation = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center">
         {/* Header */}
-        <header className="w-full shadow-md">
+        <header className="w-full shadow-lg">
           <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
             {/* Logo and Appointment Link */}
             <div className="flex items-center space-x-4">
@@ -28,13 +28,16 @@ const Appointment_Confirmation = () => {
               </Link>
             </div>
 
-            {/* Search Box */}
-            <div className='flex bg-white gap-1 border rounded-xl justify-self-center px-3 py-0.5'>
-              <div className='my-auto'>
-                  <img className='w-5' src={magnify} alt="" />
-              </div>
-              <input type="text" placeholder='Search' className=' p-0.5 outline-none'/>
-              </div>
+            {/* Search Bar */}
+            <div className="flex items-center bg-white border rounded-xl px-3 py-1">
+              <img className="w-5" src={magnify} alt="Search icon" />
+              <input
+                type="text"
+                placeholder="Search"
+                className="ml-2 p-1 outline-none w-full"
+                aria-label="Search for appointments"
+              />
+            </div>
               
             {/* Bell Icon */}
             <div className="flex items-center">
@@ -50,7 +53,7 @@ const Appointment_Confirmation = () => {
 
         {/* Content Section */}
         <div className="w-full max-w-4xl mt-6 px-4">
-          <div className="bg-white-gray border shadow-lg p-8 shadow-2xl rounded-3xl text-gray-800 max-w-4xl mx-auto">
+          <div className="bg-gray-50 border shadow-lg p-8 shadow-lg rounded-3xl text-gray-800 max-w-4xl mx-auto">
             <h1 className="text-2xl font-semibold text-[#003367] mb-4 text-center">
               Appointment Confirmation
             </h1>

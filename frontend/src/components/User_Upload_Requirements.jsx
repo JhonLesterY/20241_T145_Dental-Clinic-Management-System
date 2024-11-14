@@ -6,7 +6,7 @@ import magnify from '/src/images/magnifying-glass.png';
 
 const User_Upload_Requirements = () => {
   return (
-    <div className="flex min-h-screen overflow-hidden bg-gray-100">
+    <div className="flex min-h-screen overflow-hidden bg-gray-50">
       {/* Sidebar */}
       <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
         <Dashboard />
@@ -15,7 +15,7 @@ const User_Upload_Requirements = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center">
         {/* Header */}
-        <header className="w-full shadow-md">
+        <header className="w-full shadow-lg">
           <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
             {/* Logo and Appointment Link */}
             <div className="flex items-center space-x-4">
@@ -25,12 +25,15 @@ const User_Upload_Requirements = () => {
               </Link>
             </div>
 
-            {/* Search Box */}
-            <div className='flex bg-white gap-1 border rounded-xl justify-self-center px-3 py-0.5'>
-              <div className='my-auto'>
-                  <img className='w-5' src={magnify} alt="" />
-              </div>
-              <input type="text" placeholder='Search' className=' p-0.5 outline-none'/>
+            {/* Search Bar */}
+            <div className="flex items-center bg-white border rounded-xl px-3 py-1">
+              <img className="w-5" src={magnify} alt="Search icon" />
+              <input
+                type="text"
+                placeholder="Search"
+                className="ml-2 p-1 outline-none w-full"
+                aria-label="Search for appointments"
+              />
             </div>
 
             {/* Bell Icon */}
@@ -54,7 +57,7 @@ const User_Upload_Requirements = () => {
           {/* Requirements Cards - Larger Grid Layout */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {/* Card 1 */}
-            <div className="bg-white-gray border shadow-lg border border-gray-200 rounded-2xl p-12 flex flex-col items-center text-center transform hover:scale-105 transition-transform duration-200 ease-in-out max-w-lg">
+            <div className="bg-gray-50 border shadow-lg border border-gray-200 rounded-2xl p-12 flex flex-col items-center text-center transform hover:scale-105 transition-transform duration-200 ease-in-out max-w-lg">
               <h1 className="text-2xl font-medium mb-7 text-gray-700">Validated School ID</h1>
               <p className="text-lg text-gray-500 mb-9">(Scanned)</p>
               <input
@@ -64,7 +67,7 @@ const User_Upload_Requirements = () => {
             </div>
 
             {/* Card 2 */}
-            <div className="bg-white-gray border shadow-lg border border-gray-200 rounded-2xl p-12 flex flex-col items-center text-center transform hover:scale-105 transition-transform duration-200 ease-in-out max-w-lg">
+            <div className="bg-gray-50 border shadow-lg border border-gray-200 rounded-2xl p-12 flex flex-col items-center text-center transform hover:scale-105 transition-transform duration-200 ease-in-out max-w-lg">
               <h1 className="text-2xl font-medium mb-7 text-gray-700">Certificate of Registration</h1>
               <p className="text-lg text-gray-500 mb-9">(Scanned)</p>
               <input
