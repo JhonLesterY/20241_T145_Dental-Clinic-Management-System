@@ -28,16 +28,16 @@ const Dentist_AddConsultation = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
         <Home />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center bg-white-gray border">
+      <div className="flex-1 flex flex-col items-center bg-gray-50 border">
         {/* Header */}
-        <header className="w-full shadow-md">
+        <header className="w-full shadow-lg">
           <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
             {/* Logo and Add Consultation Link */}
             <div className="flex items-center space-x-4">
@@ -47,17 +47,14 @@ const Dentist_AddConsultation = () => {
               </Link>
             </div>
 
-            {/* Search Box */}
-            <div className="flex bg-white gap-1 border rounded-xl px-3 py-0.5">
-              <div className="my-auto">
-                <img className="w-5" src={magnify} alt="search icon" />
-              </div>
+            {/* Search Bar */}
+            <div className="flex items-center bg-white border rounded-xl px-3 py-1">
+              <img className="w-5" src={magnify} alt="Search icon" />
               <input
                 type="text"
-                value={searchQuery}
-                onChange={handleSearchChange}
                 placeholder="Search"
-                className="p-0.5 outline-none"
+                className="ml-2 p-1 outline-none w-full"
+                aria-label="Search for appointments"
               />
             </div>
 
@@ -81,78 +78,78 @@ const Dentist_AddConsultation = () => {
           {/* Consultation Form */}
           <div className="grid grid-cols-2 gap-6 mb-8">
             {/* ID Field */}
-            <div className="border shadow-md p-4 rounded-xl bg-white-gray border">
+            <div className="border shadow-md p-4 rounded-xl bg-white border">
               <label className="block mb-2 font-semibold">ID</label>
               <input
                 type="text"
                 name="id"
                 value={formData.id}
                 onChange={handleInputChange}
-                className="w-full p-2 border rounded-md bg-white-gray"
+                className="w-full p-2 border rounded-lg bg-white"
                 placeholder="Enter ID"
               />
             </div>
 
             {/* School ID Field */}
-            <div className="border shadow-md p-4 rounded-xl bg-white-gray border">
+            <div className="border shadow-md p-4 rounded-xl bg-white border">
               <label className="block mb-2 font-semibold">School ID</label>
               <input
                 type="text"
                 name="schoolId"
                 value={formData.schoolId}
                 onChange={handleInputChange}
-                className="w-full p-2 border rounded-md bg-white-gray"
+                className="w-full p-2 border rounded-lg bg-white"
                 placeholder="Enter School ID"
               />
             </div>
 
             {/* Schedule Time Field */}
-            <div className="border shadow-md p-4 rounded-xl bg-white-gray border">
+            <div className="border shadow-md p-4 rounded-xl bg-white border">
               <label className="block mb-2 font-semibold">Schedule Time</label>
               <input
                 type="text"
                 name="scheduleTime"
                 value={formData.scheduleTime}
                 onChange={handleInputChange}
-                className="w-full p-2 border rounded-md bg-white-gray"
+                className="w-full p-2 border rounded-lg bg-white"
                 placeholder="Enter Schedule Time"
               />
             </div>
 
             {/* Consultation Content Field */}
-            <div className="border shadow-md p-4 rounded-xl bg-white-gray border">
+            <div className="border shadow-md p-4 rounded-xl bg-white">
               <label className="block mb-2 font-semibold">Consultation Content</label>
               <input
                 type="text"
                 name="consultationContent"
                 value={formData.consultationContent}
                 onChange={handleInputChange}
-                className="w-full p-2 border rounded-md bg-white-gray"
+                className="w-full p-2 border rounded-lg bg-white"
                 placeholder="Enter Consultation Content"
               />
             </div>
 
             {/* Contact Number Field */}
-            <div className="border shadow-md p-4 rounded-xl bg-white-gray border">
+            <div className="border shadow-md p-4 rounded-xl bg-white">
               <label className="block mb-2 font-semibold">Contact Number</label>
               <input
                 type="text"
                 name="contactNumber"
                 value={formData.contactNumber}
                 onChange={handleInputChange}
-                className="w-full p-2 border rounded-md bg-white-gray"
+                className="w-full p-2 border rounded-lg bg-white"
                 placeholder="Enter Contact Number"
               />
             </div>
 
             {/* Sex at Birth Field */}
-            <div className="border shadow-md p-4 rounded-xl bg-white-gray border">
+            <div className="border shadow-md p-4 rounded-xl bg-white border">
               <label className="block mb-2 font-semibold">Sex at Birth</label>
               <select
                 name="sexAtBirth"
                 value={formData.sexAtBirth}
                 onChange={handleInputChange}
-                className="w-full p-2 border rounded-md bg-white-gray"
+                className="w-full p-2 border rounded-lg bg-white"
               >
                 <option value="male">Male</option>
                 <option value="female">Female</option>

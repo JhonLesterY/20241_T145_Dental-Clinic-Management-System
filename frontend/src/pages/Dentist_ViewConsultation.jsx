@@ -14,16 +14,16 @@ const Dentist_ViewConsultation = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
         <Home />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center bg-white-gray border">
+      <div className="flex-1 flex flex-col items-center bg-gray-50 border">
         {/* Header */}
-        <header className="w-full shadow-md">
+        <header className="w-full shadow-lg">
           <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
             {/* Logo and View Consultation Link */}
             <div className="flex items-center space-x-4">
@@ -33,17 +33,14 @@ const Dentist_ViewConsultation = () => {
               </Link>
             </div>
 
-            {/* Search Box */}
-            <div className="flex bg-white gap-1 border rounded-xl px-3 py-0.5">
-              <div className="my-auto">
-                <img className="w-5" src={magnify} alt="search icon" />
-              </div>
+            {/* Search Bar */}
+            <div className="flex items-center bg-white border rounded-xl px-3 py-1">
+              <img className="w-5" src={magnify} alt="Search icon" />
               <input
                 type="text"
-                value={searchQuery}
-                onChange={handleSearchChange}
                 placeholder="Search"
-                className="p-0.5 outline-none"
+                className="ml-2 p-1 outline-none w-full"
+                aria-label="Search for appointments"
               />
             </div>
 
@@ -72,9 +69,9 @@ const Dentist_ViewConsultation = () => {
           <div className="space-y-4 mt-10 mx-auto w-full max-w-5xl px-4">
             <div className="border shadow-md p-5 rounded-xl bg-white-gray text-black">
               <div className="flex justify-between items-center">
-                <span className="font-semibold">01</span>
-                <span className="font-semibold">2201103921</span>
-                <span className="font-semibold">8:00 - 10:00 AM</span>
+                <span>01</span>
+                <span>2201103921</span>
+                <span>8:00 - 10:00 AM</span>
 
                 {/* View Button aligned with Appointment Details */}
                 <button className=" cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-5 py-2 bg-[#003367] text-white transform hover:scale-105 transition-transform duration-200 ease-in-out">

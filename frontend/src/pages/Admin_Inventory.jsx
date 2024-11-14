@@ -66,7 +66,7 @@ const AdminInventory = () => {
                 <div className='w-[95rem] mx-auto my-4'></div>
 
                  {/* Clinic Inventory Section */}
-                 <div className="flex flex-col items-center mt-6 mx-auto max-w-5xl">
+                 <div className="space-y-4 mt-5 mx-auto w-full max-w-5xl px-4">
                     <h2 className="text-3xl font-semibold text-[#003367] mb-6 text-center tracking-tight">
                         Clinic Inventory
                     </h2>

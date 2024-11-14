@@ -69,7 +69,7 @@ const AdminCalendar = () => {
                     <div className='w-[95%] mx-auto my-4'></div>
 
                     {/* Appointment Content */}
-                    <div className="flex flex-col items-center mt-5 mx-auto max-w-5xl">
+                    <div className="space-y-8 mt-1 mx-auto w-full max-w-4xl px-4">
                         {/* Calendar Grid */}
                         <div className="grid grid-cols-7 gap-4">
                             {/* Day Labels */}
