@@ -21,6 +21,7 @@ import Confirmation from "./pages/Appointment_Confirmation";
 import ProtectedRoutes from "./components/protectedRoutes";
 import ForgotPassword from "./pages/ForgotPassword";
 import DentistDashboard from "./pages/Dentist_Dashboard";
+import Dentist_ViewConsultation from "./pages/Dentist_ViewConsultation";
 
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
@@ -60,6 +61,7 @@ function App() {
 
           <Route element={<ProtectedRoutes accountType="dentist" />}>
             <Route path="/dentist-dashboard" element={<DentistDashboard />} />
+            <Route path="/dentist-viewConsultation" element={<Dentist_ViewConsultation />} />
           </Route>
       </Routes>
 
