@@ -24,14 +24,14 @@ const User_Appointment = () => {
           {/* Date Section */}
           <div className="flex flex-col items-center mb-4">
             <div className="flex gap-2 items-center">
-              <div className="border rounded-md px-2 py-1 bg-gray-200 text-gray-700">
+              <div className="border rounded-md px-2 py-1 bg-white-gray shadow-md text-gray-700">
                 Today October 15, 2024
             </div>
           </div>
           </div>
 
           {/* Appointment Slot Section */}
-          <div className="w-full bg-white p-6 rounded-xl shadow-lg max-w-4xl mx-auto">
+          <div className="w-full bg-white-gray border shadow-md p-6 rounded-xl shadow-lg max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-5">
               <div className="text-lg font-medium text-gray-700">October 18, 2024</div>
               <div className="text-lg font-medium text-gray-700">Friday</div>

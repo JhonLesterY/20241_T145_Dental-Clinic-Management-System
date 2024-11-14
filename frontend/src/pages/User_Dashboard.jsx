@@ -52,7 +52,7 @@ const User_Dashboard = () => {
           <div className="flex justify-center w-full mt-4"></div>
           <div className="grid gap-6 w-full grid-cols-1 md:grid-cols-2 lg:grid-cols-2 max-w-4xl">
             {/* Card 1 */}
-            <div className="bg-white border shadow-md rounded-xl cursor-pointer transform hover:scale-105 transition-transform duration-200 ease-in-out">
+            <div className="bg-white-gray border shadow-md rounded-xl cursor-pointer transform hover:scale-105 transition-transform duration-200 ease-in-out">
               <img
                 className="object-cover rounded-t-xl w-full h-80"
                 src={dentist}
@@ -67,7 +67,7 @@ const User_Dashboard = () => {
             </div>
 
             {/* Card 2 */}
-            <div className="bg-white border shadow-md rounded-xl cursor-pointer transform hover:scale-105 transition-transform duration-200 ease-in-out">
+            <div className="bg-white-gray border shadow-md rounded-xl cursor-pointer transform hover:scale-105 transition-transform duration-200 ease-in-out">
               <img
                 className="object-cover rounded-t-xl w-full h-80"
                 src={dentalchair}

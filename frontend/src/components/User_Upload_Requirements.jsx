@@ -54,7 +54,7 @@ const User_Upload_Requirements = () => {
           {/* Requirements Cards - Larger Grid Layout */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {/* Card 1 */}
-            <div className="bg-white shadow-lg border border-gray-200 rounded-2xl p-12 flex flex-col items-center text-center transform hover:scale-105 transition-transform duration-200 ease-in-out max-w-lg">
+            <div className="bg-white-gray border shadow-lg border border-gray-200 rounded-2xl p-12 flex flex-col items-center text-center transform hover:scale-105 transition-transform duration-200 ease-in-out max-w-lg">
               <h1 className="text-2xl font-medium mb-7 text-gray-700">Validated School ID</h1>
               <p className="text-lg text-gray-500 mb-9">(Scanned)</p>
               <input
@@ -64,7 +64,7 @@ const User_Upload_Requirements = () => {
             </div>
 
             {/* Card 2 */}
-            <div className="bg-white shadow-lg border border-gray-200 rounded-2xl p-12 flex flex-col items-center text-center transform hover:scale-105 transition-transform duration-200 ease-in-out max-w-lg">
+            <div className="bg-white-gray border shadow-lg border border-gray-200 rounded-2xl p-12 flex flex-col items-center text-center transform hover:scale-105 transition-transform duration-200 ease-in-out max-w-lg">
               <h1 className="text-2xl font-medium mb-7 text-gray-700">Certificate of Registration</h1>
               <p className="text-lg text-gray-500 mb-9">(Scanned)</p>
               <input
@@ -74,7 +74,7 @@ const User_Upload_Requirements = () => {
             </div>
 
             {/* Card 3 */}
-            <div className="bg-white shadow-lg border border-gray-200 rounded-2xl p-12 flex flex-col items-center text-center transform hover:scale-105 transition-transform duration-200 ease-in-out max-w-lg">
+            <div className="bg-white-gray border shadow-lg border border-gray-200 rounded-2xl p-12 flex flex-col items-center text-center transform hover:scale-105 transition-transform duration-200 ease-in-out max-w-lg">
               <h1 className="text-2xl font-medium mb-7 text-gray-700">Vaccination Card</h1>
               <p className="text-lg text-gray-500 mb-9">(Scanned)</p>
               <input

@@ -50,7 +50,7 @@ const Appointment_Confirmation = () => {
 
         {/* Content Section */}
         <div className="w-full max-w-4xl mt-6 px-4">
-          <div className="bg-white p-8 shadow-2xl rounded-3xl text-gray-800 max-w-4xl mx-auto">
+          <div className="bg-white-gray border shadow-lg p-8 shadow-2xl rounded-3xl text-gray-800 max-w-4xl mx-auto">
             <h1 className="text-2xl font-semibold text-[#003367] mb-4 text-center">
               Appointment Confirmation
             </h1>
