@@ -18,6 +18,7 @@ import Admin_profile from "./pages/Admin_Profile";
 import Admin_settings from "./pages/Admin_Settings";
 import ViewAppointment from "./pages/Admin_ViewAppointment";
 import Confirmation from "./pages/Appointment_Confirmation";
+import Admin_ViewFeedback from "./pages/Admin_ViewFeedback";
 import ProtectedRoutes from "./components/protectedRoutes";
 import ForgotPassword from "./pages/ForgotPassword";
 import DentistDashboard from "./pages/Dentist_Dashboard";
@@ -25,6 +26,7 @@ import Dentist_ViewConsultation from "./pages/Dentist_ViewConsultation";
 import Dentist_AddConsultation from "./pages/Dentist_AddConsultation";
 import Dentist_Settings from "./pages/Dentist_Settings";
 import Dentist_Profile from "./pages/Dentist_Profile";
+import Dentist_ViewFeedback from "./pages/Dentist_ViewFeedback";
 
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
@@ -59,15 +61,16 @@ function App() {
             <Route path="/admin-settings" element={<Admin_settings />} />
             <Route path="/admin-viewAppointment" element={<ViewAppointment />} />
             <Route path="/appointment-confirmation" element={<Confirmation />} />
+            <Route path="/admin-viewFeedback" element={<Admin_ViewFeedback />} />
           </Route>
           
-
           <Route element={<ProtectedRoutes accountType="dentist" />}>
             <Route path="/dentist-dashboard" element={<DentistDashboard />} />
             <Route path="/dentist-viewConsultation" element={<Dentist_ViewConsultation />} />
             <Route path="/dentist-addConsultation" element={<Dentist_AddConsultation />} />
             <Route path="/dentist-settings" element={<Dentist_Settings />} />
             <Route path="/dentist-profile" element={<Dentist_Profile />} />
+            <Route path="/dentist-viewFeedback" element={<Dentist_ViewFeedback />} />
           </Route>
       </Routes>
 

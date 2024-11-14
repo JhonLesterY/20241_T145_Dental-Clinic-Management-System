@@ -15,39 +15,43 @@ const DentistDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center">
-        {/* Header */}
-        <header className="w-full shadow-md">
-          <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
-            {/* Logo and Dashboard Link */}
-            <div className="flex items-center space-x-4">
-              <img className="w-11 cursor-pointer" src={Logo} alt="Dental Logo" />
-              <Link
-                to="/dentist-dashboard"
-                className="text-xl font-semibold text-[#003367] hover:text-blue-500 transition"
-              >
-                Dashboard
-              </Link>
-            </div>
+                {/* Header */}
+                <header className="w-full shadow-md">
+                    <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
+                        {/* Logo and Appointment Link */}
+                        <div className="flex items-center space-x-4">
+                            <img className="w-11 cursor-pointer" src={Logo} alt="Dental Logo" />
+                            <Link to="/dentist-dashboard" className="text-xl font-semibold text-[#003367] hover:text-blue-500 transition">
+                                Dashboard
+                            </Link>
+                        </div>
 
-            <div className="flex items-center space-x-8 ml-auto">
-              {/* Bell Icon */}
-              <button className="inline-flex items-center bg-gray-100 border-0 p-3 focus:outline-none hover:bg-gray-200 rounded-full">
-                <img className="w-6" src={bell} alt="Notifications" />
-              </button>
+                        {/* Search Box */}
+                        <div className='flex bg-white gap-1 border rounded-xl justify-self-center px-3 py-0.5'>
+                            <div className='my-auto'>
+                                <img className='w-5' src={magnify} alt="Search Icon" />
+                            </div>
+                            <input 
+                                type="text" 
+                                placeholder='Search' 
+                                className='p-0.5 outline-none' 
+                            />
+                        </div>
 
-              {/* Profile Icon */}
-              <a href="/dentist-profile" className="inline-flex items-center bg-gray-100 border-0 p-3 focus:outline-none hover:bg-gray-200 rounded-full">
-                <img className="w-6" src={userIcon} alt="Profile" />
-              </a>
-            </div>
-          </div>
-        </header>
+                        {/* Bell Icon */}
+                        <div className="flex items-center">
+                            <button className="bg-gray-100 border-0 p-3 rounded-full hover:bg-gray-200">
+                                <img className="w-6" src={bell} alt="Notifications" />
+                            </button>
+                        </div>
+                    </div>
+                </header>
 
         {/* Divider */}
         <div className="w-[95rem] mx-auto my-4"></div>
 
         {/* Content Section */}
-        <div className="w-full max-w-5xl px-4 space-y-8">
+        <div className="w-full max-w-5xl px-4 space-y-6">
           {/* Two Boxes in a Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Generate Report Box */}

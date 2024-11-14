@@ -5,13 +5,20 @@ import Logo from '/src/images/Dental_logo.png';
 import bell from '/src/images/bell.png';
 import magnify from '/src/images/magnifying-glass.png';
 
-const Dentist_ViewConsultation = () => {
+const Dentist_ViewFeedback = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Handle search input change
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
   };
+
+  // Sample feedback data (You may replace this with dynamic data later)
+  const feedbackData = [
+    { id: 1, patientId: '2201103921', name: 'John Doe', date: 'October 5, 2024', feedback: 'Very satisfied with the treatment.' },
+    { id: 2, patientId: '2201103922', name: 'Jane Smith', date: 'October 6, 2024', feedback: 'The staff was very friendly and professional.' },
+    { id: 3, patientId: '2201103923', name: 'Emily Johnson', date: 'October 7, 2024', feedback: 'Clean and comfortable clinic environment.' },
+  ];
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -25,10 +32,10 @@ const Dentist_ViewConsultation = () => {
         {/* Header */}
         <header className="w-full shadow-md">
           <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
-            {/* Logo and View Consultation Link */}
+            {/* Logo and View Feedback Link */}
             <div className="flex items-center space-x-4">
               <img className="w-11 cursor-pointer" src={Logo} alt="Dental Logo" />
-              <Link to="/dentist-viewConsultation" className="text-xl font-semibold text-[#003367] hover:text-blue-500 transition">
+              <Link to="/dentist-viewFeedback" className="text-xl font-semibold text-[#003367] hover:text-blue-500 transition">
                 View Feedback
               </Link>
             </div>
@@ -68,29 +75,24 @@ const Dentist_ViewConsultation = () => {
             </div>
           </div>
 
-          {/* Appointment Box */}
-          <div className="space-y-4 mt-10 mx-auto w-full max-w-5xl px-4">
-            <div className="border shadow-md p-5 rounded-xl bg-white-gray text-black">
-              <div className="flex justify-between items-center">
-                <span className="font-semibold">01</span>
-                <span className="font-semibold">2201103921</span>
-                <span className="font-semibold">8:00 - 10:00 AM</span>
-
-                {/* View Button aligned with Appointment Details */}
-                <button className=" cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-5 py-2 bg-[#003367] text-white transform hover:scale-105 transition-transform duration-200 ease-in-out">
-                  View
-                </button>
+          {/* Feedback List */}
+          <div className="space-y-3">
+            {feedbackData.map((feedback) => (
+              <div key={feedback.id} className="border shadow-md p-5 rounded-xl bg-white-gray text-black">
+                <div className="flex justify-between items-center">
+                  <div className="space-y-1">
+                    <span className="block font-semibold text-gray-800">{feedback.name}</span>
+                    <span className="text-sm text-gray-500">Patient ID: {feedback.patientId}</span>
+                    <span className="text-sm text-gray-500">Date: {feedback.date}</span>
+                    <p className="mt-2 text-gray-700">{feedback.feedback}</p>
+                  </div>
+                  {/* View Button for further feedback details */}
+                  <button className="cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-5 py-2 bg-[#003367] text-white transform hover:scale-105 transition-transform duration-200 ease-in-out">
+                    View
+                  </button>
+                </div>
               </div>
-              </div>
-            </div>
-            {/* Add Button */}
-            <div className="flex justify-end p-7 mt-8">
-            <NavLink
-              to="/dentist-addConsultation"
-              className="cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-5 py-2 bg-[#003367] text-white transform hover:scale-105 transition-transform duration-200 ease-in-out"
-            >
-              Add
-            </NavLink>
+            ))}
           </div>
         </div>
       </div>
@@ -98,4 +100,4 @@ const Dentist_ViewConsultation = () => {
   );
 };
 
-export default Dentist_ViewConsultation;
+export default Dentist_ViewFeedback;

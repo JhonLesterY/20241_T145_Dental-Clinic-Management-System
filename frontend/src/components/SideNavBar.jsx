@@ -36,7 +36,7 @@ const Dashboard = () => {
         <NavLink to="/admin-inventory" activeClassName="text-white" className="hover:text-gray-200">
          Inventory
         </NavLink>
-        <NavLink to="/admin-view-feedback" activeClassName="text-white" className="hover:text-gray-200">
+        <NavLink to="/admin-viewFeedback" activeClassName="text-white" className="hover:text-gray-200">
           View Feedback
         </NavLink>
         <NavLink to="/admin-settings" activeClassName="text-white" className="hover:text-gray-200">
