@@ -17,16 +17,13 @@ const AdminInventory = () => {
         { name: 'Composite Resins', image: '/src/assets/composite-resins.jpg' },
         { name: 'Denture Cleaner', image: '/src/assets/denture-cleaner.jpg' },
         { name: 'Electric Micro Motor', image: '/src/assets/electric-micro-motor.jpg' },
-        { name: 'Silicon Mouth Props', image: '/src/assets/silicon-mouth-props.jpg' },
+        { name: 'Mouth Props', image: '/src/assets/silicon-mouth-props.jpg' },
         { name: 'Scaler', image: '/src/assets/scaler.jpg' },
         { name: 'Fluoride Varnish', image: '/src/assets/flouride-varnish.jpg' },
-        { name: 'Syringes', image: '/src/assets/syringe.jpg' },
-        { name: 'Trays', image: '/src/assets/trays.jpg' },
-        { name: 'Lentulo Spiral', image: '/src/assets/lentulo-spiral.jpg' },
     ];
 
     return (
-        <div className="flex min-h-screen bg-gray-100">
+        <div className="flex min-h-screen bg-gray-50">
             {/* Sidebar */}
             <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
                 <SideNavBar />
@@ -35,7 +32,7 @@ const AdminInventory = () => {
             {/* Main Content */}
             <div className="flex-1 flex flex-col items-center">
                 {/* Header */}
-                <header className="w-full shadow-md">
+                <header className="w-full shadow-lg">
                     <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
                         {/* Logo and Appointment Link */}
                         <div className="flex items-center space-x-4">
@@ -45,15 +42,14 @@ const AdminInventory = () => {
                             </Link>
                         </div>
 
-                        {/* Search Box */}
-                        <div className='flex bg-white gap-1 border rounded-xl justify-self-center px-3 py-0.5'>
-                            <div className='my-auto'>
-                                <img className='w-5' src={magnify} alt="Search Icon" />
-                            </div>
-                            <input 
-                                type="text" 
-                                placeholder='Search' 
-                                className='p-0.5 outline-none' 
+                        {/* Search Bar */}
+                        <div className="flex items-center bg-white border rounded-xl px-3 py-1">
+                            <img className="w-5" src={magnify} alt="Search icon" />
+                            <input
+                                type="text"
+                                placeholder="Search"
+                                className="ml-2 p-1 outline-none w-full"
+                                aria-label="Search for appointments"
                             />
                         </div>
 
@@ -69,18 +65,18 @@ const AdminInventory = () => {
                 {/* Divider */}
                 <div className='w-[95rem] mx-auto my-4'></div>
 
-                {/* Clinic Inventory Section */}
-                <div className="flex flex-col items-center mt-5 mx-auto max-w-5xl">
-                    <h2 className="text-3xl font-semibold text-[#003367] mb-6 text-center">
+                 {/* Clinic Inventory Section */}
+                 <div className="flex flex-col items-center mt-6 mx-auto max-w-5xl">
+                    <h2 className="text-3xl font-semibold text-[#003367] mb-6 text-center tracking-tight">
                         Clinic Inventory
                     </h2>
 
                     {/* Inventory Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-6 gap-6 px-4">
                         {inventoryItems.map((item) => (
-                            <div key={item.name} className="bg-white-gray border shadow-lg border-gray-300 p-4 rounded-lg shadow-md text-center hover:scale-105 transform transition-all duration-200 ease-in-out">
-                                <img src={item.image} alt={item.name} className="h-20 mx-auto mb-2 object-cover" />
-                                <h3 className="text-lg font-semibold">{item.name}</h3>
+                            <div key={item.name} className="bg-gray-50 border shadow-lg border-gray-300 p-6 rounded-lg transform transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-2xl">
+                                <img src={item.image} alt={item.name} className="h-24 mx-auto mb-4 object-cover rounded-lg" />
+                                <h4 className="text-lg text-[#003367]">{item.name}</h4>
                             </div>
                         ))}
                     </div>

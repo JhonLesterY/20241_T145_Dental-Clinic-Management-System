@@ -38,7 +38,7 @@ const Settings = () => {
           <div className="border shadow-lg p-5 rounded-xl mb-1.5 text-black transform hover:scale-105 transition-transform duration-200 ease-in-out">
             <div className="flex justify-between items-center">
               <span>Switch Theme</span>
-              <button className="px-4 py-2 rounded-full bg-yellow-400 text-black">Dark Mode</button>
+              <button className="px-4 py-2 rounded-full bg-[#003367] text-white">Dark Mode</button>
             </div>
           </div>
 
@@ -46,7 +46,7 @@ const Settings = () => {
           <div className="border shadow-lg p-5 rounded-xl mb-1.5 text-black transform hover:scale-105 transition-transform duration-200 ease-in-out">
             <div className="flex justify-between items-center">
               <span>Notification Settings</span>
-              <button className="text-blue-500">Edit</button>
+              <button className="bg-[#003367] text-white">Edit</button>
             </div>
           </div>
 
@@ -54,7 +54,7 @@ const Settings = () => {
           <div className="border shadow-lg p-5 rounded-xl mb-1.5 text-black transform hover:scale-105 transition-transform duration-200 ease-in-out">
             <div className="flex justify-between items-center">
               <span>Help</span>
-              <button className="text-blue-500">View</button>
+              <button className="bg-[#003367] text-white">View</button>
             </div>
           </div>
 
@@ -62,7 +62,7 @@ const Settings = () => {
           <div className="border shadow-lg p-5 rounded-xl mb-1.5 text-black transform hover:scale-105 transition-transform duration-200 ease-in-out">
             <div className="flex justify-between items-center">
               <span>Privacy Policy</span>
-              <button className="text-blue-500">View</button>
+              <button className="bg-[#003367] text-white">View</button>
             </div>
           </div>
         </div>

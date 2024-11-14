@@ -40,7 +40,7 @@ const Admin_ViewFeedback = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
         <SideNavBar />
@@ -59,15 +59,14 @@ const Admin_ViewFeedback = () => {
                             </Link>
                         </div>
 
-                        {/* Search Box */}
-                        <div className='flex bg-white gap-1 border rounded-xl justify-self-center px-3 py-0.5'>
-                            <div className='my-auto'>
-                                <img className='w-5' src={magnify} alt="Search Icon" />
-                            </div>
-                            <input 
-                                type="text" 
-                                placeholder='Search' 
-                                className='p-0.5 outline-none' 
+                        {/* Search Bar */}
+                        <div className="flex items-center bg-white border rounded-xl px-3 py-1">
+                            <img className="w-5" src={magnify} alt="Search icon" />
+                            <input
+                                type="text"
+                                placeholder="Search"
+                                className="ml-2 p-1 outline-none w-full"
+                                aria-label="Search for appointments"
                             />
                         </div>
 
@@ -86,7 +85,7 @@ const Admin_ViewFeedback = () => {
         <div className="space-y-4 mt-5 mx-auto w-full max-w-4xl px-4">
           {/* Date Display */}
           <div className="flex justify-center mb-4">
-          <div className="border rounded-md px-4 py-2 bg-white-gray border shadow-md text-gray-700">
+          <div className="border rounded-md px-4 py-2 bg-gray-50 border shadow-md text-gray-700">
               Today: October 2024
             </div>
           </div>
@@ -94,7 +93,7 @@ const Admin_ViewFeedback = () => {
           {/* Feedback List */}
           <div className="space-y-3">
             {filteredFeedback.map((feedback) => (
-              <div key={feedback.id} className="border shadow-md p-5 rounded-xl bg-white-gray text-black">
+              <div key={feedback.id} className="border shadow-md p-5 rounded-xl bg-gray-50 text-black transform hover:scale-105 transition-transform duration-200 ease-in-out">
                 <div className="flex justify-between items-center">
                   <div className="space-y-1">
                     <span className="block font-semibold text-gray-800">{feedback.name}</span>
@@ -108,7 +107,7 @@ const Admin_ViewFeedback = () => {
                     {!feedback.reviewed && (
                       <button
                         onClick={() => handleMarkReviewed(feedback.id)}
-                        className="cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-4 py-1 bg-green-600 text-white transition-transform duration-200 ease-in-out"
+                        className="cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-4 py-1 bg-[#003367] text-white transition-transform duration-200 ease-in-out"
                       >
                         Mark Reviewed
                       </button>

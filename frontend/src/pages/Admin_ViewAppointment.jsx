@@ -14,7 +14,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
         <SideNavBar />
@@ -23,7 +23,7 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center">
         {/* Header */}
-        <header className="w-full shadow-md">
+        <header className="w-full shadow-lg bg-gray-50">
           <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
             {/* Logo and Inventory Link */}
             <div className="flex items-center space-x-4">
@@ -33,17 +33,14 @@ const AdminDashboard = () => {
               </Link>
             </div>
 
-            {/* Search Box */}
-            <div className='flex bg-white gap-1 border rounded-xl justify-self-center px-3 py-0.5'>
-              <div className='my-auto'>
-                <img className='w-5' src={magnify} alt="Search Icon" />
-              </div>
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={handleSearchChange} // Handle search input
-                placeholder='Search' 
-                className='p-0.5 outline-none' 
+            {/* Search Bar */}
+            <div className="flex items-center bg-white border rounded-xl px-3 py-1">
+              <img className="w-5" src={magnify} alt="Search icon" />
+              <input
+                type="text"
+                placeholder="Search"
+                className="ml-2 p-1 outline-none w-full"
+                aria-label="Search for appointments"
               />
             </div>
 
@@ -63,7 +60,7 @@ const AdminDashboard = () => {
         <div className="space-y-4 mt-5 mx-auto w-full max-w-4xl px-4">
           <div className="flex flex-col items-center mb-4">
             <div className="flex gap-2 items-center">
-              <div className="border rounded-md px-2 py-1 bg-gray-200 text-gray-700">
+              <div className="border rounded-md px-2 py-1 shadow-lg text-gray-700">
                 Today: October 2024
               </div>
             </div>
@@ -71,7 +68,7 @@ const AdminDashboard = () => {
 
           {/* Appointment Box */}
           <div className="space-y-4 mt-10 mx-auto w-full max-w-5xl px-4">
-            <div className="border shadow-md p-5 rounded-xl mb-1.5 text-black">
+            <div className="border shadow-lg p-5 rounded-xl mb-1.5 text-black bg-gray-50">
               <div className="flex justify-between items-center">
                 <span>01</span>
                 <span>2201103921</span>

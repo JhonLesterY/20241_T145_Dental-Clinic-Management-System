@@ -100,7 +100,7 @@ const User_Appointment = () => {
                     {slot.time}
                   </label>
                 </div>
-                <div className="text-green-600 font-semibold">{slot.status}</div>
+                <div className="text-blue-500 font-semibold">{slot.status}</div>
               </div>
             ))}
           </div>

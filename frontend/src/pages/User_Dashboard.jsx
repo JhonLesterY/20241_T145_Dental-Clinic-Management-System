@@ -64,7 +64,7 @@ const User_Dashboard = () => {
                 alt="Dentist services provided at the university clinic"
               />
               <div className="p-4">
-                <p className="text-gray-700">
+                <p className="text-gray-900">
                   The university dental clinic provides free dental care services
                   for BukSU students and personnel.
                 </p>
@@ -79,7 +79,7 @@ const User_Dashboard = () => {
                 alt="Dental chair and equipment used in university clinic services"
               />
               <div className="p-4">
-                <p className="text-gray-700">
+                <p className="text-gray-900">
                   The university dental clinic offers services such as tooth
                   extraction, consultation, and fluoride varnish applications.
                 </p>
