@@ -39,7 +39,33 @@ async function createAdmin(req, res) {
         res.status(500).json({ message: 'Failed to create admin: ' + error.message });
     }
 }
+const getAllAdmins = async (req, res) => {
+    try {
+        const admins = await Admin.find({}).select('-password');
+        res.status(200).json(admins);
+    } catch (error) {
+        console.error('Error fetching admins:', error);
+        res.status(500).json({ message: 'Failed to fetch admins' });
+    }
+};
+async function getAllDentists(req, res) {
+    try {
+        const dentists = await Dentist.find({}).select('-password'); // Exclude password from the response
+        
+        // Log activity
+        await logActivity(
+            req.user.id,
+            req.user.role,
+            'getAllDentists',
+            { count: dentists.length }
+        );
 
+        res.status(200).json(dentists);
+    } catch (error) {
+        console.error('Error in getAllDentists:', error);
+        res.status(500).json({ message: 'Failed to retrieve dentists: ' + error.message });
+    }
+};
 const getAllPatients = async (req) => {
     try {
         const patients = await Patient.find();
@@ -110,6 +136,7 @@ async function deletePatient(req, res) {
     }
 }
 
+
 async function addDentist(req, res) {
     const { name, email, password, phoneNumber } = req.body;
 
@@ -119,9 +146,14 @@ async function addDentist(req, res) {
             return res.status(400).json({ message: 'Dentist already exists' });
         }
 
+        // Get the last dentist to determine the next dentist_id
+        const lastDentist = await Dentist.findOne().sort({ dentist_id: -1 });
+        const nextDentistId = lastDentist ? lastDentist.dentist_id + 1 : 1;
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const newDentist = new Dentist({
+            dentist_id: nextDentistId, // Add this line
             name,
             email,
             password: hashedPassword,
@@ -135,31 +167,114 @@ async function addDentist(req, res) {
             userId: req.user._id,
             userRole: 'admin',
             action: 'addDentist',
-            details: { dentist_id: newDentist._id, name: newDentist.name, email: newDentist.email }
+            details: { dentist_id: newDentist.dentist_id, name: newDentist.name, email: newDentist.email }
         });
 
         res.status(201).json({ message: 'Dentist added successfully', dentist: newDentist });
     } catch (error) {
+        console.error('Error adding dentist:', error); // Add this for better debugging
         res.status(500).json({ message: 'Failed to add dentist: ' + error.message });
     }
 }
 
-async function deleteDentist(dentistId, req) {
+async function deleteDentist(req, res) {
     try {
-        const dentist = await Dentist.findByIdAndDelete(dentistId);
-        if (!dentist) throw new Error('Dentist not found');
+        const { dentist_id } = req.params;
+        console.log('Attempting to delete dentist with ID:', dentist_id);
+
+        // First find and delete the dentist
+        const deletedDentist = await Dentist.findOneAndDelete({ dentist_id: parseInt(dentist_id) });
+        
+        if (!deletedDentist) {
+            return res.status(404).json({ message: 'Dentist not found' });
+        }
+
+        // Get all dentists with ID greater than the deleted one
+        const dentistsToUpdate = await Dentist.find({ 
+            dentist_id: { $gt: parseInt(dentist_id) }
+        }).sort({ dentist_id: 1 });
+
+        // Update each dentist's ID to decrement by 1
+        for (const dentist of dentistsToUpdate) {
+            await Dentist.findByIdAndUpdate(
+                dentist._id,
+                { $set: { dentist_id: dentist.dentist_id - 1 } }
+            );
+        }
 
         // Log activity
-        await logActivity({
-            userId: req.user._id,
-            userRole: 'admin',
-            action: 'deleteDentist',
-            details: { dentist_id: dentistId, name: dentist.name }
-        });
+        await logActivity(
+            req.user.id,
+            req.user.role,
+            'deleteDentist',
+            { 
+                dentist_id: dentist_id, 
+                name: deletedDentist.name,
+                affected_ids: dentistsToUpdate.length
+            }
+        );
 
-        return dentist;
+        res.status(200).json({ 
+            message: 'Dentist deleted successfully',
+            reorderedCount: dentistsToUpdate.length
+        });
     } catch (error) {
-        throw new Error('Failed to delete dentist');
+        console.error('Error deleting dentist:', error);
+        res.status(500).json({ message: 'Failed to delete dentist: ' + error.message });
+    }
+}
+
+// Add this function
+async function deleteAdmin(req, res) {
+    try {
+        const { admin_id } = req.params;
+        console.log('Attempting to delete admin with ID:', admin_id);
+
+        // Prevent deleting the last admin
+        const adminCount = await Admin.countDocuments();
+        if (adminCount <= 1) {
+            return res.status(400).json({ message: 'Cannot delete the last admin account' });
+        }
+
+        // First find and delete the admin
+        const deletedAdmin = await Admin.findOneAndDelete({ admin_id: parseInt(admin_id) });
+        
+        if (!deletedAdmin) {
+            return res.status(404).json({ message: 'Admin not found' });
+        }
+
+        // Get all admins with ID greater than the deleted one
+        const adminsToUpdate = await Admin.find({ 
+            admin_id: { $gt: parseInt(admin_id) }
+        }).sort({ admin_id: 1 });
+
+        // Update each admin's ID to decrement by 1
+        for (const admin of adminsToUpdate) {
+            await Admin.findByIdAndUpdate(
+                admin._id,
+                { $set: { admin_id: admin.admin_id - 1 } }
+            );
+        }
+
+        // Log activity
+        await logActivity(
+            req.user.id,
+            req.user.role,
+            'deleteAdmin',
+            { 
+                admin_id: admin_id, 
+                name: deletedAdmin.fullname,
+                affected_ids: adminsToUpdate.length
+            }
+        );
+
+        res.status(200).json({ 
+            message: 'Admin deleted successfully',
+            reorderedCount: adminsToUpdate.length
+        });
+    } catch (error) {
+        console.error('Error deleting admin:', error);
+        res.status(500).json({ message: 'Failed to delete admin: ' + error.message });
     }
 }
 
@@ -346,7 +461,6 @@ async function getActivityLogs(req, res) {
 };
 
 
-
 module.exports = {
     getAllPatients,
     deletePatient,
@@ -362,4 +476,7 @@ module.exports = {
     addDentist,
     createAdmin,
     getActivityLogs,
+    getAllDentists,
+    getAllAdmins,
+    deleteAdmin,
 };

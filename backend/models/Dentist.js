@@ -39,10 +39,14 @@ const dentistSchema = new Schema({
 dentistSchema.pre('save', async function(next) {
     if (this.isNew) {
         try {
+            console.log('Running pre-save middleware for dentist:', this);
             const latestDentist = await this.constructor.findOne({}, {}, { sort: { 'dentist_id': -1 } });
+            console.log('Latest dentist found:', latestDentist);
             this.dentist_id = latestDentist ? latestDentist.dentist_id + 1 : 1;
+            console.log('Assigned dentist_id:', this.dentist_id);
             next();
         } catch (error) {
+            console.error('Error in pre-save middleware:', error);
             next(error);
         }
     } else {
