@@ -1,98 +1,153 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom'; // Import Link for routing
-import SideNavBar from "../components/SideNavBar";
-import Logo from '/src/images/Dental_logo.png';
-import bell from '/src/images/bell.png';
-import magnify from '/src/images/magnifying-glass.png';
+import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+    faSearch,
+    faBell,
+    faThLarge,
+    faClipboardList,
+    faComments,
+    faCog,
+    faCalendarAlt,
+    faTooth,
+    faChevronLeft,
+    faChevronRight
+} from '@fortawesome/free-solid-svg-icons';
 
 const AdminCalendar = () => {
-    const [month, setMonth] = useState("October 2024");
-    const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1);
+    const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+    const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+
+    const nextMonth = () => {
+        setCurrentMonth((prev) => (prev === 11 ? 0 : prev + 1));
+        if (currentMonth === 11) setCurrentYear((prev) => prev + 1);
+    };
+
+    const previousMonth = () => {
+        setCurrentMonth((prev) => (prev === 0 ? 11 : prev - 1));
+        if (currentMonth === 0) setCurrentYear((prev) => prev - 1);
+    };
+
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const startDay = new Date(currentYear, currentMonth, 1).getDay();
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex h-screen w-screen">
             {/* Sidebar */}
-            <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
-                <SideNavBar />
+            <div className="bg-[#003367] text-white w-1/4 p-6 hidden lg:block">
+                <div className="mb-4">
+                    <Link to="/admin-profile" className="flex items-center">
+                        <img src="/src/assets/profile.jpg" alt="Profile" className="w-10 h-10 rounded-full mr-2" />
+                        <div className="flex flex-col">
+                            <span className="text-lg font-semibold">Admin Name</span>
+                        </div>
+                    </Link>
+                </div>
+
+                <div className="mb-8 bg-white p-4 rounded-lg text-center shadow-lg text-gray-900">
+                    <h1 className="text-3xl font-bold">
+                        <FontAwesomeIcon icon={faTooth} className="mr-3" /> BukSU Dental Clinic
+                    </h1>
+                </div>
+
+                <nav>
+                    <ul className="space-y-4">
+                        {['Dashboard', 'View Appointment', 'Calendar'].map((item, index) => (
+                            <li key={index}>
+                                <Link
+                                    to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
+                                    className="flex items-center text-lg rounded p-2 hover:bg-blue-500"
+                                >
+                                    <FontAwesomeIcon icon={[faThLarge, faClipboardList, faCalendarAlt][index]} className="mr-3" />
+                                    {item}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                    <ul className="space-y-4 mt-8">
+                        {['Inventory', 'View Feedback', 'Settings'].map((item, index) => (
+                            <li key={index}>
+                                <Link
+                                    to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
+                                    className="flex items-center text-lg rounded p-2 hover:bg-blue-500"
+                                >
+                                    <FontAwesomeIcon icon={[faClipboardList, faComments, faCog][index]} className="mr-3" />
+                                    {item}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col items-center">
+            <div className="flex-1 bg-white p-6">
                 {/* Header */}
-                <header className="w-full shadow-lg">
-                    <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
-                        {/* Logo and Calendar Link */}
-                        <div className="flex items-center space-x-4">
-                            <img className="w-11 cursor-pointer" src={Logo} alt="Dental Logo" />
-                            <Link to="/admin-calendar" className="text-xl font-semibold text-[#003367] hover:text-blue-500 transition">
-                                Calendar
-                            </Link>
-                        </div>
-
-                        {/* Search Bar */}
-                        <div className="flex items-center bg-white border rounded-xl px-3 py-1">
-                            <img className="w-5" src={magnify} alt="Search icon" />
-                            <input
-                                type="text"
-                                placeholder="Search"
-                                className="ml-2 p-1 outline-none w-full"
-                                aria-label="Search for appointments"
-                            />
-                        </div>
-
-                        {/* Bell Icon */}
-                        <div className="flex items-center">
-                            <button className="bg-gray-100 border-0 p-3 rounded-full hover:bg-gray-200">
-                                <img className="w-6" src={bell} alt="Notifications" />
-                            </button>
-                        </div>
+                <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-md text-gray-900">
+                    <div className="flex items-center">
+                        <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+                        <span className="ml-2 text-2xl font-bold">Calendar</span>
                     </div>
-                </header>
-
-                <div className='w-[95rem] mx-auto my-4'></div>
-
-                {/* Month Selector moved here directly under header */}
-                <div className="flex flex-col items-center my-4 space-x-4">
-                    <div className="flex items-center mb-4 space-x-4">
-                        <button className="text-2xl font-bold text-gray-700" onClick={() => alert("Previous month")}>
-                            &lt;
-                        </button>
-                        <button className="text-2xl text-gray-700 border px-4 py-2 rounded-lg shadow-md bg-gray-50 transition duration-200">
-                            {month}
-                        </button>
-                        <button className="text-2xl font-bold text-gray-700" onClick={() => alert("Next month")}>
-                            &gt;
-                        </button>
+                    <div className="flex items-center border border-gray-300 rounded-lg px-3 py-1 bg-white">
+                        <FontAwesomeIcon icon={faSearch} className="text-gray-500" />
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            className="border-none focus:outline-none ml-2 text-gray-700"
+                        />
                     </div>
+                    <button className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600">
+                        <FontAwesomeIcon icon={faBell} className="text-xl" />
+                    </button>
+                </div>
 
-                    {/* Divider */}
-                    <div className='w-[95%] mx-auto my-4'></div>
+                {/* Calendar Navigation */}
+                <div className="mt-8 flex items-center justify-center">
+                    <button onClick={previousMonth} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300">
+                        <FontAwesomeIcon icon={faChevronLeft} />
+                    </button>
+                    <h2 className="text-3xl font-bold mx-4 text-blue-700">{monthNames[currentMonth]} {currentYear}</h2>
+                    <button onClick={nextMonth} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300">
+                        <FontAwesomeIcon icon={faChevronRight} />
+                    </button>
+                </div>
 
-                    {/* Appointment Content */}
-                    <div className="space-y-8 mt-1 mx-auto w-full max-w-4xl px-4">
-                        {/* Calendar Grid */}
-                        <div className="grid grid-cols-7 gap-4">
-                            {/* Day Labels */}
-                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                                <div key={day} className="text-xl text-center">{day}</div>
-                            ))}
+                {/* Calendar Area */}
+                <div className="mt-4 grid grid-cols-7 gap-4">
+                    {/* Day Labels */}
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                        <div key={day} className="text-xl font-semibold text-center text-blue-700">{day}</div>
+                    ))}
 
-                            {/* Empty boxes for alignment */}
-                            {[...Array(2)].map((_, i) => (
-                                <div key={i} className="h-16"></div>
-                            ))}
+                    {/* Empty boxes for alignment */}
+                    {Array.from({ length: startDay }).map((_, index) => (
+                        <div key={index}></div>
+                    ))}
 
-                            {/* Days of the month */}
-                            {daysInMonth.map((day) => (
-                                <div 
-                                    key={day} 
-                                    className="bg-gray-50 text-black border shadow-lg border-gray-300 p-3 text-2xl font-semibold text-center rounded-lg transition duration-200 hover:bg-blue-600 w-16"
-                                >
-                                    {day}
-                                </div>
-                            ))}
+                    {/* Days of the month */}
+                    {Array.from({ length: daysInMonth }).map((_, day) => (
+                        <div
+                            key={day + 1}
+                            className="bg-blue-50 border border-gray-300 p-4 rounded-lg text-center text-xl text-blue-700 hover:bg-blue-100 transition duration-200 shadow-sm"
+                        >
+                            <span>{day + 1}</span>
                         </div>
-                    </div>
+                    ))}
+                </div>
+
+                {/* Navigation Buttons */}
+                <div className="flex justify-between mt-8">
+                    <Link to="/admin-view-appointment">
+                        <button className="text-xl bg-[#003367] text-white px-4 py-2 rounded hover:bg-blue-600">
+                            Back
+                        </button>
+                    </Link>
+                    <Link to="/admin-inventory">
+                        <button className="text-xl bg-[#003367] text-white px-4 py-2 rounded hover:bg-blue-600">
+                            Next
+                        </button>
+                    </Link>
                 </div>
             </div>
         </div>
