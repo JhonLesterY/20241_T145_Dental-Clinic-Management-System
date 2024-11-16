@@ -16,6 +16,19 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      define: {
+        'process.env': {}
+      },
+      server: {
+        watch: {
+          usePolling: true,
+        },
+    },
+    plugins: [react()],
+    server: {
+      port: 5173,
+      host: true
+    }
       
       // Add more endpoints if needed
     }

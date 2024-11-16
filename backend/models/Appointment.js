@@ -1,12 +1,18 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-// Define the appointment schema
-const appointmentSchema = new Schema({
-    patient_id: {
-        type: Schema.Types.ObjectId,
-        ref: 'Patient',
+const appointmentSchema = new mongoose.Schema({
+    studentName: {
+        type: String,
         required: true
+    },
+    studentId: {
+        type: String,
+        required: true
+    },
+    serviceType: {
+        type: String,
+        required: true,
+        enum: ['Dental Checkup', 'Tooth Extraction', 'Cleaning', 'Consultation']
     },
     date: {
         type: Date,
@@ -16,25 +22,17 @@ const appointmentSchema = new Schema({
         type: String,
         required: true
     },
-    reason: {
-        type: String
-    },
+    notes: String,
+    googleCalendarEventId: String,
     status: {
         type: String,
-        enum: ['scheduled', 'canceled', 'completed'],
-        default: 'scheduled'
+        enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+        default: 'pending'
     },
     createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
         type: Date,
         default: Date.now
     }
 });
 
-// Create the model using the schema
-const Appointment = mongoose.model('Appointment', appointmentSchema);
-
-module.exports = Appointment;
+module.exports = mongoose.model('Appointment', appointmentSchema);
