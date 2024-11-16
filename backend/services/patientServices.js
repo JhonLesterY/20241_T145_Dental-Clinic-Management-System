@@ -4,7 +4,7 @@ const Feedback = require('../models/Feedback');  // Feedback model
 
 
 // Book a new appointment for a patient
-async function bookAppointment(patien_id, appointmentData) {
+async function bookAppointment(patient_id, appointmentData) {
     try {
         const appointment = new Appointment({
             ...appointmentData,
@@ -72,6 +72,64 @@ async function submitFeedback(patient_id, feedbackData) {
         throw new Error(error.message);
     }
 }
+async function getPatientProfile(patient_id) {
+    try {
+        console.log('Looking for patient with ID:', patient_id);
+        
+        const patient = await Patient.findById(patient_id);
+        
+        if (!patient) {
+            console.log('Patient not found in database');
+            throw new Error('Patient not found');
+        }
+
+        console.log('Found patient:', patient);
+        
+        return {
+            firstName: patient.firstName || '',
+            middleName: patient.middleName || '',
+            lastName: patient.lastName || '',
+            suffix: patient.suffix || 'None',
+            phoneNumber: patient.phoneNumber || '',
+            email: patient.email || '',
+            sex: patient.sex || 'Male',
+            birthday: patient.birthday || '',
+            isProfileComplete: patient.isProfileComplete || false,
+            profilePicture: patient.profilePicture || '', // Add this line
+            isGoogleUser: patient.isGoogleUser || false  // Add this line
+        };
+    } catch (error) {
+        console.error('Error in getPatientProfile:', error);
+        throw new Error(error.message);
+    }
+}
+
+async function updatePatientProfile(patient_id, updateData) {
+    try {
+        // Handle profile picture URL for Google users
+        if (updateData.isGoogleUser && updateData.picture) {
+            updateData.profilePicture = updateData.picture;
+        }
+
+        const updatedPatient = await Patient.findByIdAndUpdate(
+            patient_id,
+            { 
+                ...updateData,
+                isProfileComplete: true,
+                updatedAt: Date.now()
+            },
+            { new: true }
+        );
+
+        if (!updatedPatient) {
+            throw new Error('Patient not found');
+        }
+
+        return updatedPatient;
+    } catch (error) {
+        throw new Error(error.message);
+    }
+}
 
 module.exports = {
     bookAppointment,
@@ -79,4 +137,6 @@ module.exports = {
     updateAppointment,
     getConsultationHistory,
     submitFeedback,
+    getPatientProfile,
+    updatePatientProfile,
 };

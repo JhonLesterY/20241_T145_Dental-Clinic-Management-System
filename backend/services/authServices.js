@@ -123,12 +123,32 @@ async function registerWithGoogle(payload) {
         const existingPatient = await Patient.findOne({ email });
 
         if (existingAdmin || existingDentist || existingPatient) {
+            // If user exists and is a Google user, just return the user
+            if (existingPatient && existingPatient.isGoogleUser) {
+                const token = jwt.sign(
+                    { id: existingPatient._id, role: 'patient' },
+                    process.env.JWT_SECRET_KEY,
+                    { expiresIn: '24h' }
+                );
+
+                return {
+                    token,
+                    user: {
+                        id: existingPatient._id,
+                        email: existingPatient.email,
+                        name: existingPatient.name,
+                        role: 'patient',
+                        profilePicture: picture,
+                        isGoogleUser: true
+                    }
+                };
+            }
             throw new Error('A user with this email already exists.');
         }
 
         // Create new patient account
         const latestPatient = await Patient.findOne().sort({ patient_id: -1 });
-        const newPatientId = latestPatient ? latestPatient.patient_id + 1 : 1;
+        const newPatientId = latestPatient ? parseInt(latestPatient.patient_id) + 1 : 1;
 
         const newPatient = new Patient({
             patient_id: newPatientId,
@@ -136,6 +156,7 @@ async function registerWithGoogle(payload) {
             email: email,
             googleId: googleId,
             profilePicture: picture,
+            isGoogleUser: true,
             phoneNumber: '', // This can be updated later
             role: 'patient'
         });
@@ -155,7 +176,8 @@ async function registerWithGoogle(payload) {
                 email: newPatient.email,
                 name: newPatient.name,
                 role: 'patient',
-                profilePicture: picture
+                profilePicture: picture,
+                isGoogleUser: true
             }
         };
     } catch (error) {
@@ -221,26 +243,35 @@ async function normalLogin({ email, password, recaptchaToken }) {
 }
 async function loginWithGoogle(payload, recaptchaToken) {
     try {
-
         const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
         if (!isRecaptchaValid) {
             throw new Error('reCAPTCHA verification failed');
         }
-        const { email, sub: googleId } = payload;
         
-        // Check if user exists in patient collection
-        const patient = await Patient.findOne({ email });
+        const { email, sub: googleId, picture } = payload; // Make sure picture is destructured
+        
+        let patient = await Patient.findOne({ email });
 
         if (!patient) {
             throw new Error('User not registered. Please sign up first.');
         }
 
-        // Generate JWT token with role
+        // Update profile picture if it has changed
+        if (patient.isGoogleUser && picture && patient.profilePicture !== picture) {
+            patient = await Patient.findOneAndUpdate(
+                { email },
+                { 
+                    $set: { 
+                        profilePicture: picture,
+                        lastUpdated: new Date()
+                    }
+                },
+                { new: true }
+            );
+        }
+
         const token = jwt.sign(
-            { 
-                id: patient._id, 
-                role: 'patient'  // Explicitly set the role
-            },
+            { id: patient._id, role: 'patient' },
             process.env.JWT_SECRET_KEY,
             { expiresIn: '24h' }
         );
@@ -251,8 +282,9 @@ async function loginWithGoogle(payload, recaptchaToken) {
                 id: patient._id,
                 email: patient.email,
                 name: patient.name,
-                role: 'patient',  // Explicitly set the role
-                profilePicture: patient.profilePicture
+                role: 'patient',
+                profilePicture: patient.profilePicture,
+                isGoogleUser: true
             }
         };
     } catch (error) {

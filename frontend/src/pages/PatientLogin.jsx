@@ -33,13 +33,11 @@ const Login = () => {
     setError('');
 
     try {
-        const token = recaptchaRef.current.getValue();
-        if (!token) {
+        const recaptchaToken = recaptchaRef.current.getValue();
+        if (!recaptchaToken) {
             setError('Please complete the reCAPTCHA verification');
             return;
         }
-
-        console.log('Sending request with token:', token); // Debug log
 
         const response = await fetch('http://localhost:5000/auth/login', {
             method: 'POST',
@@ -49,95 +47,98 @@ const Login = () => {
             body: JSON.stringify({ 
                 email, 
                 password, 
-                recaptchaToken: token // Make sure this matches what backend expects
+                recaptchaToken: recaptchaToken
             })
         });
 
         const data = await response.json();
+        console.log('Server response:', data); // Debug log
 
         if (!response.ok) {
             throw new Error(data.message || 'Login failed');
         }
 
+        // Clear existing storage first
+        sessionStorage.clear();
+
+        // Store the new values using data.user.id
         sessionStorage.setItem("token", data.token);
         sessionStorage.setItem("role", data.user.role);
+        sessionStorage.setItem("patient_id", data.user.id); // Changed from patient_id to id
 
-        switch (data.user.role) {
-            case 'admin':
-                navigate('/admin-dashboard');
-                break;
-            case 'dentist':
-                navigate('/dentist-dashboard');
-                break;
-            case 'patient':
-                navigate('/dashboard');
-                break;
-            default:
-                setError('Invalid role type');
+        // Verify storage
+        const storedId = sessionStorage.getItem("patient_id");
+        console.log('Stored patient_id:', storedId);
+
+        if (data.user.role === 'patient' && storedId) {
+            navigate('/dashboard');
+        } else {
+            setError('Invalid role type or missing patient ID');
         }
     } catch (error) {
         console.error('Login error:', error);
-        setError(error.message || 'An error occurred during login');
-        recaptchaRef.current.reset();
+        setError(error.message || 'Failed to login');
+        recaptchaRef.current?.reset();
+        setIsVerified(false);
     }
 };
-
+// Google login handler
+// In your Google login handler
 const googleLogin = useGoogleLogin({
-  onSuccess: async (tokenResponse) => {
-    try {
-      const recaptchaToken = recaptchaRef.current.getValue();
-      if (!recaptchaToken) {
-        setError('Please complete the reCAPTCHA verification');
-        return;
-      }
+  onSuccess: async (response) => {
+      try {
+          // Get user info from Google
+          const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+              headers: { Authorization: `Bearer ${response.access_token}` }
+          });
+          const userInfo = await userInfoResponse.json();
+          
+          console.log('Google user info:', userInfo); // Debug log
 
-      console.log("Google login response:", tokenResponse);
-      
-      const res = await fetch('http://localhost:5000/auth/google-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          access_token: tokenResponse.access_token,
-          recaptchaToken: recaptchaToken // Add the reCAPTCHA token
-        })
-      });
+          const recaptchaToken = recaptchaRef.current.getValue();
+          if (!recaptchaToken) {
+              setError('Please complete the reCAPTCHA verification');
+              return;
+          }
 
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to login with Google');
-      }
+          const res = await fetch('http://localhost:5000/auth/google-login', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                  access_token: response.access_token,
+                  recaptchaToken: recaptchaToken,
+                  email: userInfo.email,
+                  name: userInfo.name,
+                  picture: userInfo.picture // Make sure this is included
+              })
+          });
 
-      // Handle successful login
-      sessionStorage.setItem("token", data.token);
-      sessionStorage.setItem("role", data.user.role);
-      switch (data.user.role) {
-        case 'admin':
-          navigate('/admin-dashboard');
-          break;
-        case 'dentist':
-          navigate('/dentist-dashboard');
-          break;
-        case 'patient':
+          if (!res.ok) {
+              const errorData = await res.json();
+              console.error('Server error:', errorData); // Debug log
+              throw new Error(errorData.message || 'Failed to login with Google');
+          }
+
+          const data = await res.json();
+          console.log('Login response:', data); // Debug log
+
+          sessionStorage.setItem('token', data.token);
+          sessionStorage.setItem('patient_id', data.user.id);
+          sessionStorage.setItem('role', 'patient');
+
           navigate('/dashboard');
-          break;
-        default:
-          setError('Invalid role type');
+      } catch (error) {
+          console.error('Google login error:', error);
+          setError(error.message || 'Failed to login with Google');
+          recaptchaRef.current?.reset();
       }
-    } catch (error) {
-      console.error('Google login error:', error);
-      setError(error.message || 'Failed to login with Google');
-      recaptchaRef.current?.reset();
-      setIsVerified(false);
-    }
   },
-  onError: () => {
-    console.error('Google login failed');
-    setError('Failed to login with Google');
-    recaptchaRef.current?.reset();
-    setIsVerified(false);
+  onError: (error) => {
+      console.error('Google login error:', error);
+      setError('Google login failed');
+      recaptchaRef.current?.reset();
   }
 });
 

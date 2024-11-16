@@ -113,29 +113,46 @@ async function deletePatient(req, res) {
             return res.status(400).json({ message: 'Invalid patient ID format' });
         }
 
-        const patient = await Patient.findOneAndDelete({ patient_id: numericId });
-        if (!patient) {
+        // First find and delete the patient
+        const deletedPatient = await Patient.findOneAndDelete({ patient_id: numericId });
+        if (!deletedPatient) {
             return res.status(404).json({ message: 'Patient not found' });
+        }
+
+        // Get all patients with ID greater than the deleted one
+        const patientsToUpdate = await Patient.find({ 
+            patient_id: { $gt: numericId }
+        }).sort({ patient_id: 1 });
+
+        // Update each patient's ID to decrement by 1
+        for (const patient of patientsToUpdate) {
+            await Patient.findByIdAndUpdate(
+                patient._id,
+                { $set: { patient_id: patient.patient_id - 1 } }
+            );
         }
 
         // Log activity with the decoded user data
         await logActivity(
-            req.user.id,      // From the decoded JWT token
-            req.user.role,    // From the decoded JWT token
-            'deletePatient',  // Action
-            {                 // Details
+            req.user.id,      
+            req.user.role,    
+            'deletePatient',  
+            {                 
                 patient_id: numericId,
-                name: patient.name || patient.fullname
+                name: deletedPatient.name || deletedPatient.fullname,
+                affected_ids: patientsToUpdate.length
             }
         );
 
-        res.status(200).json({ message: 'Patient deleted successfully' });
+        res.status(200).json({ 
+            message: 'Patient deleted successfully',
+            reorderedCount: patientsToUpdate.length
+        });
     } catch (error) {
         console.error('Delete error:', error);
         res.status(500).json({ message: 'Failed to delete patient: ' + error.message });
     }
 }
-
 
 async function addDentist(req, res) {
     const { name, email, password, phoneNumber } = req.body;

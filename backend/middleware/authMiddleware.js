@@ -22,4 +22,21 @@ const authenticateAdmin = (req, res, next) => {
     }
 };
 
-module.exports = { authenticateAdmin };
+const authenticatePatient = (req, res, next) => {
+    const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ message: 'Access Denied: No Token Provided!' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        req.user = decoded; // Attach the decoded token data to the request object
+        next();
+    } catch (error) {
+        console.error('Error verifying token:', error);
+        return res.status(401).json({ message: 'Access Denied: Invalid Token!' });
+    }
+};
+
+module.exports = { authenticateAdmin, authenticatePatient };

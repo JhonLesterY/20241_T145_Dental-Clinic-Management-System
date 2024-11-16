@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 require('dotenv').config();
 const connectDB = require('./db');
+const path = require('path');
 const cors = require('cors');
 
 // Connect to the database
@@ -23,12 +24,18 @@ app.use((req, res, next) => {
     res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
     next();
 });
+app.use('/uploads', express.static('uploads'));
 
 // Import and use routes
 const authRoutes = require('./routes/authRoutes');
 const patientRoutes = require('./routes/patientRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const dentistRoutes = require('./routes/dentistRoutes');
+const fs = require('fs');
+const uploadDir = path.join(__dirname, 'uploads/profile-pictures');
+if (!fs.existsSync(uploadDir)){
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 app.use('/auth', authRoutes);
 app.use('/patients', patientRoutes);

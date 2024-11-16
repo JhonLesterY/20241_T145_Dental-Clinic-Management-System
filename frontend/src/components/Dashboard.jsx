@@ -2,6 +2,11 @@ import { NavLink } from "react-router-dom";
 import { FaCalendarAlt, FaComments, FaInfoCircle, FaCog, FaHome } from "react-icons/fa";
 
 const Dashboard = () => {
+  // Helper function for NavLink className
+  const getLinkClassName = ({ isActive }) => {
+    return `hover:text-gray-200 flex items-center gap-3 ${isActive ? 'text-white' : 'text-slate-200'}`;
+  };
+
   return (
     <div className="h-full fixed bg-customblue text-slate-200 w-[16rem] flex flex-col justify-between shadow-lg transition-all duration-300 ease-in-out">
       {/* Navbar Header */}
@@ -16,13 +21,19 @@ const Dashboard = () => {
         {/* Navigation Links directly below Unicare */}
         <ul className="space-y-6 font-medium text-lg px-6">
           <li>
-            <NavLink to="/dashboard" activeClassName="text-white" className="hover:text-gray-200 flex items-center gap-3">
+            <NavLink 
+              to="/dashboard" 
+              className={getLinkClassName}
+            >
               <FaHome className="text-xl" />
               Dashboard
             </NavLink>
           </li>
           <li>
-            <NavLink to="/appointment" activeClassName="text-white" className="hover:text-gray-200 flex items-center gap-3">
+            <NavLink 
+              to="/appointment" 
+              className={getLinkClassName}
+            >
               <FaCalendarAlt className="text-xl" />
               Appointment
             </NavLink>
@@ -31,16 +42,25 @@ const Dashboard = () => {
       </div>
 
       {/* Bottom Links */}
-      <div className=" space-y-5 pb-10 border-t border-gray-600 pt-6 px-6">
-        <NavLink to="/feedback" activeClassName="text-white" className="hover:text-gray-200 flex items-center gap-3">
+      <div className="space-y-5 pb-10 border-t border-gray-600 pt-6 px-6">
+        <NavLink 
+          to="/feedback" 
+          className={getLinkClassName}
+        >
           <FaComments className="text-xl" />
           Feedback
         </NavLink>
-        <NavLink to="/about-us" activeClassName="text-white" className="hover:text-gray-200 flex items-center gap-3">
+        <NavLink 
+          to="/about-us" 
+          className={getLinkClassName}
+        >
           <FaInfoCircle className="text-xl" />
           About Us
         </NavLink>
-        <NavLink to="/settings" activeClassName="text-white" className="hover:text-gray-200 flex items-center gap-3">
+        <NavLink 
+          to="/settings" 
+          className={getLinkClassName}
+        >
           <FaCog className="text-xl" />
           Settings
         </NavLink>

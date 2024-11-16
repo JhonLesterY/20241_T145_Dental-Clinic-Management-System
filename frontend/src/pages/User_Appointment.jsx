@@ -1,10 +1,74 @@
 import { Link, NavLink } from "react-router-dom";
 import Dashboard from "../components/Dashboard";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import magnify from "/src/images/magnifying-glass.png";
 
 const User_Appointment = () => {
+  const navigate = useNavigate();
+  const [isProfileComplete, setIsProfileComplete] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    checkProfileCompletion();
+  }, []); 
+
+  const checkProfileCompletion = async () => {
+    try {
+      const patientId = sessionStorage.getItem('patient_id');
+      const token = sessionStorage.getItem('token');
+  
+      if (!token || !patientId) {
+        console.log('Missing authentication credentials');
+        navigate('/login');
+        return;
+      }
+  
+      const response = await fetch(`http://localhost:5000/patients/${patientId}/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+  
+      if (!response.ok) {
+        if (response.status === 401) {
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('patient_id');
+          navigate('/login');
+          return;
+        }
+        throw new Error('Failed to fetch profile');
+      }
+      
+      const data = await response.json();
+      console.log('Profile data:', data);
+
+      if (!data.isProfileComplete) {
+        navigate('/profile', { 
+          state: { message: 'Please complete your profile before making an appointment' }
+        });
+        return;
+      }
+      
+      setIsProfileComplete(true);
+    } catch (error) {
+      console.error('Error checking profile:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <div className="text-blue-600 text-xl">Loading...</div>
+      </div>
+    );
+  }
+      
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}

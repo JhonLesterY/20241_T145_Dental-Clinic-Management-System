@@ -27,8 +27,9 @@ import Dentist_AddConsultation from "./pages/Dentist_AddConsultation";
 import Dentist_Settings from "./pages/Dentist_Settings";
 import Dentist_Profile from "./pages/Dentist_Profile";
 import Dentist_ViewFeedback from "./pages/Dentist_ViewFeedback";
-import AdminSideBar from "./components/AdminSidebar";
-import UserSideBar from './components/UserSideBar';
+import UserSideBar from "./components/UserSideBar";
+import AdminSideBar from "./components/AdminSideBar";
+import Admin_UserManagement from "./pages/Admin_UserManagement";
 
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
@@ -66,6 +67,7 @@ function App() {
             <Route path="/appointment-confirmation" element={<Confirmation />} />
             <Route path="/admin-viewFeedback" element={<Admin_ViewFeedback />} />
             <Route path="/admin-sidebar" element={<AdminSideBar />} />
+      <Route path="/admin-userManagement" element={<Admin_UserManagement />} />
           </Route>
           
           <Route element={<ProtectedRoutes accountType="dentist" />}>

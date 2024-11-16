@@ -322,70 +322,47 @@ useEffect(() => {
         </div>
 
         <nav className="flex-1">
-              {/* First group of navigation items */}
-              <ul className="space-y-4">
-                {['Dashboard', 'View Appointment', 'Calendar'].map((item, index) => (
-                  <li key={index}>
-                    <Link
-                      to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
-                      className="flex items-center text-white text-lg transition duration-200 rounded p-2 hover:bg-blue-600"
-                    >
-                      <FontAwesomeIcon icon={[faThLarge, faFileAlt, faCalendarAlt][index]} className="mr-3" />
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+          <ul className="space-y-4">
+            {['Dashboard', 'View Appointment', 'Calendar'].map((item, index) => (
+              <li key={index}>
+                <Link
+                  to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
+                  className="flex items-center text-white text-lg transition duration-200 rounded p-2 hover:bg-blue-600"
+                >
+                  <FontAwesomeIcon icon={[faThLarge, faFileAlt, faCalendarAlt][index]} className="mr-3" />
+                  {item}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <ul className="space-y-4 mt-8">
+            {['Inventory', 'View Feedback', 'Settings', 'User Management'].map((item, index) => (
+              <li key={index}>
+                <Link
+                  to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
+                  className="flex items-center text-white text-lg transition duration-200 rounded p-2 hover:bg-blue-600"
+                >
+                  <FontAwesomeIcon icon={[faClipboardList, faComments, faCog, faUsers][index]} className="mr-3" />
+                  {item}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-              {/* Second group of navigation items */}
-              <ul className="space-y-4 mt-8">
-                {['Inventory', 'View Feedback', 'Settings'].map((item, index) => (
-                  <li key={index}>
-                    <Link
-                      to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
-                      className="flex items-center text-white text-lg transition duration-200 rounded p-2 hover:bg-blue-600"
-                    >
-                      <FontAwesomeIcon icon={[faClipboardList, faComments, faCog][index]} className="mr-3" />
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-
-              {/* User Management link - separate from other groups */}
-              <ul className="space-y-4 mt-8">
-                <li>
-                  <Link
-                    to="/admin-userManagement"
-                    className="flex items-center text-white text-lg transition duration-200 rounded p-2 hover:bg-blue-600"
-                  >
-                    <FontAwesomeIcon icon={faUsers} className="mr-3" />
-                    User Management
-                  </Link>
-                </li>
-              </ul>
-            </nav>
-
-            {/* Add Admin and Logout Buttons */}
-            <button 
-              onClick={toggleModal} 
-              className="mt-4 mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Add Admin
-            </button>
-            <button
-              onClick={() => setShowDentistModal(true)}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Add Dentist
-            </button>
-            <button 
-              onClick={handleLogout} 
-              className="mt-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Logout
-            </button>
-
+        {/* Add Admin and Logout Button */}
+        <button onClick={toggleModal} className="mt-4 mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          Add Admin
+        </button>
+        <button
+          onClick={() => setShowDentistModal(true)}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          Add Dentist
+        </button>
+        
+        <button onClick={handleLogout} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+          Logout
+        </button>
       </div>
 
       {/* Main Content */}

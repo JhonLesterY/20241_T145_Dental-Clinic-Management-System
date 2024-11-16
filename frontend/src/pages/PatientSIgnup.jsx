@@ -1,4 +1,4 @@
-  import React, { useState, useEffect } from 'react'; 
+  import React, { useState } from 'react'; 
   import { Link, useNavigate} from 'react-router-dom'; // Import Link for navigation
   import { useGoogleLogin } from '@react-oauth/google';
   import "../App.css";
@@ -12,15 +12,7 @@
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    useEffect(() => {
-      // Initialize Google Sign In when component mounts
-      if (window.google) {
-        google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          callback: handleCredentialResponse
-        });
-      }
-    }, []);
+  
 
     const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{9,16}$/;
 
@@ -68,59 +60,56 @@
       }
     };
     
-   
-   
 
-    // ... existing imports and code ...
 
-const googleSignup = useGoogleLogin({
-  onSuccess: async (tokenResponse) => {
-      try {
-          console.log("Google signup response:", tokenResponse);
-          
-          const res = await fetch('http://localhost:5000/auth/google-signup', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ 
-                  access_token: tokenResponse.access_token
-              })
-          });
-
-          const data = await res.json();
-          
-          if (!res.ok) {
-              throw new Error(data.error || 'Signup failed');
-          }
-
-          // Store the token and user data in localStorage or your auth context
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
-
-          // Show success message
-          alert('Signup successful!');
-          
-          // Redirect to appropriate page (e.g., dashboard or login)
-          navigate('/login');
-          
-      } catch (error) {
-          console.error("Signup error:", error);
-          setError(error.message || 'Failed to signup with Google');
-      }
-  },
-  onError: (error) => {
-      console.error("Google signup error:", error);
-      setError('Google signup failed');
-  },
-  scope: "email profile"
-});
-
-// ... rest of your component code ...
-
-// ... existing code ...
-
+    const googleSignup = useGoogleLogin({
+      onSuccess: async (response) => {
+          try {
+              // Get user info from Google
+              const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${response.access_token}` }
+              });
+              const userInfo = await userInfoResponse.json();
+              console.log('Google user info:', userInfo); 
+              
+              const res = await fetch('http://localhost:5000/auth/google-signup', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                      access_token: response.access_token,
+                      email: userInfo.email,
+                      name: userInfo.name,
+                      picture: userInfo.picture
+                  })
+              });
   
+              if (!res.ok) {
+                  const errorData = await res.json();
+                  console.error('Server error:', errorData);
+                  throw new Error(errorData.message || 'Failed to signup with Google');
+              }
+  
+              const data = await res.json();
+              console.log('Signup response:', data); 
+              
+              // Store the token and user info
+              sessionStorage.setItem('token', data.token);
+              sessionStorage.setItem('patient_id', data.user.id);
+              sessionStorage.setItem('role', 'patient');
+  
+              navigate('/login');
+          } catch (error) {
+              console.error('Signup error:', error);
+              setError(error.message || 'Failed to signup with Google');
+          }
+      },
+      onError: () => {
+          setError('Google signup failed');
+      }
+  });
+
     return (
       <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-100">
         <div className="flex flex-1">

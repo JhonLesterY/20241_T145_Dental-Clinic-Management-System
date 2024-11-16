@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-// Define the patient schema
 const patientSchema = new Schema({
     patient_id: {
         type: Number,
@@ -19,11 +18,36 @@ const patientSchema = new Schema({
     },
     password: {
         type: String,
-        required: false
+        required: function() {
+            return !this.isGoogleUser;
+        }
     },
-    phoneNumber: {
+    // Optional fields for profile completion
+    firstName: String,
+    middleName: String,
+    lastName: String,
+    suffix: String,
+    phoneNumber: String,
+    sex: {
         type: String,
-        required: false
+        enum: ['Male', 'Female']
+    },
+    birthday: Date,
+    isProfileComplete: {
+        type: Boolean,
+        default: false
+    },
+    isGoogleUser: {
+        type: Boolean,
+        default: false
+    },
+    googleId: {
+        type: String,
+        sparse: true // Allows null/undefined values
+    },
+    profilePicture: {
+        type: String,
+        default: ''
     },
     createdAt: {
         type: Date,
@@ -35,7 +59,5 @@ const patientSchema = new Schema({
     }
 });
 
-// Create the model using the schema
 const Patient = mongoose.model('Patient', patientSchema);
-
 module.exports = Patient;
