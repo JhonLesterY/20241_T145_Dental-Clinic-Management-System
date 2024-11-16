@@ -5,13 +5,15 @@ import dentalchair from "/src/images/Dental_Chair_.jpg";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import userIcon from "/src/images/user.png";
+import AdminSideBar from "../components/AdminSideBar";
+import UserSideBar from "../components/UserSideBar";
 
 const User_Dashboard = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
-        <Dashboard />
+        <UserSideBar />
       </div>
 
       {/* Main Content */}
