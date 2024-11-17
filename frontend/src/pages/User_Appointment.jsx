@@ -6,14 +6,28 @@ import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import magnify from "/src/images/magnifying-glass.png";
 
+const TIME_SLOTS = [
+  { time: "8:00 - 10:00 AM", id: 1 },
+  { time: "10:30 - 12:30 NN", id: 2 },
+  { time: "1:00 - 3:00 PM", id: 3 },
+  { time: "3:00 - 5:00 PM", id: 4 }
+];
+
 const User_Appointment = () => {
   const navigate = useNavigate();
   const [isProfileComplete, setIsProfileComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
 
   useEffect(() => {
     checkProfileCompletion();
   }, []); 
+
+  useEffect(() => {
+    fetchAvailableSlots(currentDate);
+  }, [currentDate]);
 
   const checkProfileCompletion = async () => {
     try {
@@ -58,6 +72,54 @@ const User_Appointment = () => {
       console.error('Error checking profile:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchAvailableSlots = async (date) => {
+    try {
+      const token = sessionStorage.getItem('token');
+      const formattedDate = date.toISOString().split('T')[0];
+      
+      const response = await fetch(`http://localhost:5000/appointments/available-slots?date=${formattedDate}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch available slots');
+      }
+
+      const data = await response.json();
+      const slotsWithAvailability = TIME_SLOTS.map(slot => ({
+        ...slot,
+        available: data.availableSlots?.includes(slot.id) ?? true
+      }));
+      setAvailableSlots(slotsWithAvailability);
+    } catch (error) {
+      console.error('Error fetching available slots:', error);
+      setAvailableSlots(TIME_SLOTS.map(slot => ({ ...slot, available: false })));
+    }
+  };
+
+  const formatDate = (date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(date);
+  };
+
+  const handleSlotSelection = (slotId) => {
+    setSelectedSlot(slotId);
+  };
+
+  const handleNext = () => {
+    if (selectedSlot) {
+      sessionStorage.setItem('appointmentDate', currentDate.toISOString());
+      sessionStorage.setItem('appointmentSlot', selectedSlot);
+      navigate('/upload-requirements');
     }
   };
 
@@ -125,58 +187,81 @@ const User_Appointment = () => {
           <div className="flex flex-col items-center mb-4">
             <div className="flex gap-2 items-center">
               <div className="border rounded-md px-2 py-1 bg-gray-100 shadow-md text-gray-700">
-                Today: October 15, 2024
+                Today: {formatDate(new Date())}
               </div>
             </div>
           </div>
 
           {/* Appointment Slot Section */}
-          <div className="w-full bg-gray-100 border shadow-md p-6 rounded-xl shadow-lg max-w-4xl mx-auto">
+          <div className="w-full bg-white border rounded-xl shadow-lg max-w-4xl mx-auto p-6">
             <div className="flex items-center justify-between mb-5">
-              <div className="text-lg font-medium text-gray-700">October 18, 2024</div>
-              <div className="text-lg font-medium text-gray-700">Friday</div>
+              <div className="text-lg font-medium text-gray-700">{formatDate(currentDate)}</div>
             </div>
 
-            <div className="border-t my-4 border shadow-md"></div>
-
-            {/* Slot Options */}
-            {[
-              { time: "8:00 - 10:00 AM", status: "Available Slots" },
-              { time: "10:30 - 12:30 NN", status: "Available Slots" },
-              { time: "1:00 - 3:00 PM", status: "Available Slots" },
-              { time: "3:00 - 5:00 PM", status: "Available Slots" }
-            ].map((slot, index) => (
-              <div
-                key={index}
-                className="flex justify-between items-center py-4 mb-4 border-b last:border-b-0"
-              >
-                <div className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="appointmentSlot"
-                    className="form-radio text-blue-500"
-                    id={`slot-${index}`}
-                  />
-                  <label
-                    htmlFor={`slot-${index}`}
-                    className="text-gray-700 font-medium"
+            <div className="space-y-4">
+              {TIME_SLOTS.map((slot) => {
+                const isAvailable = availableSlots.find(s => s.id === slot.id)?.available;
+                
+                return (
+                  <div
+                    key={slot.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    {slot.time}
-                  </label>
-                </div>
-                <div className="text-blue-500 font-semibold">{slot.status}</div>
+                    <div className="flex items-center gap-3 flex-1">
+                      <input
+                        type="radio"
+                        id={`slot-${slot.id}`}
+                        name="timeSlot"
+                        value={slot.id}
+                        checked={selectedSlot === slot.id}
+                        onChange={() => handleSlotSelection(slot.id)}
+                        disabled={!isAvailable}
+                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <label
+                        htmlFor={`slot-${slot.id}`}
+                        className={`flex-1 flex items-center justify-between cursor-pointer ${
+                          !isAvailable ? 'cursor-not-allowed text-gray-400' : 'text-gray-700'
+                        }`}
+                      >
+                        <span className="font-medium">{slot.time}</span>
+                        <span 
+                          className={`text-sm font-medium ${
+                            isAvailable ? 'text-blue-500' : 'text-red-500'
+                          }`}
+                        >
+                          {isAvailable ? 'Available Slots' : 'Fully Booked'}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {selectedSlot === null && (
+              <div className="mt-4 text-sm text-gray-500">
+                Please select a time slot to continue
               </div>
-            ))}
+            )}
           </div>
 
           {/* Next Button */}
           <div className="flex justify-end mt-4">
-            <NavLink
-              to="/upload-requirements"
-              className="cursor-pointer shadow-sm hover:shadow-lg rounded-xl px-5 py-2 bg-[#003367] text-white transform hover:scale-105 transition-transform duration-200 ease-in-out"
+            <button
+              onClick={handleNext}
+              disabled={!selectedSlot}
+              className={`
+                cursor-pointer shadow-sm rounded-xl px-5 py-2 
+                ${selectedSlot 
+                  ? 'bg-[#003367] hover:shadow-lg transform hover:scale-105 transition-transform duration-200 ease-in-out' 
+                  : 'bg-gray-400 cursor-not-allowed'
+                }
+                text-white
+              `}
             >
               Next
-            </NavLink>
+            </button>
           </div>
         </div>
       </div>
