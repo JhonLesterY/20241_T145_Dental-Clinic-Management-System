@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios"; // For making API requests
 import Logo from "/src/images/Dental_logo.png";
+import { useNavigate } from "react-router-dom";
 
 // Icons
 import { MdMenuOpen } from "react-icons/md";
@@ -14,17 +15,18 @@ import { MdOutlineDashboard } from "react-icons/md";
 
 // Menu Items
 const menuItems = [
-  { icons: <IoHomeOutline size={24} />, label: "Home" },
-  { icons: <FaProductHunt size={24} />, label: "Products" },
-  { icons: <MdOutlineDashboard size={24} />, label: "Dashboard" },
-  { icons: <CiSettings size={24} />, label: "Settings" },
-  { icons: <IoLogoBuffer size={24} />, label: "Log" },
-  { icons: <TbReportSearch size={24} />, label: "Reports" },
+  { icons: <IoHomeOutline size={24} />, label: "Dashboard", path: "/dashboard" },
+  { icons: <FaProductHunt size={24} />, label: "Appointment", path: "/appointment" },
+  { icons: <MdOutlineDashboard size={24} />, label: "Feedback", path: "/feedback" },
+  { icons: <CiSettings size={24} />, label: "Upload Requirements", path: "/upload-requirements" },
+  { icons: <CiSettings size={24} />, label: "User Management", path: "/user-management" },
+  { icons: <IoLogoBuffer size={24} />, label: "Log Out", path: "/login" },
+  { icons: <TbReportSearch size={24} />, label: "Reports", path: "/reports" },
 ];
 
-export default function Sidebar() {
-  const [open, setOpen] = useState(true);
+export default function Sidebar({ open, setOpen }) {
   const [adminData, setAdminData] = useState({ email: "Loading..." });
+  const navigate = useNavigate();
 
   // Fetch admin details from the backend
   useEffect(() => {
@@ -68,10 +70,11 @@ export default function Sidebar() {
       </div>
 
       {/* Menu Items */}
-      <ul className="flex-1 overflow-y-auto space-y-2 px-3 mt-4">
+      <ul className={`flex-1 px-3 mt-4 ${open ? 'space-y-2' : 'space-y-4'}`}>
         {menuItems.map((item, index) => (
           <li
             key={index}
+            onClick={() => navigate(item.path)}
             className="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#0055A4] transition duration-300 cursor-pointer group"
           >
             <div>{item.icons}</div>
@@ -82,13 +85,14 @@ export default function Sidebar() {
             >
               {item.label}
             </p>
-            <span
-              className={`absolute left-16 bg-white text-[#003367] px-2 py-1 rounded-md shadow-lg opacity-0 group-hover:opacity-100 group-hover:left-12 transition-all duration-300 ${
-                open && "hidden"
-              }`}
-            >
-              {item.label}
-            </span>
+            {!open && (
+              <span
+                className="absolute left-16 bg-white text-[#003367] px-2 py-1 rounded-md shadow-lg 
+                opacity-0 group-hover:opacity-100 pointer-events-none"
+              >
+                {item.label}
+              </span>
+            )}
           </li>
         ))}
       </ul>
