@@ -7,105 +7,118 @@
   const PatientSignup = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
-
-  
-
-    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{9,16}$/;
-
-    const validatePassword = (password) => {
-      return passwordPattern.test(password);
-    };
 
 
     const handleSubmit = async (e) => {
       e.preventDefault();
-      if (password !== confirmPassword) {
-        setError("Passwords do not match");  
-        return;
-      } 
+      setError('');
+      setSuccess('');
       
-      if (!validatePassword(password)) {
-        setError("Password must be 9-16 characters and include uppercase, lowercase, number, and special character.");
-        return;
+      const formData = {
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          phoneNumber: ''
+      };
+      
+      console.log('Sending data:', formData); // Debug log
+      
+      if (!formData.name || !formData.email) {
+          setError('All fields are required');
+          return;
+      }
+      
+      if (!formData.email.endsWith('@student.buksu.edu.ph') && !formData.email.endsWith('@buksu.edu.ph')) {
+          setError('Please use your BukSU institutional email (@student.buksu.edu.ph or @buksu.edu.ph)');
+          return;
       }
   
       try {
-        const response = await fetch('http://localhost:5000/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            name,
-            email,
-            password,
-            phoneNumber: 'Optional phone number field if needed',
-          })
-        });
-    
-        const data = await response.json();
-        
-        if (response.ok) {
-          console.log("Signup successful", data);
-          navigate('/login');
-        } else {
-          setError(data.error);  // Use setError instead of console.error
-        }
+          const response = await fetch('http://localhost:5000/auth/register', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+              },
+              body: JSON.stringify(formData)
+          });
+  
+          const data = await response.json();
+          console.log('Full server response:', {
+              status: response.status,
+              data: data
+          });
+  
+          if (response.ok) {
+              setSuccess('Registration successful! Please check your email for login credentials.');
+              setTimeout(() => {
+                  navigate('/login');
+              }, 3000);
+          } else {
+              throw new Error(data.error || 'Registration failed');
+          }
       } catch (error) {
-        setError("An error occurred during signup");  // Use setError
+          console.error('Signup error details:', error);
+          setError(error.message || 'An error occurred during signup');
       }
-    };
-    
+  };
 
-
+  
     const googleSignup = useGoogleLogin({
       onSuccess: async (response) => {
           try {
+              console.log('Google login success, getting user info...');
+              
               // Get user info from Google
               const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                   headers: { Authorization: `Bearer ${response.access_token}` }
               });
-              const userInfo = await userInfoResponse.json();
-              console.log('Google user info:', userInfo); 
               
+              if (!userInfoResponse.ok) {
+                  throw new Error('Failed to get Google user info');
+              }
+              
+              const userInfo = await userInfoResponse.json();
+              console.log('Google user info:', userInfo);
+              
+              // Send to your backend
               const res = await fetch('http://localhost:5000/auth/google-signup', {
                   method: 'POST',
                   headers: {
                       'Content-Type': 'application/json'
                   },
                   body: JSON.stringify({
-                      access_token: response.access_token,
-                      email: userInfo.email,
-                      name: userInfo.name,
-                      picture: userInfo.picture
+                      access_token: response.access_token
                   })
               });
   
+              const data = await res.json();
+              
               if (!res.ok) {
-                  const errorData = await res.json();
-                  console.error('Server error:', errorData);
-                  throw new Error(errorData.message || 'Failed to signup with Google');
+                  throw new Error(data.error || 'Failed to signup with Google');
               }
   
-              const data = await res.json();
-              console.log('Signup response:', data); 
+              console.log('Signup successful:', data);
               
-              // Store the token and user info
+              // Store user data
               sessionStorage.setItem('token', data.token);
               sessionStorage.setItem('patient_id', data.user.id);
               sessionStorage.setItem('role', 'patient');
+              sessionStorage.setItem('name', data.user.name);
   
-              navigate('/login');
+              setSuccess('Registration successful! Redirecting to login...');
+              setTimeout(() => {
+                  navigate('/login');
+              }, 2000);
           } catch (error) {
               console.error('Signup error:', error);
               setError(error.message || 'Failed to signup with Google');
           }
       },
-      onError: () => {
+      onError: (error) => {
+          console.error('Google signup error:', error);
           setError('Google signup failed');
       }
   });
@@ -133,6 +146,9 @@
               {error && (
                 <p className="text-red-600 text-center mb-4 bg-red-100 p-2 rounded">{error}</p>
               )}
+               {success && (
+                  <p className="text-green-600 text-center mb-4 bg-green-100 p-2 rounded">{success}</p>
+                )}
   
               <form onSubmit={handleSubmit} className="space-y-4">
                 <input
@@ -152,24 +168,7 @@
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
-  
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 text-gray-800"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-  
-                <input
-                  type="password"
-                  placeholder="Confirm Password"
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 text-gray-800"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
+
   
                 <button
                   type="submit"

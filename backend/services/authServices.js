@@ -5,6 +5,7 @@ const axios = require('axios');
 const Patient = require('../models/Patient');
 const Admin = require('../models/Admin');
 const Dentist = require('../models/Dentist');
+const { sendWelcomeEmail, generatePassword } = require('./emailService');
 
 const secretKey = process.env.JWT_SECRET_KEY;
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -47,83 +48,78 @@ const verifyRecaptcha = async (token) => {
     }
 };
 
+
 async function registerUser(userData) {
     try {
-        // Check if email already exists in any collection (admin, dentist, or patient)
-        const existingAdmin = await Admin.findOne({ email: userData.email });
-        const existingDentist = await Dentist.findOne({ email: userData.email });
-        const existingPatient = await Patient.findOne({ email: userData.email });
-
-        if (existingAdmin || existingDentist || existingPatient) {
-            throw new Error('A user with this email already exists.');
+        // Validate input
+        if (!userData.name || !userData.email) {
+            throw new Error('Name and email are required');
         }
 
-        let newUser;
+        // Generate a secure password
+        const plainPassword = 'Pass' + Math.random().toString(36).slice(-8) + '!';
+        console.log('Generated password:', plainPassword); // For debugging
 
-        // Determine the type of user and assign the correct auto-incrementing ID
-        if (userData.role === 'admin') {
-            // Generate an incrementing admin_id
-            const latestAdmin = await Admin.findOne().sort({ admin_id: -1 });
-            const newAdminId = latestAdmin ? latestAdmin.admin_id + 1 : 1;
-
-            // Hash the password before saving it
-            const hashedPassword = await bcrypt.hash(userData.password, 10);
-            newUser = new Admin({
-                admin_id: newAdminId,
-                fullname: userData.fullname,
-                email: userData.email,
-                password: hashedPassword,
-                role: 'admin',
-            });
-
-        } else if (userData.role === 'dentist') {
-            // Handle dentist registration, similar to admin registration logic
-            const latestDentist = await Dentist.findOne().sort({ dentist_id: -1 });
-            const newDentistId = latestDentist ? latestDentist.dentist_id + 1 : 1;
-
-            const hashedPassword = await bcrypt.hash(userData.password, 10);
-            newUser = new Dentist({
-                dentist_id: newDentistId,
-                name: userData.name,
-                email: userData.email,
-                password: hashedPassword,
-                phoneNumber: userData.phoneNumber,
-            });
-
-        } else {
-            // Handle patient registration
-            const latestPatient = await Patient.findOne().sort({ patient_id: -1 });
-            const newPatientId = latestPatient ? latestPatient.patient_id + 1 : 1;
-
-            const hashedPassword = await bcrypt.hash(userData.password, 10);
-            newUser = new Patient({
-                patient_id: newPatientId,
-                name: userData.name,
-                email: userData.email,
-                password: hashedPassword,
-                phoneNumber: userData.phoneNumber,
-            });
+        // Hash the password properly
+        const saltRounds = 10;
+        let hashedPassword;
+        
+        try {
+            // Generate salt and hash password
+            const salt = await bcrypt.genSalt(saltRounds);
+            hashedPassword = await bcrypt.hash(plainPassword, salt);
+            
+            if (!hashedPassword) {
+                throw new Error('Password hashing failed');
+            }
+        } catch (hashError) {
+            console.error('Password hashing error:', hashError);
+            throw new Error('Failed to secure password');
         }
 
-        // Save the new user to the database
+        // Create new patient
+        const newUser = new Patient({
+            patient_id: newPatientId,
+            name: userData.name,
+            email: userData.email,
+            password: hashedPassword, // Store the hashed password
+            phoneNumber: userData.phoneNumber || '',
+            role: 'patient'
+        });
+
+        // Save user and send email
         await newUser.save();
-        return newUser;  // Return the newly created user
+        await sendWelcomeEmail(userData.email, plainPassword); // Send the plain password
+
+        return {
+            success: true,
+            message: 'Registration successful! Please check your email for login credentials.',
+            user: {
+                id: newUser.patient_id,
+                name: newUser.name,
+                email: newUser.email
+            }
+        };
+
     } catch (error) {
-        throw new Error(error.message);
+        console.error('Registration error:', error);
+        throw new Error(error.message || 'Registration failed');
     }
 }
 
 async function registerWithGoogle(payload) {
     try {
+        console.log('Starting Google registration with payload:', payload);
+
         const { email, name, sub: googleId, picture } = payload;
         
-        // Check if user exists in any role
+        // Check if user exists
         const existingAdmin = await Admin.findOne({ email });
         const existingDentist = await Dentist.findOne({ email });
         const existingPatient = await Patient.findOne({ email });
 
         if (existingAdmin || existingDentist || existingPatient) {
-            // If user exists and is a Google user, just return the user
+            // If user exists and is a Google user, return the user
             if (existingPatient && existingPatient.isGoogleUser) {
                 const token = jwt.sign(
                     { id: existingPatient._id, role: 'patient' },
@@ -134,7 +130,7 @@ async function registerWithGoogle(payload) {
                 return {
                     token,
                     user: {
-                        id: existingPatient._id,
+                        id: existingPatient.patient_id,
                         email: existingPatient.email,
                         name: existingPatient.name,
                         role: 'patient',
@@ -146,23 +142,30 @@ async function registerWithGoogle(payload) {
             throw new Error('A user with this email already exists.');
         }
 
-        // Create new patient account
+        // Get new patient ID
         const latestPatient = await Patient.findOne().sort({ patient_id: -1 });
-        const newPatientId = latestPatient ? parseInt(latestPatient.patient_id) + 1 : 1;
+        const newPatientId = latestPatient ? latestPatient.patient_id + 1 : 1;
 
+        // Create random password for Google users
+        const randomPassword = Math.random().toString(36).slice(-8);
+        const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+        // Create new patient
         const newPatient = new Patient({
             patient_id: newPatientId,
             name: name,
             email: email,
+            password: hashedPassword,
             googleId: googleId,
             profilePicture: picture,
             isGoogleUser: true,
-            phoneNumber: '', // This can be updated later
+            phoneNumber: '',
             role: 'patient'
         });
-        await newPatient.save();
 
-        // Generate JWT token
+        await newPatient.save();
+        console.log('New Google patient saved:', newPatient);
+
         const token = jwt.sign(
             { id: newPatient._id, role: 'patient' },
             process.env.JWT_SECRET_KEY,
@@ -172,7 +175,7 @@ async function registerWithGoogle(payload) {
         return {
             token,
             user: {
-                id: newPatient._id,
+                id: newPatient.patient_id,
                 email: newPatient.email,
                 name: newPatient.name,
                 role: 'patient',
@@ -182,7 +185,7 @@ async function registerWithGoogle(payload) {
         };
     } catch (error) {
         console.error('Google registration error:', error);
-        throw new Error(error.message);
+        throw new Error(error.message || 'Failed to register with Google');
     }
 }
 

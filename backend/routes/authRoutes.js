@@ -12,18 +12,56 @@ const client = new OAuth2Client({
     redirectUri: 'http://localhost:5173' // or your frontend URL
   });
 
-router.post('/register', async (req, res) => {
+  router.post('/register', async (req, res) => {
     try {
-        const result = await registerUser(req.body);
+        console.log('Raw request body:', req.body);
+        
+        // Validate request body
+        if (!req.body || typeof req.body !== 'object') {
+            return res.status(400).json({
+                error: 'Invalid request body'
+            });
+        }
+
+        const { name, email, phoneNumber } = req.body;
+
+        // Log validated data
+        console.log('Validated data:', { name, email, phoneNumber });
+
+        // Validate required fields
+        if (!name || !email) {
+            return res.status(400).json({
+                error: 'Name and email are required fields'
+            });
+        }
+
+        // Validate email format
+        if (!email.endsWith('@student.buksu.edu.ph') && !email.endsWith('@buksu.edu.ph')) {
+            return res.status(400).json({
+                error: 'Please use your BukSU institutional email'
+            });
+        }
+
+        const result = await registerUser({
+            name,
+            email,
+            phoneNumber: phoneNumber || ''
+        });
+
+        console.log('Registration result:', result);
         res.status(200).json(result);
     } catch (error) {
-        console.error("Error during registration:", error.message);
-        res.status(400).json({ error: error.message });
+        console.error("Error during registration:", error);
+        res.status(400).json({ 
+            error: error.message || 'Registration failed',
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 
 router.post('/google-signup', async (req, res) => {
   try {
+      console.log('Received Google signup request:', req.body);
       const { access_token } = req.body;
       
       // Get user info from Google
@@ -32,26 +70,21 @@ router.post('/google-signup', async (req, res) => {
       });
       
       const payload = await response.json();
-      console.log('Payload:', payload);
+      console.log('Google payload:', payload);
 
       // Verify email domain
-      const emailDomain = payload.email.split('@')[1];
-      if (!emailDomain.endsWith('buksu.edu.ph')) {
+      if (!payload.email.endsWith('@student.buksu.edu.ph') && !payload.email.endsWith('@buksu.edu.ph')) {
           return res.status(400).json({ 
-              error: 'Please use your BukSU institutional email' 
+              error: 'Please use your BukSU institutional email (@student.buksu.edu.ph or @buksu.edu.ph)' 
           });
       }
 
-      // Use the authService to handle registration
+      // Register with Google
       const result = await registerWithGoogle(payload);
       
-      res.status(200).json({ 
-          message: 'Signup successful',
-          ...result
-      });
-
+      res.status(200).json(result);
   } catch (error) {
-      console.error('Google signup error:', error);
+      console.error('Google signup route error:', error);
       res.status(400).json({ 
           error: error.message || 'Failed to process signup' 
       });

@@ -55,10 +55,10 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/user-sidebar" element={<UserSideBar />} />
         </Route>
-       
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
         {/* Protected Routes for Admins */}
           <Route element={<ProtectedRoutes accountType="admin" />}>
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            
             <Route path="/admin-calendar" element={<Calendar />} />
             <Route path="/admin-inventory" element={<Inventory />} />
             <Route path="/admin-profile" element={<Admin_profile />} />

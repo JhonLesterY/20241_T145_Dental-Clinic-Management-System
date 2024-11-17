@@ -52,29 +52,35 @@ const Login = () => {
         });
 
         const data = await response.json();
-        console.log('Server response:', data); // Debug log
+        console.log('Server response:', data);
 
         if (!response.ok) {
             throw new Error(data.message || 'Login failed');
         }
 
-        // Clear existing storage first
-        sessionStorage.clear();
-
-        // Store the new values using data.user.id
-        sessionStorage.setItem("token", data.token);
-        sessionStorage.setItem("role", data.user.role);
-        sessionStorage.setItem("patient_id", data.user.id); // Changed from patient_id to id
-
-        // Verify storage
-        const storedId = sessionStorage.getItem("patient_id");
-        console.log('Stored patient_id:', storedId);
-
-        if (data.user.role === 'patient' && storedId) {
+        // Check user role and redirect accordingly
+        if (data.user.role === 'admin') {
+            sessionStorage.setItem("token", data.token);
+            sessionStorage.setItem("role", "admin");
+            sessionStorage.setItem("admin_id", data.user.id);
+            sessionStorage.setItem("name", data.user.name);
+            navigate('/admin-dashboard');
+        } else if (data.user.role === 'dentist') {
+            sessionStorage.setItem("token", data.token);
+            sessionStorage.setItem("role", "dentist");
+            sessionStorage.setItem("dentist_id", data.user.id);
+            sessionStorage.setItem("name", data.user.name);
+            navigate('/dentist-dashboard');
+        } else if (data.user.role === 'patient') {
+            sessionStorage.setItem("token", data.token);
+            sessionStorage.setItem("role", "patient");
+            sessionStorage.setItem("patient_id", data.user.id);
+            sessionStorage.setItem("name", data.user.name);
             navigate('/dashboard');
         } else {
-            setError('Invalid role type or missing patient ID');
+            throw new Error('Invalid user role');
         }
+
     } catch (error) {
         console.error('Login error:', error);
         setError(error.message || 'Failed to login');
@@ -82,6 +88,8 @@ const Login = () => {
         setIsVerified(false);
     }
 };
+
+
 // Google login handler
 // In your Google login handler
 const googleLogin = useGoogleLogin({
