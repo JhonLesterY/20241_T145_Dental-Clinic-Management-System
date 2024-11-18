@@ -5,6 +5,7 @@ const path = require('path');
 const patientService = require('../services/patientServices');
 const { authenticatePatient } = require('../middleware/authMiddleware');
 const { checkProfileCompletion } = require('../middleware/profileCheckMiddleware');
+const { sendWelcomeEmail, generatePassword } = require('../emailService');
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/profile-pictures')

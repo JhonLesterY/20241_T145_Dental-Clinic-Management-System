@@ -14,57 +14,41 @@
 
     const handleSubmit = async (e) => {
       e.preventDefault();
-      setError('');
-      setSuccess('');
       
-      const formData = {
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-          phoneNumber: ''
-      };
-      
-      console.log('Sending data:', formData); // Debug log
-      
-      if (!formData.name || !formData.email) {
-          setError('All fields are required');
-          return;
-      }
-      
-      if (!formData.email.endsWith('@student.buksu.edu.ph') && !formData.email.endsWith('@buksu.edu.ph')) {
-          setError('Please use your BukSU institutional email (@student.buksu.edu.ph or @buksu.edu.ph)');
-          return;
-      }
-  
       try {
+          const formData = {
+              name: name.trim(),
+              email: email.trim()
+          };
+  
+          // Debug log to see exactly what we're sending
+          console.log('Sending data:', JSON.stringify(formData, null, 2));
+  
           const response = await fetch('http://localhost:5000/auth/register', {
               method: 'POST',
               headers: {
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json'
+                  'Content-Type': 'application/json'
               },
-              body: JSON.stringify(formData)
+              body: JSON.stringify(formData)  // Send only name and email
           });
+  
+          if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Registration failed');
+          }
   
           const data = await response.json();
-          console.log('Full server response:', {
-              status: response.status,
-              data: data
-          });
+          setSuccess(data.message);
+          setName('');
+          setEmail('');
+          
+          setTimeout(() => navigate('/login'), 3000);
   
-          if (response.ok) {
-              setSuccess('Registration successful! Please check your email for login credentials.');
-              setTimeout(() => {
-                  navigate('/login');
-              }, 3000);
-          } else {
-              throw new Error(data.error || 'Registration failed');
-          }
       } catch (error) {
-          console.error('Signup error details:', error);
-          setError(error.message || 'An error occurred during signup');
+          console.error('Signup error:', error);
+          setError(error.message);
       }
   };
-
   
     const googleSignup = useGoogleLogin({
       onSuccess: async (response) => {
@@ -85,14 +69,17 @@
               
               // Send to your backend
               const res = await fetch('http://localhost:5000/auth/google-signup', {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                      access_token: response.access_token
-                  })
-              });
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: userInfo.name,
+                    email: userInfo.email,
+                    access_token: response.access_token,
+                    googleId: userInfo.sub  // Include Google's unique identifier
+                })
+            });
   
               const data = await res.json();
               
