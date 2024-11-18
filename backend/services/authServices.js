@@ -5,10 +5,11 @@ const axios = require('axios');
 const Patient = require('../models/Patient');
 const Admin = require('../models/Admin');
 const Dentist = require('../models/Dentist');
-const { sendWelcomeEmail, generatePassword } = require('./emailService');
+const { sendWelcomeEmail } = require('../emailService');
 
 const secretKey = process.env.JWT_SECRET_KEY;
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 
 const verifyRecaptcha = async (token) => {
     try {
@@ -51,59 +52,44 @@ const verifyRecaptcha = async (token) => {
 
 async function registerUser(userData) {
     try {
-        // Validate input
-        if (!userData.name || !userData.email) {
-            throw new Error('Name and email are required');
-        }
+        console.log('1. Starting registration with userData:', userData);
 
-        // Generate a secure password
-        const plainPassword = 'Pass' + Math.random().toString(36).slice(-8) + '!';
-        console.log('Generated password:', plainPassword); // For debugging
+        // Generate a temporary password
+        const temporaryPassword = Math.random().toString(36).slice(-8);
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(temporaryPassword, salt);
 
-        // Hash the password properly
-        const saltRounds = 10;
-        let hashedPassword;
-        
-        try {
-            // Generate salt and hash password
-            const salt = await bcrypt.genSalt(saltRounds);
-            hashedPassword = await bcrypt.hash(plainPassword, salt);
-            
-            if (!hashedPassword) {
-                throw new Error('Password hashing failed');
-            }
-        } catch (hashError) {
-            console.error('Password hashing error:', hashError);
-            throw new Error('Failed to secure password');
-        }
+        // Generate a unique patient_id
+        const lastPatient = await Patient.findOne().sort({ patient_id: -1 });
+        const newPatientId = lastPatient ? lastPatient.patient_id + 1 : 1;
 
-        // Create new patient
+        // Create new user with temporary password
         const newUser = new Patient({
             patient_id: newPatientId,
             name: userData.name,
             email: userData.email,
-            password: hashedPassword, // Store the hashed password
-            phoneNumber: userData.phoneNumber || '',
-            role: 'patient'
+            password: hashedPassword, // Add the hashed temporary password
+            isGoogleUser: false
         });
 
-        // Save user and send email
         await newUser.save();
-        await sendWelcomeEmail(userData.email, plainPassword); // Send the plain password
+        console.log('2. User saved successfully');
+
+        // Send welcome email with temporary password
+        await sendWelcomeEmail({
+            email: userData.email,
+            name: userData.name,
+            temporaryPassword: temporaryPassword // Send the unhashed temporary password
+        });
+        console.log('3. Welcome email sent');
 
         return {
             success: true,
-            message: 'Registration successful! Please check your email for login credentials.',
-            user: {
-                id: newUser.patient_id,
-                name: newUser.name,
-                email: newUser.email
-            }
+            message: 'Registration successful. Please check your email for login credentials.'
         };
-
     } catch (error) {
-        console.error('Registration error:', error);
-        throw new Error(error.message || 'Registration failed');
+        console.error('Service error:', error);
+        throw error;
     }
 }
 
@@ -146,16 +132,11 @@ async function registerWithGoogle(payload) {
         const latestPatient = await Patient.findOne().sort({ patient_id: -1 });
         const newPatientId = latestPatient ? latestPatient.patient_id + 1 : 1;
 
-        // Create random password for Google users
-        const randomPassword = Math.random().toString(36).slice(-8);
-        const hashedPassword = await bcrypt.hash(randomPassword, 10);
-
         // Create new patient
         const newPatient = new Patient({
             patient_id: newPatientId,
             name: name,
             email: email,
-            password: hashedPassword,
             googleId: googleId,
             profilePicture: picture,
             isGoogleUser: true,

@@ -1,75 +1,98 @@
 const nodemailer = require('nodemailer');
-const { oauth2Client } = require('../config/googleAuth');
+const { google } = require('googleapis');
 
 const createTransporter = async () => {
-  const accessToken = await new Promise((resolve, reject) => {
-    oauth2Client.getAccessToken((err, token) => {
-      if (err) reject(err);
-      resolve(token);
-    });
-  });
-
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      type: 'OAuth2',
-      user: process.env.EMAIL_FROM,
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-      accessToken
-    }
-  });
-};
-
-const generatePassword = () => {
     try {
-        const length = 12;
-        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-        let password = "";
+        console.log('Creating transporter...');
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true, // use SSL
+            auth: {
+                user: process.env.EMAIL_FROM,
+                pass: process.env.EMAIL_APP_PASSWORD // Add this to your .env
+            }
+        });
+
+        console.log('Verifying transporter...');
+        await transporter.verify();
+        console.log('Transporter verified successfully');
         
-        for (let i = 0; i < length; i++) {
-            const randomIndex = Math.floor(Math.random() * charset.length);
-            password += charset[randomIndex];
-        }
-        
-        console.log('Generated password in function:', password); // Debug log
-        return password;
+        return transporter;
     } catch (error) {
-        console.error('Error generating password:', error);
+        console.error('Error creating transporter:', error);
         throw error;
     }
 };
 
-const sendWelcomeEmail = async (email, password) => {
-  try {
-    const transporter = await createTransporter();
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to: email,
-      subject: 'Welcome to BukSU Dental Clinic',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #2c3e50;">Welcome to BukSU Dental Clinic</h1>
-          <p>Your account has been created successfully.</p>
-          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <h2 style="color: #2c3e50; margin-top: 0;">Your Login Credentials</h2>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Password:</strong> ${password}</p>
-          </div>
-          <p style="color: #e74c3c;"><strong>Important:</strong> Please change your password after your first login.</p>
-          <p>If you didn't create this account, please contact our support team.</p>
-        </div>
-      `
-    });
-  } catch (error) {
-    console.error('Error sending email:', error);
-    throw error;
-  }
+// Update sendPasswordResetEmail with better error handling
+const sendPasswordResetEmail = async ({ email, name, resetLink }) => {
+    try {
+        console.log('Starting password reset email process...');
+        const transporter = await createTransporter();
+        console.log('Transporter created successfully');
+
+        const mailOptions = {
+            from: {
+                name: 'UniCare Dental',
+                address: process.env.EMAIL_FROM
+            },
+            to: email,
+            subject: 'Password Reset Request - UniCare Dental',
+            html: `
+                <h1>Hello ${name},</h1>
+                <p>You requested to reset your password.</p>
+                <p>Please click the link below to reset your password:</p>
+                <a href="${resetLink}">Reset Password</a>
+                <p>This link will expire in 1 hour.</p>
+                <p>If you didn't request this, please ignore this email.</p>
+                <p>Best regards,<br>UniCare Dental Team</p>
+            `
+        };
+
+        console.log('Attempting to send email...');
+        const result = await transporter.sendMail(mailOptions);
+        console.log('Reset email sent successfully:', result.messageId);
+        return result;
+    } catch (error) {
+        console.error('Error in sendPasswordResetEmail:', error);
+        throw new Error(`Failed to send password reset email: ${error.message}`);
+    }
+};
+
+const sendWelcomeEmail = async ({ email, name, temporaryPassword }) => {
+    try {
+        const transporter = await createTransporter();
+        
+        const mailOptions = {
+            from: {
+                name: 'UniCare Dental',
+                address: process.env.EMAIL_FROM
+            },
+            to: email,
+            subject: 'Welcome to UniCare Dental',
+            html: `
+                <h1>Welcome to UniCare Dental!</h1>
+                <p>Hello ${name},</p>
+                <p>Your account has been successfully created.</p>
+                <p>Here are your temporary login credentials:</p>
+                <p>Email: ${email}</p>
+                <p>Temporary Password: ${temporaryPassword}</p>
+                <p><strong>Important:</strong> Please change your password after your first login for security purposes.</p>
+                <br>
+                <p>Best regards,<br>UniCare Dental Team</p>
+            `
+        };
+
+        const result = await transporter.sendMail(mailOptions);
+        return result;
+    } catch (error) {
+        console.error('Error sending welcome email:', error);
+        throw error;
+    }
 };
 
 module.exports = {
-  sendWelcomeEmail,
-  generatePassword,
-  createTransporter
+    sendWelcomeEmail,
+    sendPasswordResetEmail
 };

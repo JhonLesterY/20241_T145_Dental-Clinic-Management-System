@@ -13,36 +13,32 @@ const ForgotPassword = () => {
     setError('');
 
     try {
-      console.log('Attempting password reset for email:', email);
-      
-      const response = await fetch('/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
+        console.log('Sending request to:', 'http://localhost:5000/auth/forgot-password');
+        console.log('Request payload:', { email });
+        
+        const response = await fetch('http://localhost:5000/auth/forgot-password', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email })
+        });
 
-      const data = await response.json();
-      console.log('Server response:', data);
-
-      if (response.ok) {
-        console.log('Password reset email sent successfully');
-        setMessage('A password reset link has been sent to your email.');
-      } else {
-        console.error('Server error:', data.error || 'Unknown error');
-        setError(data.error || 'Email not found. Please try again.');
-      }
+        const data = await response.json();
+        console.log('Server response:', data);
+        
+        if (response.ok) {
+            setMessage(data.message || 'Password reset email sent successfully');
+            setEmail('');
+        } else {
+            setError(data.error || data.details || 'Failed to send reset email');
+            console.error('Server error details:', data);
+        }
     } catch (error) {
-      console.error('Password reset error:', error);
-      if (error instanceof TypeError) {
-        console.error('Network error:', error.message);
-        setError('Network error. Please check your connection.');
-      } else {
-        console.error('Unexpected error:', error.message);
-        setError('An unexpected error occurred. Please try again later.');
-      }
+        console.error('Password reset error:', error);
+        setError('An error occurred while processing your request. Please try again.');
     }
-  };
-
+};
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-100">
       {/* Main Content */}

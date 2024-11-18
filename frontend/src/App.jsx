@@ -3,7 +3,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import About_us from "./pages/About_us";
 import Landing_Page from "./pages/DentalClinicLanding";
 import Login from "./pages/PatientLogin";
-import SignUp from "./pages/PatientSIgnup";
+import SignUp from "./pages/PatientSignup";
 import User_Dashboard from "./pages/User_Dashboard";
 import User_Appointment from "./pages/User_Appointment";
 import Feedback from "./pages/Feedback";
@@ -30,6 +30,7 @@ import Dentist_ViewFeedback from "./pages/Dentist_ViewFeedback";
 import UserSideBar from "./components/UserSideBar";
 import AdminSideBar from "./components/AdminSideBar";
 import Admin_UserManagement from "./pages/Admin_UserManagement";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
@@ -43,6 +44,7 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/about-us" element={<About_us />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         
          {/* Protected Routes for Users */}
          <Route element={<ProtectedRoutes accountType="patient" />}>
