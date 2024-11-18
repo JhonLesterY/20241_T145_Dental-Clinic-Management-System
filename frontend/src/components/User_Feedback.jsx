@@ -82,7 +82,7 @@ const User_Feedback = () => {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 placeholder="Enter your email"
                 required
               />
@@ -96,7 +96,7 @@ const User_Feedback = () => {
                 id="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none bg-white text-gray-900"
                 placeholder="Your feedback"
                 required
               ></textarea>
