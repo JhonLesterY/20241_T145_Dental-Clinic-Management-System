@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import magnify from "/src/images/magnifying-glass.png";
+import UserSideBar from "../components/UserSideBar";
+import userIcon from "/src/images/user.png";
 
 const TIME_SLOTS = [
   { time: "8:00 - 10:00 AM", id: 1 },
@@ -20,6 +22,7 @@ const User_Appointment = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     checkProfileCompletion();
@@ -132,14 +135,14 @@ const User_Appointment = () => {
   }
       
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="hidden lg:block w-1/4 bg-gray-50 text-gray-700">
-        <Dashboard />
-      </div>
+    <div className="flex h-screen bg-gray-100">
+      {/* UserSideBar */}
+      <UserSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
-      {/* Main Content */}
-      <div className="flex-1">
+      {/* Main Content - Add transition and conditional margin */}
+      <div className={`flex-1 transition-all duration-300 ease-in-out ${
+        sidebarOpen ? 'ml-64' : 'ml-20'
+      }`}>
         {/* Header */}
         <header className="w-full shadow-lg bg-gray-50">
           <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
@@ -160,18 +163,20 @@ const User_Appointment = () => {
               <input
                 type="text"
                 placeholder="Search"
-                className="ml-2 p-1 outline-none w-full"
+                className="ml-2 p-1 outline-none w-full bg-white"
                 aria-label="Search for appointments"
               />
             </div>
 
             {/* Notification Bell */}
-            <button
-              className="bg-gray-100 p-3 rounded-full hover:bg-gray-200 focus:outline-none"
-              aria-label="Notifications"
-            >
-              <img className="w-6" src={bell} alt="Notifications" />
-            </button>
+            <div className="flex items-center space-x-4">
+              <button className="p-2 rounded-full hover:bg-gray-100 transition">
+                <img className="w-6 h-6" src={bell} alt="Notifications" />
+              </button>
+              <Link to="/profile" className="p-2 rounded-full hover:bg-gray-100 transition">
+                <img className="w-6 h-6" src={userIcon} alt="Profile" />
+              </Link>
+            </div>
           </div>
         </header>
 
