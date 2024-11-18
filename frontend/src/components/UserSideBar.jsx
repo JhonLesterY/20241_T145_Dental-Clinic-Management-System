@@ -49,12 +49,12 @@ export default function Sidebar({ open, setOpen }) {
 
   return (
     <nav
-      className={`fixed top-0 left-0 shadow-lg h-screen flex flex-col transition-all duration-500 bg-[#003367] text-white ${
+      className={`fixed top-0 left-0 shadow-lg h-screen flex flex-col transition-all duration-500 bg-[#1e2a4a] text-white ${
         open ? "w-64" : "w-16"
       }`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#0055A4]">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#1e2a4a]">
         <img
           src={Logo}
           alt="Logo"
@@ -75,7 +75,7 @@ export default function Sidebar({ open, setOpen }) {
           <li
             key={index}
             onClick={() => navigate(item.path)}
-            className="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#0055A4] transition duration-300 cursor-pointer group"
+            className="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#2a3a63] transition duration-300 cursor-pointer group"
           >
             <div>{item.icons}</div>
             <p
@@ -98,7 +98,7 @@ export default function Sidebar({ open, setOpen }) {
       </ul>
 
       {/* Footer */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-[#0055A4]">
+      <div className="flex items-center gap-3 px-4 py-3 bg-[#1e2a4a]">
         <FaUserCircle size={30} />
         <div
           className={`text-sm transition-all duration-500 ${
