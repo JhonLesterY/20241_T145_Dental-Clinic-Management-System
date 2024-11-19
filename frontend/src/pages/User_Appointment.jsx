@@ -22,7 +22,7 @@ const User_Appointment = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     checkProfileCompletion();
@@ -31,6 +31,10 @@ const User_Appointment = () => {
   useEffect(() => {
     fetchAvailableSlots(currentDate);
   }, [currentDate]);
+
+  useEffect(() => {
+    setSidebarOpen(true);
+  }, []);
 
   const checkProfileCompletion = async () => {
     try {
@@ -80,28 +84,18 @@ const User_Appointment = () => {
 
   const fetchAvailableSlots = async (date) => {
     try {
-      const token = sessionStorage.getItem('token');
-      const formattedDate = date.toISOString().split('T')[0];
+      const response = await fetch(`/appointments/available?date=${date}`);
       
-      const response = await fetch(`http://localhost:5000/appointments/available-slots?date=${formattedDate}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
       if (!response.ok) {
-        throw new Error('Failed to fetch available slots');
+        throw new Error(`Failed to fetch slots: ${response.statusText}`);
       }
 
       const data = await response.json();
-      const slotsWithAvailability = TIME_SLOTS.map(slot => ({
-        ...slot,
-        available: data.availableSlots?.includes(slot.id) ?? true
-      }));
-      setAvailableSlots(slotsWithAvailability);
+      return data;
     } catch (error) {
-      console.error('Error fetching available slots:', error);
-      setAvailableSlots(TIME_SLOTS.map(slot => ({ ...slot, available: false })));
+      console.error('Error fetching slots:', error);
+      toast.error('Failed to fetch available slots');
+      return [];
     }
   };
 
