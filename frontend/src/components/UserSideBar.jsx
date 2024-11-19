@@ -5,28 +5,33 @@ import { useNavigate } from "react-router-dom";
 
 // Icons
 import { MdMenuOpen } from "react-icons/md";
-import { IoHomeOutline } from "react-icons/io5";
-import { FaProductHunt } from "react-icons/fa";
+import { MdDashboard } from "react-icons/md";
+import { BsCalendarCheck } from "react-icons/bs";
+import { MdFeedback } from "react-icons/md";
+import { MdUploadFile } from "react-icons/md";
+import { FaUsers } from "react-icons/fa";
+import { MdLogout } from "react-icons/md";
+import { TbReportAnalytics } from "react-icons/tb";
 import { FaUserCircle } from "react-icons/fa";
-import { TbReportSearch } from "react-icons/tb";
-import { IoLogoBuffer } from "react-icons/io";
-import { CiSettings } from "react-icons/ci";
-import { MdOutlineDashboard } from "react-icons/md";
 
 // Menu Items
 const menuItems = [
-  { icons: <IoHomeOutline size={24} />, label: "Dashboard", path: "/dashboard" },
-  { icons: <FaProductHunt size={24} />, label: "Appointment", path: "/appointment" },
-  { icons: <MdOutlineDashboard size={24} />, label: "Feedback", path: "/feedback" },
-  { icons: <CiSettings size={24} />, label: "Upload Requirements", path: "/upload-requirements" },
-  { icons: <CiSettings size={24} />, label: "User Management", path: "/user-management" },
-  { icons: <IoLogoBuffer size={24} />, label: "Log Out", path: "/login" },
-  { icons: <TbReportSearch size={24} />, label: "Reports", path: "/reports" },
+  { icons: <MdDashboard size={24} />, label: "Dashboard", path: "/dashboard" },
+  { icons: <BsCalendarCheck size={24} />, label: "Appointment", path: "/appointment" },
+  { icons: <MdFeedback size={24} />, label: "Feedback", path: "/feedback" },
+  { icons: <MdUploadFile size={24} />, label: "Upload Requirements", path: "/upload-requirements" },
+  { icons: <FaUsers size={24} />, label: "User Management", path: "/user-management" },
+  { icons: <TbReportAnalytics size={24} />, label: "Reports", path: "/reports" },
 ];
 
 export default function Sidebar({ open, setOpen }) {
   const [adminData, setAdminData] = useState({ email: "Loading..." });
   const navigate = useNavigate();
+
+  // Add this effect to open the sidebar on mount
+  useEffect(() => {
+    setOpen(true);
+  }, []);
 
   // Fetch admin details from the backend
   useEffect(() => {
@@ -98,15 +103,17 @@ export default function Sidebar({ open, setOpen }) {
       </ul>
 
       {/* Footer */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-[#1e2a4a]">
-        <FaUserCircle size={30} />
+      <div 
+        className="flex items-center gap-3 px-4 py-3 bg-[#1e2a4a] cursor-pointer hover:bg-[#2a3a63] transition duration-300"
+        onClick={() => navigate("/login")}
+      >
+        <MdLogout size={30} />
         <div
           className={`text-sm transition-all duration-500 ${
             !open && "opacity-0 translate-x-10"
           }`}
         >
-          <p className="font-semibold">{adminData.email || "N/A"}</p>
-          <p className="text-gray-300 text-xs">User</p>
+          <p className="font-semibold">{adminData.email || "Sign Out"}</p>
         </div>
       </div>
     </nav>
