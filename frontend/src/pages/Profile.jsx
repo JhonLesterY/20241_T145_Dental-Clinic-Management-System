@@ -21,6 +21,12 @@ const Profile = () => {
   const [profilePicture, setProfilePicture] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(User_Profile);
   const fileInputRef = useRef(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
   useEffect(() => {
     fetchUserProfile();
@@ -157,6 +163,50 @@ const Profile = () => {
     }
 };
 
+const handlePasswordChange = async (e) => {
+  e.preventDefault();
+  
+  if (passwordData.newPassword !== passwordData.confirmPassword) {
+    alert("New passwords don't match!");
+    return;
+  }
+
+  try {
+    const patientId = sessionStorage.getItem('patient_id');
+    const token = sessionStorage.getItem('token');
+
+    console.log('Sending password change request:', {
+      patientId,
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword
+    });
+
+    const response = await fetch(`http://localhost:5000/patients/${patientId}/change-password`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to change password');
+    }
+
+    const data = await response.json();
+    alert('Password changed successfully!');
+    setShowPasswordModal(false);
+    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  } catch (err) {
+    alert(err.message);
+    console.error('Error changing password:', err);
+  }
+};
   if (isLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
@@ -303,23 +353,89 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="flex gap-4 mt-6">
-              <button
-                type="submit"
-                className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-              >
-                {userData.isProfileComplete ? 'Update Profile' : 'Complete Profile'}
-              </button>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex-1 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-              >
-                Logout
-              </button>
-            </div>
-          </form>
+        <div className="flex gap-4 mt-6">
+          <button
+            type="submit"
+            className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            {userData.isProfileComplete ? 'Update Profile' : 'Complete Profile'}
+          </button>
+          {!userData.isGoogleUser && (
+            <button
+              type="button"
+              onClick={() => setShowPasswordModal(true)}
+              className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            >
+              Change Password
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex-1 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+          >
+            Logout
+          </button>
         </div>
+         </form>
+        </div>
+       
+
+        {/* Add this modal at the end of your return statement, before the closing div */}
+        {showPasswordModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-lg w-96">
+              <h2 className="text-xl font-bold mb-4">Change Password</h2>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div>
+                  <label className="block text-gray-600">Current Password</label>
+                  <input
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                    className="w-full px-4 py-2 border rounded bg-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-600">New Password</label>
+                  <input
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                    className="w-full px-4 py-2 border rounded bg-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-600">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                    className="w-full px-4 py-2 border rounded bg-white "
+                    required
+                  />
+                </div>
+                <div className="flex gap-4">
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Change Password
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordModal(false)}
+                    className="flex-1 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

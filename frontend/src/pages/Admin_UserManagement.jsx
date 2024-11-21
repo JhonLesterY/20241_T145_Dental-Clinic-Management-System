@@ -47,21 +47,32 @@ const AdminDashboard = () => {
     try {
       const response = await fetch('http://localhost:5000/admin/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json',
+        headers: { 
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(newAdminData),
+        body: JSON.stringify({
+          fullname: newAdminData.fullname,
+          email: newAdminData.email
+        }),
       });
+
       if (response.ok) {
-        alert('Admin added successfully');
+        alert('Admin added successfully. Login credentials have been sent to their email.');
         toggleModal();
+        // Reset form
+        setNewAdminData({ fullname: '', email: '', password: '' });
+        // Refresh admin list
+        fetchAdmins();
       } else {
-        console.error('Failed to add admin');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to add admin');
       }
     } catch (error) {
       console.error('Error adding admin:', error);
+      alert(error.message);
     }
-  };
+};
  
   const handleLogout = () => {
     sessionStorage.removeItem('token');
@@ -322,47 +333,70 @@ useEffect(() => {
         </div>
 
         <nav className="flex-1">
-          <ul className="space-y-4">
-            {['Dashboard', 'View Appointment', 'Calendar'].map((item, index) => (
-              <li key={index}>
-                <Link
-                  to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
-                  className="flex items-center text-white text-lg transition duration-200 rounded p-2 hover:bg-blue-600"
-                >
-                  <FontAwesomeIcon icon={[faThLarge, faFileAlt, faCalendarAlt][index]} className="mr-3" />
-                  {item}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <ul className="space-y-4 mt-8">
-            {['Inventory', 'View Feedback', 'Settings', 'User Management'].map((item, index) => (
-              <li key={index}>
-                <Link
-                  to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
-                  className="flex items-center text-white text-lg transition duration-200 rounded p-2 hover:bg-blue-600"
-                >
-                  <FontAwesomeIcon icon={[faClipboardList, faComments, faCog, faUsers][index]} className="mr-3" />
-                  {item}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+              {/* First group of navigation items */}
+              <ul className="space-y-4">
+                {['Dashboard', 'View Appointment', 'Calendar'].map((item, index) => (
+                  <li key={index}>
+                    <Link
+                      to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
+                      className="flex items-center text-white text-lg transition duration-200 rounded p-2 hover:bg-blue-600"
+                    >
+                      <FontAwesomeIcon icon={[faThLarge, faFileAlt, faCalendarAlt][index]} className="mr-3" />
+                      {item}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
 
-        {/* Add Admin and Logout Button */}
-        <button onClick={toggleModal} className="mt-4 mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-          Add Admin
-        </button>
-        <button
-          onClick={() => setShowDentistModal(true)}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-          Add Dentist
-        </button>
-        
-        <button onClick={handleLogout} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-          Logout
-        </button>
+              {/* Second group of navigation items */}
+              <ul className="space-y-4 mt-8">
+                {['Inventory', 'View Feedback', 'Settings'].map((item, index) => (
+                  <li key={index}>
+                    <Link
+                      to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
+                      className="flex items-center text-white text-lg transition duration-200 rounded p-2 hover:bg-blue-600"
+                    >
+                      <FontAwesomeIcon icon={[faClipboardList, faComments, faCog][index]} className="mr-3" />
+                      {item}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              {/* User Management link - separate from other groups */}
+              <ul className="space-y-4 mt-8">
+                <li>
+                  <Link
+                    to="/admin-userManagement"
+                    className="flex items-center text-white text-lg transition duration-200 rounded p-2 hover:bg-blue-600"
+                  >
+                    <FontAwesomeIcon icon={faUsers} className="mr-3" />
+                    User Management
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+
+            {/* Add Admin and Logout Buttons */}
+            <button 
+              onClick={toggleModal} 
+              className="mt-4 mb-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Add Admin
+            </button>
+            <button
+              onClick={() => setShowDentistModal(true)}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Add Dentist
+            </button>
+            <button 
+              onClick={handleLogout} 
+              className="mt-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Logout
+            </button>
+
       </div>
 
       {/* Main Content */}
@@ -588,44 +622,35 @@ useEffect(() => {
 </div>
 
         {/* Add Admin Modal */}
-        {isModalOpen && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white p-6 rounded shadow-lg w-96">
-              <h2 className="text-2xl font-bold mb-4 text-black">Add New Admin</h2>
-              <form onSubmit={handleSubmit}>
-                <input
-                  type="text"
-                  name="fullname"
-                  placeholder="Full Name"
-                  onChange={handleInputChange}
-                  value={newAdminData.fullname}
-                  required
-                  className="w-full p-2 mb-2 border border-gray-300 rounded bg-white"
-                />
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  onChange={handleInputChange}
-                  value={newAdminData.email}
-                  required
-                  className="w-full p-2 mb-2 border border-gray-300 rounded bg-white"
-                />
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                  onChange={handleInputChange}
-                  value={newAdminData.password}
-                  required
-                  className="w-full p-2 mb-2 border border-gray-300 rounded bg-white"
-                />
-                <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded mt-4">Add Admin</button>
-                <button type="button" onClick={toggleModal} className="ml-2 bg-gray-300 py-2 px-4 rounded mt-4">Cancel</button>
-              </form>
-            </div>
-          </div>
-        )}
+       {isModalOpen && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-white p-6 rounded shadow-lg w-96">
+      <h2 className="text-2xl font-bold mb-4 text-black">Add New Admin</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          name="fullname"
+          placeholder="Full Name"
+          onChange={handleInputChange}
+          value={newAdminData.fullname}
+          required
+          className="w-full p-2 mb-2 border border-gray-300 rounded bg-white"
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          onChange={handleInputChange}
+          value={newAdminData.email}
+          required
+          className="w-full p-2 mb-2 border border-gray-300 rounded bg-white"
+        />
+        <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded mt-4">Add Admin</button>
+        <button type="button" onClick={toggleModal} className="ml-2 bg-gray-300 py-2 px-4 rounded mt-4">Cancel</button>
+      </form>
+    </div>
+  </div>
+)}
          {/* Create Dentist Modal */}
     {showDentistModal && (
       <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">

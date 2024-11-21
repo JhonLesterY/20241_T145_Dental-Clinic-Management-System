@@ -5,6 +5,7 @@ const Appointment = require('../models/Appointment');
 const Inventory = require('../models/Inventory');
 const bcrypt = require('bcryptjs');
 const { logActivity } = require('../services/activitylogServices');
+const { sendWelcomeEmail } = require('../emailService'); 
 
 // Secret key for JWT
 const secretKey = process.env.JWT_SECRET_KEY; // Store securely in environment variables
@@ -13,12 +14,15 @@ async function createAdmin(req, res) {
     try {
         const existingAdmin = await Admin.findOne({ email: req.body.email });
         if (existingAdmin) {
-            return res.status(400).json({ message: 'Admin with this fullname already exists.' });
+            return res.status(400).json({ message: 'Admin with this email already exists.' });
         }
+
+        // Generate a random password
+        const generatedPassword = Math.random().toString(36).slice(-8);
+        const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
         const lastAdmin = await Admin.findOne().sort({ admin_id: -1 });
         const newAdminId = lastAdmin ? lastAdmin.admin_id + 1 : 1;
-        const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
         const newAdmin = new Admin({
             admin_id: newAdminId,
@@ -30,15 +34,26 @@ async function createAdmin(req, res) {
 
         await newAdmin.save();
 
+        // Send welcome email with generated password
+        await sendWelcomeEmail({
+            email: req.body.email,
+            name: req.body.fullname,
+            temporaryPassword: generatedPassword
+        });
+
         // Log activity
         await logActivity(req.user.id, req.user.role, 'createAdmin', { adminId: newAdmin._id });
 
-        res.status(201).json({ message: 'Admin created successfully', admin: newAdmin });
+        res.status(201).json({ 
+            message: 'Admin created successfully. Login credentials have been sent to their email.',
+            admin: { ...newAdmin.toObject(), password: undefined }
+        });
     } catch (error) {
         console.error('Failed to create admin:', error);
         res.status(500).json({ message: 'Failed to create admin: ' + error.message });
     }
 }
+
 const getAllAdmins = async (req, res) => {
     try {
         const admins = await Admin.find({}).select('-password');
@@ -477,6 +492,70 @@ async function getActivityLogs(req, res) {
     }
 };
 
+// Add these functions to your adminServices.js
+async function getAdminProfile(admin_id) {
+    try {
+      const admin = await Admin.findOne({ admin_id });
+      if (!admin) {
+        throw new Error('Admin not found');
+      }
+      return {
+        fullname: admin.fullname,
+        email: admin.email,
+        phoneNumber: admin.phoneNumber,
+        sex: admin.sex,
+        birthday: admin.birthday,
+        isProfileComplete: admin.isProfileComplete,
+        profilePicture: admin.profilePicture
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+
+  async function updateAdminProfile(admin_id, updateData) {
+    try {
+      const admin = await Admin.findOneAndUpdate(
+        { admin_id },
+        { 
+          ...updateData,
+          isProfileComplete: true 
+        },
+        { new: true }
+      );
+      if (!admin) {
+        throw new Error('Admin not found');
+      }
+      return admin;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+async function changeAdminPassword(adminId, currentPassword, newPassword) {
+    try {
+        console.log('Changing password for admin:', adminId); // Debug log
+        const admin = await Admin.findOne({ admin_id: adminId });
+        if (!admin) {
+            throw new Error('Admin not found');
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, admin.password);
+        if (!isMatch) {
+            throw new Error('Current password is incorrect');
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        admin.password = hashedPassword;
+        await admin.save();
+
+        return true;
+    } catch (error) {
+        console.error('Error in changeAdminPassword:', error);
+        throw error;
+    }
+}
 
 module.exports = {
     getAllPatients,
@@ -496,4 +575,7 @@ module.exports = {
     getAllDentists,
     getAllAdmins,
     deleteAdmin,
+    getAdminProfile,
+    updateAdminProfile,
+    changeAdminPassword,
 };

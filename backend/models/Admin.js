@@ -10,8 +10,7 @@ const adminSchema = new Schema({
     },
     fullname: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     email: {
         type: String,
@@ -21,6 +20,23 @@ const adminSchema = new Schema({
     password: {
         type: String,
         required: true
+    },
+    phoneNumber: {
+        type: String
+    },
+    sex: {
+        type: String,
+        enum: ['Male', 'Female']
+    },
+    birthday: {
+        type: Date
+    },
+    profilePicture: {
+        type: String
+    },
+    isProfileComplete: {
+        type: Boolean,
+        default: false
     },
     role: {
         type: String,

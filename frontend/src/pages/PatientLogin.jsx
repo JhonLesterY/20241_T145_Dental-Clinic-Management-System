@@ -62,7 +62,7 @@ const Login = () => {
         if (data.user.role === 'admin') {
             sessionStorage.setItem("token", data.token);
             sessionStorage.setItem("role", "admin");
-            sessionStorage.setItem("admin_id", data.user.id);
+            sessionStorage.setItem("admin_id", data.user.admin_id);
             sessionStorage.setItem("name", data.user.name);
             navigate('/admin-dashboard');
         } else if (data.user.role === 'dentist') {

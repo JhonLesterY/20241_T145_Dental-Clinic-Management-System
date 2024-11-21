@@ -131,6 +131,44 @@ async function updatePatientProfile(patient_id, updateData) {
     }
 }
 
+const bcrypt = require('bcrypt');
+
+async function changePassword(patient_id, currentPassword, newPassword) {
+    try {
+      console.log('Attempting to change password for patient:', patient_id); // Debug log
+      
+      // Find by MongoDB _id instead of patient_id
+      const patient = await Patient.findById(patient_id);
+      
+      if (!patient) {
+        console.log('Patient not found'); // Debug log
+        throw new Error('Patient not found');
+      }
+  
+     // If the patient has a local password, verify it
+     if (patient.hasLocalPassword) {
+        const isMatch = await bcrypt.compare(currentPassword, patient.password);
+        if (!isMatch) {
+            throw new Error('Current password is incorrect');
+        }
+    }
+  
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await Patient.findByIdAndUpdate(
+        patient_id,
+        { 
+            password: hashedPassword,
+            hasLocalPassword: true 
+        }
+    );
+      
+      return true;
+    } catch (error) {
+      console.error('Error in changePassword:', error); // Debug log
+      throw error;
+    }
+  }
+
 module.exports = {
     bookAppointment,
     getAppointments,
@@ -139,4 +177,5 @@ module.exports = {
     submitFeedback,
     getPatientProfile,
     updatePatientProfile,
+    changePassword,
 };

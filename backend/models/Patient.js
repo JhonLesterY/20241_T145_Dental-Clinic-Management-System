@@ -18,9 +18,7 @@ const patientSchema = new Schema({
     },
     password: {
         type: String,
-        required: function() {
-            return !this.isGoogleUser;
-        }
+        required: false
     },
     // Optional fields for profile completion
     firstName: String,
@@ -56,6 +54,10 @@ const patientSchema = new Schema({
     resetPasswordExpires: {
         type: Date,
         default: null
+    },
+    hasLocalPassword: {
+        type: Boolean,
+        default: false
     },
     createdAt: {
         type: Date,
