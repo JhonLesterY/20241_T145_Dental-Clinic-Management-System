@@ -14,7 +14,7 @@ const base64url = require('base64url');
 const client = new OAuth2Client({
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.JWT_SECRET_KEY,
-    redirectUri: 'http://localhost:5173' // or your frontend URL
+    redirectUri: 'http://localhost:5173' 
   });
 
   router.post('/register', async (req, res) => {

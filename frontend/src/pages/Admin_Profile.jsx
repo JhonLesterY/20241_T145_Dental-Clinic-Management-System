@@ -8,7 +8,7 @@ const AdminProfile = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
     fullname: "",
-    email: "",
+    email: sessionStorage.getItem('email') || "",
     phoneNumber: "",
     sex: "",
     birthday: "",
@@ -21,6 +21,9 @@ const AdminProfile = () => {
   const [previewUrl, setPreviewUrl] = useState(User_Profile);
   const fileInputRef = useRef(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [requiresPasswordChange, setRequiresPasswordChange] = useState(
+    sessionStorage.getItem('hasChangedPassword') !== 'true'
+  );
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -28,7 +31,11 @@ const AdminProfile = () => {
   });
 
   useEffect(() => {
-    fetchAdminProfile();
+    if (!sessionStorage.getItem('hasChangedPassword')) {
+      setShowPasswordModal(true);
+      setRequiresPasswordChange(true);
+    }
+    fetchAdminProfile();    
   }, []);
 
   const handleFileChange = (e) => {
@@ -56,70 +63,62 @@ const AdminProfile = () => {
 
 const fetchAdminProfile = async () => {
   try {
-      setIsLoading(true);
       const adminId = sessionStorage.getItem('admin_id');
       const token = sessionStorage.getItem('token');
-
-      console.log('Fetching profile for admin:', adminId); // Debug log
-
-      if (!token || !adminId) {
-          navigate('/login');
-          return;
+      
+      if (!adminId) {
+          throw new Error('Admin ID not found in session');
       }
 
-      const response = await fetch(`http://localhost:5000/admins/${adminId}/profile`, {
+      const response = await fetch(`http://localhost:5000/admin/${adminId}/profile`, {
           headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              'Authorization': `Bearer ${token}`
           }
       });
 
       if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to fetch profile');
+          throw new Error('Failed to fetch profile');
       }
-      
+
       const data = await response.json();
-      console.log('Profile data received:', data);
+      
+      // Format the date to YYYY-MM-DD for the input field
+      const formattedBirthday = data.birthday ? 
+          new Date(data.birthday).toISOString().split('T')[0] : '';
 
       setUserData({
-          fullname: data.fullname || "",
-          email: data.email || "",
-          phoneNumber: data.phoneNumber || "",
-          sex: data.sex || "",
-          birthday: data.birthday ? data.birthday.split('T')[0] : "",
-          isProfileComplete: data.isProfileComplete || false
+          ...data,
+          birthday: formattedBirthday
       });
 
-      if (data.profilePicture) {
-          setPreviewUrl(`http://localhost:5000${data.profilePicture}`);
-      }
-  } catch (err) {
-      console.error('Error fetching profile:', err);
-      setError(err.message);
-  } finally {
+      setIsLoading(false);
+  } catch (error) {
+      console.error('Error fetching profile:', error);
+      setError(error.message);
       setIsLoading(false);
   }
 };
-
 const handleSubmit = async (e) => {
   e.preventDefault();
+  
   try {
-      const formData = new FormData();
+      const adminId = sessionStorage.getItem('admin_id');
+      const token = sessionStorage.getItem('token');
       
-      Object.keys(userData).forEach(key => {
-          formData.append(key, userData[key]);
-      });
-
+      const formData = new FormData();
+      formData.append('fullname', userData.fullname);
+      formData.append('email', userData.email);
+      formData.append('phoneNumber', userData.phoneNumber);
+      formData.append('sex', userData.sex);
+      formData.append('birthday', userData.birthday);
+      
       if (profilePicture) {
           formData.append('profilePicture', profilePicture);
       }
 
-      const adminId = sessionStorage.getItem('admin_id');
-      const token = sessionStorage.getItem('token');
+      console.log('Submitting profile data:', Object.fromEntries(formData));
 
-      // Updated URL without /api/
-      const response = await fetch(`http://localhost:5000/admins/${adminId}/profile`, {
+      const response = await fetch(`http://localhost:5000/admin/${adminId}/profile`, {
           method: 'PUT',
           headers: {
               'Authorization': `Bearer ${token}`
@@ -133,60 +132,65 @@ const handleSubmit = async (e) => {
       }
 
       const data = await response.json();
-      alert('Profile updated successfully!');
-      fetchAdminProfile();
-  } catch (err) {
-      console.error('Error updating profile:', err);
-      alert(err.message);
+      setUserData(data);
+      
+      // Update session storage with profile completion status
+      sessionStorage.setItem('isProfileComplete', 'true');
+      
+      // Force reload sidebar state
+      window.dispatchEvent(new Event('profileUpdate'));
+      
+      alert('Profile updated successfully');
+      
+      // Reload the page or redirect to dashboard
+      window.location.href = '/admin-dashboard';
+  } catch (error) {
+      console.error('Error updating profile:', error);
+      alert(error.message);
   }
 };
-
-const handlePasswordChange = async (e) => {
-  e.preventDefault();
-  if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("New passwords don't match!");
-      return;
-  }
+// Update password change handler
+const handlePasswordChange = async (currentPassword, newPassword) => {
   try {
       const adminId = sessionStorage.getItem('admin_id');
       const token = sessionStorage.getItem('token');
-      
-      // Updated URL without /api/
-      const response = await fetch(`http://localhost:5000/admins/${adminId}/change-password`, {
-          method: 'POST',
+
+      const response = await fetch(`http://localhost:5000/admin/${adminId}/change-password`, {
+          method: 'PUT',
           headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-              currentPassword: passwordData.currentPassword,
-              newPassword: passwordData.newPassword
-          })
+          body: JSON.stringify({ currentPassword, newPassword })
       });
-
-      if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to change password');
-      }
 
       const data = await response.json();
-      alert('Password changed successfully!');
+
+      if (!response.ok) {
+          throw new Error(data.message || 'Failed to change password');
+      }
+
+      // Update session storage and state
+      sessionStorage.setItem('hasChangedPassword', 'true');
+      setHasChangedPassword(true);
       setShowPasswordModal(false);
-      setPasswordData({
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
-      });
-  } catch (err) {
-      console.error('Password change error:', err);
-      alert(err.message);
+      
+      alert('Password changed successfully');
+      
+      // Refresh the page to update all states
+      window.location.reload();
+  } catch (error) {
+      console.error('Error changing password:', error);
+      alert(error.message);
   }
 };
+    
 
 const handleLogout = () => {
   sessionStorage.removeItem('token');
   sessionStorage.removeItem('admin_id');
   sessionStorage.removeItem('role');
+  sessionStorage.clear();
   navigate('/login');
 };
 
@@ -317,9 +321,11 @@ const handleLogout = () => {
                 <select 
                   value={userData.sex}
                   onChange={(e) => setUserData({ ...userData, sex: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
+                  <option value="">Select Sex</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                 </select>
@@ -363,57 +369,71 @@ const handleLogout = () => {
           </form>
         </div>
          {/* Password Change Modal */}
-         {showPasswordModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div className="bg-white p-8 rounded-lg w-96">
-              <h2 className="text-xl text-gray-800 font-semibold mb-4">Change Password</h2>
-              <form onSubmit={handlePasswordChange} className="space-y-4">
-                <div>
-                  <label className="block text-gray-600">Current Password</label>
-                  <input
-                    type="password"
-                    value={passwordData.currentPassword}
-                    onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg bg-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-600">New Password</label>
-                  <input
-                    type="password"
-                    value={passwordData.newPassword}
-                    onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg bg-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-600">Confirm New Password</label>
-                  <input
-                    type="password"
-                    value={passwordData.confirmPassword}
-                    onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg bg-white"
-                    required
-                  />
-                </div>
-                <div className="flex gap-4">
-                  <button
-                    type="submit"
-                    className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Change Password
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswordModal(false)}
-                    className="flex-1 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+        {showPasswordModal && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="fixed inset-0 bg-black opacity-50"></div>
+            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20   
+             text-center sm:p-0">
+              <div className="relative bg-white rounded-lg p-8 max-w-md w-full mx-auto  
+               shadow-xl">
+                <h2 className="text-xl font-bold mb-4">
+                  {requiresPasswordChange ? 'Change Default Password' : 'Change Password'}
+                </h2>
+                <form onSubmit={handlePasswordChange} className="space-y-4">
+                  <div>
+                    <label className="block text-gray-600">Current Password</label>
+                    <input
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData({...passwordData, currentPassword:   
+                         e.target.value})}
+                      className="w-full px-4 py-2 border rounded bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-600">New Password</label>
+                    <input
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData({...passwordData, newPassword:   
+                         e.target.value})}
+                      className="w-full px-4 py-2 border rounded bg-white "
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-600">Confirm New Password</label>
+                    <input
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({...passwordData, confirmPassword:   
+                         e.target.value})}
+                      className="w-full px-4 py-2 border rounded bg-white "
+                      required
+                    />
+                  </div>
+                  <div className="flex gap-4 mt-6">
+                    <button
+                      type="submit"
+                      className="flex-1 py-2 bg-blue-600 text-white rounded hover:bg-blue-  
+                       700"
+                    >
+                      Change Password
+                    </button>
+                    {!requiresPasswordChange && (
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswordModal(false)}
+                        className="flex-1 py-2 bg-gray-300 text-gray-700 rounded hover:bg-  
+                         gray-400"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}

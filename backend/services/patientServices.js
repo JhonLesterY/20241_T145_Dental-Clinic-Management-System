@@ -1,6 +1,7 @@
 const Patient = require('../models/Patient');  // Patient model
 const Appointment = require('../models/Appointment');  // Appointment model
 const Feedback = require('../models/Feedback');  // Feedback model
+const bcrypt = require('bcrypt');
 
 
 // Book a new appointment for a patient
@@ -83,7 +84,10 @@ async function getPatientProfile(patient_id) {
             throw new Error('Patient not found');
         }
 
-        console.log('Found patient:', patient);
+        console.log('Found patient status:', {
+            hasChangedPassword: patient.hasChangedPassword,
+            hasLocalPassword: patient.hasLocalPassword
+        });
         
         return {
             firstName: patient.firstName || '',
@@ -95,8 +99,10 @@ async function getPatientProfile(patient_id) {
             sex: patient.sex || 'Male',
             birthday: patient.birthday || '',
             isProfileComplete: patient.isProfileComplete || false,
-            profilePicture: patient.profilePicture || '', // Add this line
-            isGoogleUser: patient.isGoogleUser || false  // Add this line
+            profilePicture: patient.profilePicture || '',
+            isGoogleUser: patient.isGoogleUser || false,
+            hasChangedPassword: patient.hasChangedPassword || false,
+            hasLocalPassword: patient.hasLocalPassword || false
         };
     } catch (error) {
         console.error('Error in getPatientProfile:', error);
@@ -131,43 +137,52 @@ async function updatePatientProfile(patient_id, updateData) {
     }
 }
 
-const bcrypt = require('bcrypt');
 
 async function changePassword(patient_id, currentPassword, newPassword) {
     try {
-      console.log('Attempting to change password for patient:', patient_id); // Debug log
-      
-      // Find by MongoDB _id instead of patient_id
-      const patient = await Patient.findById(patient_id);
-      
-      if (!patient) {
-        console.log('Patient not found'); // Debug log
-        throw new Error('Patient not found');
-      }
-  
-     // If the patient has a local password, verify it
-     if (patient.hasLocalPassword) {
-        const isMatch = await bcrypt.compare(currentPassword, patient.password);
-        if (!isMatch) {
-            throw new Error('Current password is incorrect');
+        console.log('Attempting to change password for patient:', patient_id);
+        
+        const patient = await Patient.findById(patient_id);
+        
+        if (!patient) {
+            console.log('Patient not found');
+            throw new Error('Patient not found');
         }
-    }
-  
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await Patient.findByIdAndUpdate(
-        patient_id,
-        { 
-            password: hashedPassword,
-            hasLocalPassword: true 
+
+        // If the patient has a local password, verify it
+        if (patient.hasLocalPassword) {
+            const isMatch = await bcrypt.compare(currentPassword, patient.password);
+            if (!isMatch) {
+                throw new Error('Current password is incorrect');
+            }
         }
-    );
-      
-      return true;
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        
+        // Update both password and flags
+        const updatedPatient = await Patient.findByIdAndUpdate(
+            patient_id,
+            { 
+                $set: {
+                    password: hashedPassword,
+                    hasLocalPassword: true,
+                    hasChangedPassword: true
+                }
+            },
+            { new: true }
+        );
+
+        console.log('Password update status:', {
+            hasChangedPassword: updatedPatient.hasChangedPassword,
+            hasLocalPassword: updatedPatient.hasLocalPassword
+        });
+        
+        return true;
     } catch (error) {
-      console.error('Error in changePassword:', error); // Debug log
-      throw error;
+        console.error('Error in changePassword:', error);
+        throw error;
     }
-  }
+}
 
 module.exports = {
     bookAppointment,

@@ -58,14 +58,20 @@ const Login = () => {
             throw new Error(data.message || 'Login failed');
         }
 
-        // Check user role and redirect accordingly
-        if (data.user.role === 'admin') {
-            sessionStorage.setItem("token", data.token);
-            sessionStorage.setItem("role", "admin");
-            sessionStorage.setItem("admin_id", data.user.admin_id);
-            sessionStorage.setItem("name", data.user.name);
-            navigate('/admin-dashboard');
-        } else if (data.user.role === 'dentist') {
+        if (data.user && data.user.role === 'admin') {
+          console.log('Storing admin data:', data.user); // Debug log
+          sessionStorage.setItem("admin_id", data.user._id); // Use _id from response
+          sessionStorage.setItem("token", data.token);
+          sessionStorage.setItem("role", "admin");
+          sessionStorage.setItem("email", data.user.email);
+          sessionStorage.setItem("name", data.user.fullname);
+          if (data.user.profilePicture) {
+              sessionStorage.setItem("profilePicture", data.user.profilePicture);
+          }
+          navigate("/admin-dashboard");
+      }
+        
+        else if (data.user.role === 'dentist') {
             sessionStorage.setItem("token", data.token);
             sessionStorage.setItem("role", "dentist");
             sessionStorage.setItem("dentist_id", data.user.id);

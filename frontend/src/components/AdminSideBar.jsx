@@ -19,36 +19,51 @@ export default function Sidebar({ toggleModal, setShowDentistModal, handleLogout
 
   useEffect(() => {
     checkProfileStatus();
-  }, []);
+    
+    // Listen for profile updates
+    const handleProfileUpdate = () => {
+        checkProfileStatus();
+    };
+    
+    window.addEventListener('profileUpdate', handleProfileUpdate);
+    
+    return () => {
+        window.removeEventListener('profileUpdate', handleProfileUpdate);
+    };
+}, []);
 
-  const checkProfileStatus = async () => {
-    try {
-        const adminId = sessionStorage.getItem('admin_id');
-        const token = sessionStorage.getItem('token');
-        
-        if (!adminId || !token) {
-            navigate('/login');
-            return;
-        }
+const checkProfileStatus = async () => {
+  try {
+      const adminId = sessionStorage.getItem('admin_id');
+      const token = sessionStorage.getItem('token');
+      const isComplete = sessionStorage.getItem('isProfileComplete');
+      
+      console.log('Checking profile status:', { adminId, token, isComplete });
+      
+      if (!adminId || !token) {
+          navigate('/login');
+          return;
+      }
 
-        // Updated URL without /api/
-        const response = await fetch(`http://localhost:5000/admins/${adminId}/profile`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch profile status');
-        }
+      const response = await fetch(`http://localhost:5000/admin/${adminId}/profile`, {
+          headers: {
+              'Authorization': `Bearer ${token}`
+          }
+      });
+      
+      if (!response.ok) {
+          throw new Error('Failed to fetch profile status');
+      }
 
-        const data = await response.json();
-        setIsProfileComplete(data.isProfileComplete);
-    } catch (error) {
-        console.error('Error checking profile status:', error);
-    }
+      const data = await response.json();
+      console.log('Profile status response:', data);
+      
+      setIsProfileComplete(data.isProfileComplete);
+      sessionStorage.setItem('isProfileComplete', data.isProfileComplete);
+  } catch (error) {
+      console.error('Error checking profile status:', error);
+  }
 };
-
   const menuItems = [
     { 
       label: "Dashboard", 

@@ -22,6 +22,7 @@ const Profile = () => {
   const [previewUrl, setPreviewUrl] = useState(User_Profile);
   const fileInputRef = useRef(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [requiresPasswordChange, setRequiresPasswordChange] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -88,9 +89,22 @@ const Profile = () => {
             phoneNumber: data.phoneNumber || "",
             email: data.email || "",
             sex: data.sex || "Male",
-            birthday: data.birthday ? new Date(data.birthday).toISOString().split('T')[0] : "",
-            isProfileComplete: data.isProfileComplete || false
+            birthday: data.birthday ? new   
+            Date(data.birthday).toISOString().split('T')[0] : "",
+            isProfileComplete: data.isProfileComplete || false,
+            hasChangedPassword: data.hasChangedPassword || false,
+            isGoogleUser: data.isGoogleUser || false
+
         });
+
+        const needsPasswordChange = !data.isGoogleUser && !data.hasChangedPassword;
+        console.log('Needs password change:', needsPasswordChange); // Debug log
+        console.log('Is Google user:', data.isGoogleUser);
+        console.log('Has changed password:', data.hasChangedPassword);
+
+        setRequiresPasswordChange(needsPasswordChange);
+        setShowPasswordModal(needsPasswordChange);
+
 
         // Set profile picture with debug logs
         console.log('Profile picture URL:', data.profilePicture); // Debug log
@@ -117,6 +131,12 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (requiresPasswordChange && !userData.hasChangedPassword) {
+      alert('Please change your temporary password before updating your profile.');
+      setShowPasswordModal(true);
+      return;
+  }
     try {
         const formData = new FormData();
         
@@ -167,44 +187,47 @@ const handlePasswordChange = async (e) => {
   e.preventDefault();
   
   if (passwordData.newPassword !== passwordData.confirmPassword) {
-    alert("New passwords don't match!");
-    return;
+      alert("New passwords don't match!");
+      return;
   }
 
   try {
-    const patientId = sessionStorage.getItem('patient_id');
-    const token = sessionStorage.getItem('token');
+      const patientId = sessionStorage.getItem('patient_id');
+      const token = sessionStorage.getItem('token');
 
-    console.log('Sending password change request:', {
-      patientId,
-      currentPassword: passwordData.currentPassword,
-      newPassword: passwordData.newPassword
-    });
+      const response = await fetch(`http://localhost:5000/patients/${patientId}/change-password`, {
+          method: 'PUT',
+          headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+              currentPassword: passwordData.currentPassword,
+              newPassword: passwordData.newPassword
+          })
+      });
 
-    const response = await fetch(`http://localhost:5000/patients/${patientId}/change-password`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword
-      })
-    });
+      const data = await response.json();
+      
+      if (!response.ok) {
+          throw new Error(data.message || 'Failed to change password');
+      }
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to change password');
-    }
+      // Update local state with the response data
+      setUserData(prev => ({
+          ...prev,
+          hasChangedPassword: data.hasChangedPassword,
+          hasLocalPassword: data.hasLocalPassword
+      }));
 
-    const data = await response.json();
-    alert('Password changed successfully!');
-    setShowPasswordModal(false);
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setRequiresPasswordChange(false);
+      setShowPasswordModal(false);
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      
+      alert('Password changed successfully!');
   } catch (err) {
-    alert(err.message);
-    console.error('Error changing password:', err);
+      alert(err.message);
+      console.error('Error changing password:', err);
   }
 };
   if (isLoading) {
@@ -385,7 +408,10 @@ const handlePasswordChange = async (e) => {
         {showPasswordModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-8 rounded-lg w-96">
-              <h2 className="text-xl font-bold mb-4">Change Password</h2>
+            <h2 className="text-xl font-bold mb-4">
+                {requiresPasswordChange ? 'Change Default Password' : 'Change Password'}
+            </h2>
+
               <form onSubmit={handlePasswordChange} className="space-y-4">
                 <div>
                   <label className="block text-gray-600">Current Password</label>
@@ -420,17 +446,22 @@ const handlePasswordChange = async (e) => {
                 <div className="flex gap-4">
                   <button
                     type="submit"
-                    className="flex-1 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="flex-1 py-2 bg-blue-600 text-white rounded hover:bg- 
+                     blue-700"
                   >
                     Change Password
                   </button>
-                  <button
+                  {!requiresPasswordChange && (
+                <button
                     type="button"
                     onClick={() => setShowPasswordModal(false)}
-                    className="flex-1 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-                  >
+                    className="flex-1 py-2 bg-gray-300 text-gray-700 rounded 
+                     hover:bg-gray-400"
+                >
                     Cancel
-                  </button>
+                </button>
+            )}
+
                 </div>
               </form>
             </div>

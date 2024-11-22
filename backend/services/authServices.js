@@ -69,7 +69,8 @@ async function registerUser(userData) {
             name: userData.name,
             email: userData.email,
             password: hashedPassword, // Add the hashed temporary password
-            isGoogleUser: false
+            isGoogleUser: false,
+            
         });
 
         await newUser.save();
@@ -211,13 +212,32 @@ async function normalLogin({ email, password, recaptchaToken }) {
             { expiresIn: '24h' }
         );
 
+        if (role === 'admin') {
+            return {
+                token,
+                user: {
+                    _id: admin._id.toString(),
+                    admin_id: admin.admin_id,
+                    email: admin.email,
+                    fullname: admin.fullname,
+                    role: 'admin',
+                    isProfileComplete: admin.isProfileComplete || false,
+                    hasChangedPassword: admin.hasChangedPassword || false,
+                    profilePicture: admin.profilePicture || ''
+                }
+            };
+        }
+
         return { 
             token, 
             user: { 
-                id: user._id, 
-                email: user.email,
+                id: user._id,
+                email: user.email,  // Include email in response
                 name: user instanceof Patient ? user.name : user.fullname,
-                role 
+                role,
+                profilePicture: user.profilePicture || '',  // Include profile picture
+                isProfileComplete: user.isProfileComplete || false,
+                hasChangedPassword: user.hasChangedPassword || false
             } 
         };
     } catch (error) {
@@ -225,6 +245,7 @@ async function normalLogin({ email, password, recaptchaToken }) {
         throw error;
     }
 }
+
 async function loginWithGoogle(payload, recaptchaToken) {
     try {
         const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);

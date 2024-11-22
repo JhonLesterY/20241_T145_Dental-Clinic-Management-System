@@ -38,6 +38,14 @@ const adminSchema = new Schema({
         type: Boolean,
         default: false
     },
+    hasChangedPassword: {
+        type: Boolean,
+        default: false
+    },
+    hasLocalPassword: {
+        type: Boolean,
+        default: true
+    },
     role: {
         type: String,
         default: 'admin'

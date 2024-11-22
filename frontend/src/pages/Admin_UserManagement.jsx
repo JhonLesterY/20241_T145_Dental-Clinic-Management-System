@@ -90,73 +90,58 @@ const AdminDashboard = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
-const fetchDentists = async () => {
-  try {
-    const response = await fetch('http://localhost:5000/admin/dentists', {
-      headers: {
-        'Authorization': `Bearer ${sessionStorage.getItem('token')}`
-      }
-    });
-    if (response.ok) {
-      const data = await response.json();
-      setDentists(data);
-    } else {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch dentists');
+  const fetchDentists = async () => {
+    try {
+        const response = await fetch('http://localhost:5000/admin/dentists', {
+            headers: {
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+            }
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch dentists');
+        }
+        const data = await response.json();
+        setDentists(data);
+    } catch (error) {
+        console.error('Error fetching dentists:', error);
+        setError(error.message);
     }
-  } catch (error) {
-    console.error('Error fetching dentists:', error);
-    setError('Failed to fetch dentists');
-  }
 };
 
 const fetchAdmins = async () => {
-  try {
-    const response = await fetch('http://localhost:5000/admin/admins', {
-      headers: {
-        'Authorization': `Bearer ${sessionStorage.getItem('token')}`
-      }
-    });
-    if (response.ok) {
-      const data = await response.json();
-      setAdmins(data);
-    } else {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch admins');
+    try {
+        const response = await fetch('http://localhost:5000/admin/admins', {
+            headers: {
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+            }
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch admins');
+        }
+        const data = await response.json();
+        setAdmins(data);
+    } catch (error) {
+        console.error('Error fetching admins:', error);
+        setError(error.message);
     }
-  } catch (error) {
-    console.error('Error fetching admins:', error);
-    setError('Failed to fetch admins');
-  }
 };
 
 const fetchAllPatients = async () => {
-  try {
-      const token = sessionStorage.getItem('token');
-      console.log('Fetching patients...');
-
-      const response = await fetch('http://localhost:5000/admin/patients', {
-          method: 'GET',
-          headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-          },
-          credentials: 'include'
-      });
-
-      if (response.ok) {
-          const data = await response.json();
-          console.log('Raw patients data:', JSON.stringify(data, null, 2)); // Log the full data structure
-          setPatients(data);
-      } else {
-          const errorData = await response.json();
-          console.error('Error fetching patients:', errorData);
-          setError(errorData.message || 'Failed to fetch patients');
-      }
-  } catch (error) {
-      console.error('Fetch error:', error);
-      setError('Error fetching patients');
-  }
+    try {
+        const response = await fetch('http://localhost:5000/admin/patients', {
+            headers: {
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+            }
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch patients');
+        }
+        const data = await response.json();
+        setPatients(data);
+    } catch (error) {
+        console.error('Error fetching patients:', error);
+        setError(error.message);
+    }
 };
 
 const handleCreateDentist = async (e) => {

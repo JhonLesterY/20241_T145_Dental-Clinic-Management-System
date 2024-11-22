@@ -7,8 +7,7 @@ const bcrypt = require('bcryptjs');
 const { logActivity } = require('../services/activitylogServices');
 const { sendWelcomeEmail } = require('../emailService'); 
 
-// Secret key for JWT
-const secretKey = process.env.JWT_SECRET_KEY; // Store securely in environment variables
+const secretKey = process.env.JWT_SECRET_KEY; 
 
 async function createAdmin(req, res) {
     try {
@@ -54,6 +53,7 @@ async function createAdmin(req, res) {
     }
 }
 
+// Get all admins
 const getAllAdmins = async (req, res) => {
     try {
         const admins = await Admin.find({}).select('-password');
@@ -63,6 +63,7 @@ const getAllAdmins = async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch admins' });
     }
 };
+//Get all dentists
 async function getAllDentists(req, res) {
     try {
         const dentists = await Dentist.find({}).select('-password'); // Exclude password from the response
@@ -495,48 +496,62 @@ async function getActivityLogs(req, res) {
 // Add these functions to your adminServices.js
 async function getAdminProfile(admin_id) {
     try {
-      const admin = await Admin.findOne({ admin_id });
-      if (!admin) {
-        throw new Error('Admin not found');
-      }
-      return {
-        fullname: admin.fullname,
-        email: admin.email,
-        phoneNumber: admin.phoneNumber,
-        sex: admin.sex,
-        birthday: admin.birthday,
-        isProfileComplete: admin.isProfileComplete,
-        profilePicture: admin.profilePicture
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-  
+        console.log('Looking for admin with ID:', admin_id);
+        
+        const admin = await Admin.findOne({ admin_id });
+        
+        if (!admin) {
+            console.log('Admin not found in database');
+            throw new Error('Admin not found');
+        }
 
-  async function updateAdminProfile(admin_id, updateData) {
-    try {
-      const admin = await Admin.findOneAndUpdate(
-        { admin_id },
-        { 
-          ...updateData,
-          isProfileComplete: true 
-        },
-        { new: true }
-      );
-      if (!admin) {
-        throw new Error('Admin not found');
-      }
-      return admin;
+        console.log('Found admin status:', {
+            isProfileComplete: admin.isProfileComplete,
+            hasChangedPassword: admin.hasChangedPassword
+        });
+        
+        return {
+            fullname: admin.fullname || '',
+            email: admin.email,  // Don't provide default for email since it's required
+            phoneNumber: admin.phoneNumber || '',
+            sex: admin.sex || 'Male',
+            birthday: admin.birthday || '',
+            isProfileComplete: admin.isProfileComplete || false,
+            hasChangedPassword: admin.hasChangedPassword || false,
+            profilePicture: admin.profilePicture || ''
+        };
     } catch (error) {
-      throw error;
+        console.error('Error in getAdminProfile:', error);
+        throw error;
     }
-  }
+}
+
+async function updateAdminProfile(admin_id, updateData) {
+    try {
+        const updatedAdmin = await Admin.findOneAndUpdate(
+            { admin_id },
+            { 
+                ...updateData,
+                isProfileComplete: true,
+                updatedAt: Date.now()
+            },
+            { new: true }
+        );
+
+        if (!updatedAdmin) {
+            throw new Error('Admin not found');
+        }
+
+        return updatedAdmin;
+    } catch (error) {
+        throw new Error(error.message);
+    }
+}
 
 async function changeAdminPassword(adminId, currentPassword, newPassword) {
     try {
-        console.log('Changing password for admin:', adminId); // Debug log
-        const admin = await Admin.findOne({ admin_id: adminId });
+        const admin = await Admin.findById(adminId);
+        
         if (!admin) {
             throw new Error('Admin not found');
         }
@@ -547,16 +562,28 @@ async function changeAdminPassword(adminId, currentPassword, newPassword) {
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        admin.password = hashedPassword;
-        await admin.save();
+        
+        const updatedAdmin = await Admin.findByIdAndUpdate(
+            adminId,
+            { 
+                $set: {
+                    password: hashedPassword,
+                    hasChangedPassword: true,
+                    updatedAt: Date.now()
+                }
+            },
+            { new: true }
+        );
 
-        return true;
+        return {
+            message: 'Password updated successfully',
+            hasChangedPassword: true
+        };
     } catch (error) {
         console.error('Error in changeAdminPassword:', error);
         throw error;
     }
 }
-
 module.exports = {
     getAllPatients,
     deletePatient,

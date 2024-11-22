@@ -38,7 +38,7 @@ function App() {
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
     <>  
       <Routes>
-       
+        {/* Public Routes */}
         <Route path="/" element={<Landing_Page />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
@@ -46,8 +46,8 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         
-         {/* Protected Routes for Users */}
-         <Route element={<ProtectedRoutes accountType="patient" />}>
+        {/* Protected Routes for Users */}
+        <Route element={<ProtectedRoutes accountType="patient" />}>
           <Route path="/dashboard" element={<User_Dashboard />} />
           <Route path="/appointment" element={<User_Appointment />} />
           <Route path="/feedback" element={<Feedback />} />
@@ -57,34 +57,33 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/user-sidebar" element={<UserSideBar />} />
         </Route>
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        {/* Protected Routes for Admins */}
-          <Route element={<ProtectedRoutes accountType="admin" />}>
-            
-            <Route path="/admin-calendar" element={<Calendar />} />
-            <Route path="/admin-inventory" element={<Inventory />} />
-            <Route path="/admin-profile" element={<Admin_profile />} />
-            <Route path="/admin-settings" element={<Admin_settings />} />
-            <Route path="/admin-viewAppointment" element={<ViewAppointment />} />
-            <Route path="/appointment-confirmation" element={<Confirmation />} />
-            <Route path="/admin-viewFeedback" element={<Admin_ViewFeedback />} />
-            <Route path="/admin-sidebar" element={<AdminSideBar />} />
-      <Route path="/admin-userManagement" element={<Admin_UserManagement />} />
-          </Route>
-          
-          <Route element={<ProtectedRoutes accountType="dentist" />}>
-            <Route path="/dentist-dashboard" element={<DentistDashboard />} />
-            <Route path="/dentist-viewConsultation" element={<Dentist_ViewConsultation />} />
-            <Route path="/dentist-addConsultation" element={<Dentist_AddConsultation />} />
-            <Route path="/dentist-settings" element={<Dentist_Settings />} />
-            <Route path="/dentist-profile" element={<Dentist_Profile />} />
-            <Route path="/dentist-viewFeedback" element={<Dentist_ViewFeedback />} />
-          </Route>
-      </Routes>
 
+        {/* Protected Routes for Admins */}
+        <Route element={<ProtectedRoutes accountType="admin" />}>
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-calendar" element={<Calendar />} />
+          <Route path="/admin-inventory" element={<Inventory />} />
+          <Route path="/admin-profile" element={<Admin_profile />} />
+          <Route path="/admin-settings" element={<Admin_settings />} />
+          <Route path="/admin-viewAppointment" element={<ViewAppointment />} />
+          <Route path="/appointment-confirmation" element={<Confirmation />} />
+          <Route path="/admin-viewFeedback" element={<Admin_ViewFeedback />} />
+          <Route path="/admin-sidebar" element={<AdminSideBar />} />
+          <Route path="/admin-userManagement" element={<Admin_UserManagement />} />
+        </Route>
+        
+        {/* Protected Routes for Dentists */}
+        <Route element={<ProtectedRoutes accountType="dentist" />}>
+          <Route path="/dentist-dashboard" element={<DentistDashboard />} />
+          <Route path="/dentist-viewConsultation" element={<Dentist_ViewConsultation />} />
+          <Route path="/dentist-addConsultation" element={<Dentist_AddConsultation />} />
+          <Route path="/dentist-settings" element={<Dentist_Settings />} />
+          <Route path="/dentist-profile" element={<Dentist_Profile />} />
+          <Route path="/dentist-viewFeedback" element={<Dentist_ViewFeedback />} />
+        </Route>
+      </Routes>
     </>
     </GoogleOAuthProvider>
   );
 }
-
 export default App;

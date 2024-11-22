@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt');
 const patientService = require('../services/patientServices');
 const { authenticatePatient } = require('../middleware/authMiddleware');
 const { checkProfileCompletion } = require('../middleware/profileCheckMiddleware');
-const { sendWelcomeEmail, generatePassword } = require('../emailService');
+//const { sendWelcomeEmail, generatePassword } = require('../emailService');
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/profile-pictures')
@@ -137,45 +137,66 @@ P_route.get('/uploads/profile-pictures/:filename', (req, res) => {
     res.sendFile(path.join(__dirname, '../uploads/profile-pictures', req.params.filename));
 });
 
+// Update the change password route
 P_route.put('/:patient_id/change-password', authenticatePatient, async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    const patientId = req.params.patient_id;
-    
-    console.log('Received password change request for patient:', patientId);
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const patientId = req.params.patient_id;
+        
+        console.log('Received password change request for patient:', patientId);
 
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ 
-        message: 'Current password and new password are required' 
-      });
+        const patient = await Patient.findById(patientId);
+        if (!patient) {
+            return res.status(404).json({ message: 'Patient not found' });
+        }
+
+        // Verify current password
+        const isMatch = await bcrypt.compare(currentPassword, patient.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update both password flags and the password itself
+        const updatedPatient = await Patient.findByIdAndUpdate(
+            patientId,
+            {
+                $set: {
+                    password: hashedPassword,
+                    hasChangedPassword: true,
+                    hasLocalPassword: true,
+                    updatedAt: Date.now()
+                }
+            },
+            { new: true }
+        );
+
+        if (!updatedPatient) {
+            throw new Error('Failed to update patient');
+        }
+
+        console.log('Updated patient status:', {
+            hasChangedPassword: updatedPatient.hasChangedPassword,
+            hasLocalPassword: updatedPatient.hasLocalPassword
+        });
+
+        res.json({
+            message: 'Password updated successfully',
+            hasChangedPassword: true,
+            hasLocalPassword: true,
+            patient: {
+                hasChangedPassword: updatedPatient.hasChangedPassword,
+                hasLocalPassword: updatedPatient.hasLocalPassword,
+                isGoogleUser: updatedPatient.isGoogleUser
+            }
+        });
+    } catch (error) {
+        console.error('Password change error:', error);
+        res.status(400).json({ message: error.message || 'Failed to change password' });
     }
-
-    const patient = await Patient.findById(patientId);
-    if (!patient) {
-      return res.status(404).json({ message: 'Patient not found' });
-    }
-
-    // Verify current password
-    const isMatch = await bcrypt.compare(currentPassword, patient.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Current password is incorrect' });
-    }
-
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-    // Update password
-    patient.password = hashedPassword;
-    await patient.save();
-
-    console.log('Password updated successfully for patient:', patientId);
-    res.json({ message: 'Password updated successfully' });
-  } catch (error) {
-    console.error('Password change error:', error);
-    res.status(400).json({ message: error.message || 'Failed to change password' });
-  }
 });
-
 
 module.exports = P_route;
