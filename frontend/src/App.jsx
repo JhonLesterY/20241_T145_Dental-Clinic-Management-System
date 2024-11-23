@@ -31,6 +31,10 @@ import UserSideBar from "./components/UserSideBar";
 import AdminSideBar from "./components/AdminSideBar";
 import Admin_UserManagement from "./pages/Admin_UserManagement";
 import ResetPassword from "./pages/ResetPassword";
+import DentistSideBar from "./components/DentistSidebar";
+import Dentist_Report from "./pages/Dentist_Report";
+import User_Report from "./pages/User_Report";
+import Admin_Report from "./pages/Admin_Report";
 
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
@@ -56,6 +60,7 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/user-sidebar" element={<UserSideBar />} />
+          <Route path="/user-reports" element={<User_Report />} />
         </Route>
 
         {/* Protected Routes for Admins */}
@@ -70,6 +75,7 @@ function App() {
           <Route path="/admin-viewFeedback" element={<Admin_ViewFeedback />} />
           <Route path="/admin-sidebar" element={<AdminSideBar />} />
           <Route path="/admin-userManagement" element={<Admin_UserManagement />} />
+          <Route path="/admin-report" element={<Admin_Report />} />
         </Route>
         
         {/* Protected Routes for Dentists */}
@@ -80,6 +86,8 @@ function App() {
           <Route path="/dentist-settings" element={<Dentist_Settings />} />
           <Route path="/dentist-profile" element={<Dentist_Profile />} />
           <Route path="/dentist-viewFeedback" element={<Dentist_ViewFeedback />} />
+          <Route path="/dentist-sidebar" element={<DentistSideBar />} />
+          <Route path="/reports" element={<Dentist_Report />} />
         </Route>
       </Routes>
     </>
