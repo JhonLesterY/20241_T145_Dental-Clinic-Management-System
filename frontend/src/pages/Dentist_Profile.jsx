@@ -1,116 +1,124 @@
-import Home from "../components/Home";
+import { useState, useRef } from "react";
+import DentistSideBar from "../components/DentistSidebar";
 import User_Profile from "/src/images/user.png";
 
 const Profile = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(User_Profile); // Default profile image
+  const [userData, setUserData] = useState({
+    firstName: "William James",
+    middleName: "Von",
+    lastName: "Moriarty",
+    suffix: "None",
+    contactNumber: "0912-345-6789",
+    email: "Criminalgenuis@example.com",
+    sex: "Male",
+    birthday: "1990-01-01",
+    isProfileComplete: true,
+  });
+
+  const fileInputRef = useRef();
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setUserData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Handle form submission logic here
+    console.log(userData);
+  };
+
   return (
-    <div className="flex h-screen w-screen bg-gray-50 overflow-hidden">
-      {/* Sidebar */}
-      <Home />
+    <div className="flex h-screen bg-gray-100">
+    {/* Sidebar */}
+    <DentistSideBar open={sidebarOpen} setOpen={setSidebarOpen} /> {/* Use UserSideBar for the dentist */}
 
-      {/* Main Profile Content */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-gray-100 text-white p-8">
-        <div className="w-full max-w-2xl p-8 bg-white text-gray-800 rounded-lg shadow-lg">
-         
-          {/* Profile Image */}
-          <div className="flex justify-center mb-6">
+      <div className="flex-1 flex flex-col">
+        <div className="w-[95rem] mx-auto my-4"></div>
+
+        {/* Profile Content */}
+        <div className="p-6 flex flex-col items-center">
+          {/* Profile Image Upload */}
+          <div className="mb-6 text-center relative">
             <img
-              className="h-24 w-24 rounded-full border-4 shadow-lg"
-              src={User_Profile}
-              alt="User Profile"
+              src={previewUrl}
+              alt="Profile"
+              className="w-36 h-36 rounded-full border-6 border-white shadow-md"
             />
+            <label className="absolute bottom-0 right-0 bg-blue-500 text-white p-1 rounded-full shadow-lg cursor-pointer">
+              <input
+                type="file"
+                onChange={handleFileChange}
+                className="hidden"
+                ref={fileInputRef}
+              />
+              <span className="material-icons">camera_alt</span>
+            </label>
           </div>
-          <div className="text-center text-2xl font-semibold text-blue-900">
-            William James Moriarty
-          </div>
 
-          {/* Profile Form */}
-          <form className="space-y-5 mt-8">
-            {/* First and Middle Name */}
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-gray-600">First Name*</label>
-                <input
-                  type="text"
-                  defaultValue="William James"
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-gray-600">Middle Name</label>
-                <input
-                  type="text"
-                  defaultValue="Von"
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Last Name and Suffix */}
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-gray-600">Last Name*</label>
-                <input
-                  type="text"
-                  defaultValue="Moriarty"
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-gray-600">Suffix</label>
-                <select className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" defaultValue="None">
-                  <option value="None">None</option>
-                  <option value="Jr.">Jr.</option>
-                  <option value="II">II</option>
-                  <option value="III">III</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Contact and Email */}
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-gray-600">Contact Number*</label>
-                <input
-                  type="text"
-                  defaultValue="0912-345-6789"
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-gray-600">Email</label>
-                <input
-                  type="email"
-                  defaultValue="Criminalgenuis@example.com"
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Sex and Birthday */}
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-gray-600">Sex at Birth*</label>
-                <select className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" defaultValue="Male">
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-              <div className="flex-1">
-                <label className="block text-gray-600">Birthday*</label>
-                <input
-                  type="date"
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Logout Button */}
-            <div className="mt-6">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {Object.entries(userData).map(([key, value], idx) => (
+              key !== "isProfileComplete" && (
+                <div key={idx} className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-700 capitalize">
+                    {key.replace(/([A-Z])/g, " $1")}
+                  </label>
+                  {key === "sex" || key === "suffix" ? (
+                    <select
+                      name={key}
+                      value={value}
+                      onChange={handleInputChange}
+                      className="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {key === "sex" ? (
+                        <>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="None">None</option>
+                          <option value="Jr">Jr</option>
+                          <option value="Sr">Sr</option>
+                          <option value="III">III</option>
+                        </>
+                      )}
+                    </select>
+                  ) : (
+                    <input
+                      type={key === "email" ? "email" : key === "birthday" ? "date" : "text"}
+                      name={key}
+                      value={value}
+                      onChange={handleInputChange}
+                      className="mt-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={`Enter ${key.replace(/([A-Z])/g, " $1")}`}
+                    />
+                  )}
+                </div>
+              )
+            ))}
+            <div className="col-span-full flex justify-center">
               <button
-                type="button"
-                className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                type="submit"
+                className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white font-medium rounded-full shadow-md hover:bg-blue-600"
               >
-                Logout
+                Save Changes
               </button>
             </div>
           </form>

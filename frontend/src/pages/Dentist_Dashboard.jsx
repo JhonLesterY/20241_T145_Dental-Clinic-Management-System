@@ -1,118 +1,99 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import Home from "../components/Home";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
-import userIcon from "/src/images/user.png"; // Assuming you have a user icon image
-import magnify from "/src/images/magnifying-glass.png"; // Importing search icon
+import userIcon from "/src/images/user.png";
+import DentistSideBar from "../components/DentistSidebar";
 
 const DentistDashboard = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
-        <Home />
-      </div>
+      <DentistSideBar open={sidebarOpen} setOpen={setSidebarOpen} /> {/* Use UserSideBar for the dentist */}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center">
-                {/* Header */}
-                <header className="w-full shadow-lg">
-                    <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
-                        {/* Logo and Appointment Link */}
-                        <div className="flex items-center space-x-4">
-                            <img className="w-11 cursor-pointer" src={Logo} alt="Dental Logo" />
-                            <Link to="/dentist-dashboard" className="text-xl font-semibold text-[#003367] hover:text-blue-500 transition">
-                                Dashboard
-                            </Link>
-                        </div>
+      <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
+        {/* Header */}
+        <header className="bg-white shadow-md">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center space-x-4">
+              <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
+              <h1 className="text-2xl font-semibold text-[#003367]">Dentist Dashboard</h1>
+            </div>
 
-                        {/* Search Bar */}
-                        <div className="flex items-center bg-white border rounded-xl px-3 py-1">
-                          <img className="w-5" src={magnify} alt="Search icon" />
-                          <input
-                            type="text"
-                            placeholder="Search"
-                            className="ml-2 p-1 outline-none w-full"
-                            aria-label="Search for appointments"
-                          />
-                        </div>
-
-                        {/* Notifications and Profile Icons */}
-            <div className="flex items-center space-x-8">
-              <button className="bg-gray-100 p-3 rounded-full hover:bg-gray-200 transition">
-                <img className="w-6" src={bell} alt="Notifications" />
+            <div className="flex items-center space-x-4">
+              <button className="p-2 rounded-full hover:bg-gray-100 transition">
+                <img className="w-6 h-6" src={bell} alt="Notifications" />
               </button>
-              <a
-                href="/dentist-profile"
-                className="bg-gray-100 p-3 rounded-full hover:bg-gray-200 transition"
-              >
-                <img className="w-6" src={userIcon} alt="Profile" />
-              </a>
+              <Link to="/dentist-profile" className="p-2 rounded-full hover:bg-gray-100 transition">
+                <img className="w-6 h-6" src={userIcon} alt="Profile" />
+              </Link>
             </div>
           </div>
-                </header>
+        </header>
 
-                {/* Divider */}
-                <div className="w-[95rem] mx-auto my-4"></div>
+        {/* Main Dashboard Content */}
+        <div className="p-6">
+          <div className="space-y-4 mt-8 mx-auto w-full max-w-9xl px-8">
 
-                {/* Content Section */}
-                <div className="space-y-8 mt-10 mx-auto w-full max-w-4xl px-4">
-                  {/* Two Boxes in a Row */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Generate Report Box */}
-                    <div className="bg-gray-50 border p-6 shadow-md rounded-lg text-center">
-                      <h2 className="text-xl font-semibold text-[#003367] mb-2">Generate Report</h2>
-                      <p className="text-gray-600 mb-4">Create detailed reports based on recent data.</p>
-                      <button className="bg-[#003367] text-white rounded-full px-6 py-2 hover:bg-blue-700 transition transform hover:scale-105 transition-transform duration-200 ease-in-out">
-                        Generate
-                      </button>
-                    </div>
-
-                    {/* Accomplishment Report Box */}
-                    <div className="bg-gray-50 border p-6 shadow-md rounded-lg text-center">
-                      <h2 className="text-xl font-semibold text-[#003367] mb-2">Accomplishment Report</h2>
-                      <p className="text-gray-600 mb-4">Review your recent accomplishments and goals.</p>
-                      <button className="bg-[#003367] text-white rounded-full px-6 py-2 hover:bg-blue-700 transition transform hover:scale-105 transition-transform duration-200 ease-in-out">
-                        View Report
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Patient History Information Box */}
-                  <h2 className="text-xl font-semibold text-[#003367] mb-4">Patient History Information</h2>
-
-                  {/* Table for Patient Data */}
-                  <div className="overflow-x-auto shadow-md rounded-lg">
-                    <table className="min-w-full bg-gray-100 border">
-                      <thead>
-                        <tr className="w-full bg-[#003367] text-white">
-                          <th className="py-3 px-4 text-left">ID</th>
-                          <th className="py-3 px-4 text-left">Name</th>
-                          <th className="py-3 px-4 text-left">Appointment</th>
-                          <th className="py-3 px-4 text-left">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {/* Sample Data Row */}
-                        <tr className="border-t">
-                          <td className="py-3 px-4">001</td>
-                          <td className="py-3 px-4">Juan Dela Cruz</td>
-                          <td className="py-3 px-4">12/11/2024</td>
-                          <td className="py-3 px-4 text-green-600">Completed</td>
-                        </tr>
-                        <tr className="border-t">
-                          <td className="py-3 px-4">002</td>
-                          <td className="py-3 px-4">Maria Santos</td>
-                          <td className="py-3 px-4">13/11/2024</td>
-                          <td className="py-3 px-4 text-yellow-500">Pending</td>
-                        </tr>
-                        {/* Add more rows as needed */}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
+          {/* Report Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 ">
+            {/* Generate Report Card */}
+            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+              <h3 className="text-xl font-semibold text-[#003367] mb-4">Generate Report</h3>
+              <p className="text-gray-600 mb-4">
+                Generate reports on your patients' treatments, appointments, and progress.
+              </p>
+              <Link to="/generate-report" className="text-blue-500 hover:underline ">
+                Generate Report
+              </Link>
             </div>
+
+            {/* Accomplish Report Card */}
+            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+              <h3 className="text-xl font-semibold text-[#003367] mb-4">Accomplish Report</h3>
+              <p className="text-gray-600 mb-4">
+                Accomplish and track the progress of completed reports for patients and treatments.
+              </p>
+              <Link to="/accomplish-report" className="text-blue-500 hover:underline">
+                Accomplish Report
+              </Link>
+            </div>
+          </div>
+
+          {/* Patient History Section */}
+          <h3 className="text-xl font-semibold text-[#003367] mb-6">Patient History Information</h3>
+
+          <div className="overflow-x-auto bg-white rounded-lg shadow-md p-4">
+            <table className="w-full table-auto">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Patient ID</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Name</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Appointment</th>
+                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[{ id: 'P001', name: 'John Doe', appointment: '2024-11-25', status: 'Completed' },
+                  { id: 'P002', name: 'Jane Smith', appointment: '2024-11-26', status: 'Pending' },
+                  { id: 'P003', name: 'Michael Johnson', appointment: '2024-11-27', status: 'Completed' }].map((patient, index) => (
+                  <tr key={index} className="border-t">
+                    <td className="py-3 px-4 text-sm text-gray-600">{patient.id}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{patient.name}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{patient.appointment}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{patient.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
   );
 };
 
