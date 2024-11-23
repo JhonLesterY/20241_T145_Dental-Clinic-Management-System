@@ -47,7 +47,7 @@ const User_Feedback = () => {
       {/* Back Button */}
       <Link 
   to="/Dashboard" 
-  className="absolute top-4 left-4 flex items-center space-x-2 text-white bg-[#003367] border border-blue-900 rounded-xl px-4 py-2 hover:bg-blue-700 transition transform hover:scale-105 transition-transform duration-200 ease-in-out"
+  className="absolute top-4 left-4 flex items-center space-x-2 inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center transform hover:scale-105 transition-transform duration-200 ease-in-out"
 >
   <span className="text-lg">Back</span>
 </Link>
