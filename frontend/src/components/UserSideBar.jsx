@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios"; // For making API requests
+import axios from "axios";
 import Logo from "/src/images/Dental_logo.png";
 import { useNavigate } from "react-router-dom";
 
 // Icons
-import { MdMenuOpen } from "react-icons/md";
-import { MdDashboard } from "react-icons/md";
+import { MdMenuOpen, MdDashboard, MdFeedback, MdUploadFile, MdLogout } from "react-icons/md";
 import { BsCalendarCheck } from "react-icons/bs";
-import { MdFeedback } from "react-icons/md";
-import { MdUploadFile } from "react-icons/md";
 import { FaUsers } from "react-icons/fa";
-import { MdLogout } from "react-icons/md";
-import { TbReportAnalytics } from "react-icons/tb";
-import { FaUserCircle } from "react-icons/fa";
+import { TbReportSearch } from "react-icons/tb";
+import { CiSettings } from "react-icons/ci";
 
 // Menu Items
 const menuItems = [
@@ -21,28 +17,29 @@ const menuItems = [
   { icons: <MdFeedback size={24} />, label: "Feedback", path: "/feedback" },
   { icons: <MdUploadFile size={24} />, label: "Upload Requirements", path: "/upload-requirements" },
   { icons: <FaUsers size={24} />, label: "User Management", path: "/user-management" },
-  { icons: <TbReportAnalytics size={24} />, label: "Reports", path: "/reports" },
+  { icons: <CiSettings size={24} />, label: "Settings", path: "/settings" },
+  { icons: <TbReportSearch size={24} />, label: "Reports", path: "/user-reports" },
 ];
 
 export default function Sidebar({ open, setOpen }) {
   const [adminData, setAdminData] = useState({ email: "Loading..." });
   const navigate = useNavigate();
 
-  // Add this effect to open the sidebar on mount
+  // Automatically open the sidebar on mount
   useEffect(() => {
     setOpen(true);
-  }, []);
+  }, [setOpen]);
 
-  // Fetch admin details from the backend
+  // Fetch admin details
   useEffect(() => {
     const fetchAdminData = async () => {
       try {
         const response = await axios.get("/adminRoute/adminServices/getAdmin", {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`, // Authentication token
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-        setAdminData(response.data); // Set admin data from response
+        setAdminData(response.data);
       } catch (error) {
         console.error("Error fetching admin data:", error);
         setAdminData({ email: "Error: Unable to fetch data" });
@@ -63,9 +60,7 @@ export default function Sidebar({ open, setOpen }) {
         <img
           src={Logo}
           alt="Logo"
-          className={`transition-all duration-500 rounded-md ${
-            open ? "w-12" : "w-0"
-          }`}
+          className={`transition-all duration-500 rounded-md ${open ? "w-12" : "w-0"}`}
         />
         <MdMenuOpen
           size={28}
@@ -75,7 +70,7 @@ export default function Sidebar({ open, setOpen }) {
       </div>
 
       {/* Menu Items */}
-      <ul className={`flex-1 px-3 mt-4 ${open ? 'space-y-2' : 'space-y-4'}`}>
+      <ul className={`flex-1 px-3 mt-4 ${open ? "space-y-2" : "space-y-4"}`}>
         {menuItems.map((item, index) => (
           <li
             key={index}
@@ -84,16 +79,13 @@ export default function Sidebar({ open, setOpen }) {
           >
             <div>{item.icons}</div>
             <p
-              className={`text-base transition-all duration-500 ${
-                !open && "opacity-0 translate-x-10"
-              }`}
+              className={`text-base transition-all duration-500 ${!open && "opacity-0 translate-x-10"}`}
             >
               {item.label}
             </p>
             {!open && (
               <span
-                className="absolute left-16 bg-white text-[#003367] px-2 py-1 rounded-md shadow-lg 
-                opacity-0 group-hover:opacity-100 pointer-events-none"
+                className="absolute left-16 bg-white text-[#003367] px-2 py-1 rounded-md shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none"
               >
                 {item.label}
               </span>
@@ -103,16 +95,12 @@ export default function Sidebar({ open, setOpen }) {
       </ul>
 
       {/* Footer */}
-      <div 
+      <div
         className="flex items-center gap-3 px-4 py-3 bg-[#1e2a4a] cursor-pointer hover:bg-[#2a3a63] transition duration-300"
         onClick={() => navigate("/login")}
       >
         <MdLogout size={30} />
-        <div
-          className={`text-sm transition-all duration-500 ${
-            !open && "opacity-0 translate-x-10"
-          }`}
-        >
+        <div className={`text-sm transition-all duration-500 ${!open && "opacity-0 translate-x-10"}`}>
           <p className="font-semibold">{adminData.email || "Sign Out"}</p>
         </div>
       </div>
