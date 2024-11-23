@@ -33,16 +33,11 @@ const AdminCalendar = () => {
         startTime: '',
         endTime: '',
     });
-    const [showAppointmentForm, setShowAppointmentForm] = useState(false);
-    const [newAppointment, setNewAppointment] = useState({
-        studentName: '',
-        studentId: '',
-        date: '',
-        time: '',
-        serviceType: '',
-        notes: ''
-    });
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedDateEvents, setSelectedDateEvents] = useState([]);
+    const [showEventsModal, setShowEventsModal] = useState(false);
+    const [editingEvent, setEditingEvent] = useState(null);
+    const [showEditForm, setShowEditForm] = useState(false);
 
     useEffect(() => {
         const loadCalendarData = async () => {
@@ -185,6 +180,15 @@ const AdminCalendar = () => {
         );
     }
 
+    const handleViewEvents = (date) => {
+        const eventsOnDate = events.filter(event => {
+            const eventDate = new Date(event.start.dateTime || event.start.date);
+            return eventDate.toDateString() === date.toDateString();
+        });
+        setSelectedDateEvents(eventsOnDate);
+        setShowEventsModal(true);
+    };
+
     const handleShowEventForm = () => setShowEventForm(true);
 
     const handleInputChange = (e) => {
@@ -193,123 +197,156 @@ const AdminCalendar = () => {
     };
 
     const handleAddEvent = async () => {
+        if (!accessToken) {
+            setError('Not logged in to Google Calendar. Please log in first.');
+            googleLogin();
+            return;
+        }
+    
         const { summary, description, date, startTime, endTime } = newEvent;
         const startDateTime = new Date(`${date}T${startTime}`);
         const endDateTime = new Date(`${date}T${endTime}`);
-
+    
         try {
-            const addedEvent = await addEventToGoogleCalendar({
-                summary,
-                description,
-                start: startDateTime.toISOString(),
-                end: endDateTime.toISOString(),
-            });
-            setEvents([...events, addedEvent]);
-            setShowEventForm(false);
-        } catch (error) {
-            setError('Failed to add event');
-            console.error('Error adding event:', error);
-        }
-    };
-
-    const handleAddAppointment = async () => {
-        try {
-            if (!accessToken) {
-                console.log('No access token, triggering login...');
-                googleLogin();
-                return;
-            }
-
-            setIsLoading(true);
-            setError(null);
-
-            const { studentName, studentId, date, time, serviceType, notes } = newAppointment;
-            
-            // Validate inputs
-            if (!studentName || !studentId || !date || !time || !serviceType) {
-                setError('Please fill in all required fields');
-                return;
-            }
-            
-            const appointmentDateTime = new Date(`${date}T${time}`);
-            const endDateTime = new Date(appointmentDateTime.getTime() + (30 * 60000));
-
-            try {
-                // First, add to Google Calendar
-                const googleEvent = await addEventToGoogleCalendar({
-                    summary: `Dental Appointment - ${studentName}`,
-                    description: `Student ID: ${studentId}\nService: ${serviceType}\nNotes: ${notes}`,
-                    start: appointmentDateTime.toISOString(),
-                    end: endDateTime.toISOString(),
-                }, accessToken);
-
-                if (!googleEvent) {
-                    throw new Error('Failed to create Google Calendar event');
-                }
-
-                // Then, save to MongoDB
-                const response = await fetch('/api/appointments', {
+            const response = await fetch(
+                'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+                {
                     method: 'POST',
                     headers: {
+                        'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
                     body: JSON.stringify({
-                        studentName,
-                        studentId,
-                        serviceType,
-                        date: appointmentDateTime.toISOString(),
-                        time,
-                        notes,
-                        googleCalendarEventId: googleEvent.id
-                    }),
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to save appointment to database');
+                        summary,
+                        description,
+                        start: {
+                            dateTime: startDateTime.toISOString(),
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                        },
+                        end: {
+                            dateTime: endDateTime.toISOString(),
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                        }
+                    })
                 }
-
-                const savedAppointment = await response.json();
-
-                // Update local state
-                setEvents(prevEvents => [...prevEvents, googleEvent]);
-                setShowAppointmentForm(false);
-                setNewAppointment({
-                    studentName: '',
-                    studentId: '',
-                    date: '',
-                    time: '',
-                    serviceType: '',
-                    notes: ''
-                });
-
-                alert('Appointment scheduled successfully!');
-
-            } catch (error) {
-                console.error('Error in appointment creation:', error);
-                
-                if (error.message === 'AUTH_ERROR') {
-                    setError('Authentication failed. Please login again.');
-                    googleLogin();
-                    return;
-                }
-                
-                throw error;
+            );
+    
+            if (!response.ok) {
+                throw new Error('Failed to add event to calendar');
             }
-
+    
+            const addedEvent = await response.json();
+            setEvents(prevEvents => [...prevEvents, addedEvent]);
+            setShowEventForm(false);
+            setError(null);
         } catch (error) {
-            console.error('Error adding appointment:', error);
-            setError(error.message || 'Failed to add appointment');
-        } finally {
-            setIsLoading(false);
+            console.error('Error adding event:', error);
+            setError('Failed to add event: ' + error.message);
+            if (error.message.includes('authentication')) {
+                googleLogin();
+            }
         }
     };
 
-    const handleAppointmentInputChange = (e) => {
-        const { name, value } = e.target;
-        setNewAppointment(prev => ({ ...prev, [name]: value }));
+    const handleDeleteEvent = async (eventId) => {
+        if (!accessToken) {
+            setError('Not logged in to Google Calendar. Please log in first.');
+            googleLogin();
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to delete event');
+            }
+
+            setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
+            setShowEventsModal(false);
+            setError(null);
+        } catch (error) {
+            console.error('Error deleting event:', error);
+            setError('Failed to delete event: ' + error.message);
+            if (error.message.includes('authentication')) {
+                googleLogin();
+            }
+        }
     };
 
+    const handleEditEvent = async (event) => {
+        setEditingEvent({
+            id: event.id,
+            summary: event.summary,
+            description: event.description,
+            date: new Date(event.start.dateTime).toISOString().split('T')[0],
+            startTime: new Date(event.start.dateTime).toISOString().split('T')[1].substring(0, 5),
+            endTime: new Date(event.end.dateTime).toISOString().split('T')[1].substring(0, 5),
+        });
+        setShowEditForm(true);
+        setShowEventsModal(false);
+    };
+
+    const handleUpdateEvent = async () => {
+        if (!accessToken || !editingEvent) {
+            setError('Not logged in to Google Calendar or no event selected.');
+            return;
+        }
+
+        const startDateTime = new Date(`${editingEvent.date}T${editingEvent.startTime}`);
+        const endDateTime = new Date(`${editingEvent.date}T${editingEvent.endTime}`);
+
+        try {
+            const response = await fetch(
+                `https://www.googleapis.com/calendar/v3/calendars/primary/events/${editingEvent.id}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        summary: editingEvent.summary,
+                        description: editingEvent.description,
+                        start: {
+                            dateTime: startDateTime.toISOString(),
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                        },
+                        end: {
+                            dateTime: endDateTime.toISOString(),
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                        }
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to update event');
+            }
+
+            const updatedEvent = await response.json();
+            setEvents(prevEvents => prevEvents.map(event => 
+                event.id === editingEvent.id ? updatedEvent : event
+            ));
+            setShowEditForm(false);
+            setEditingEvent(null);
+            setError(null);
+        } catch (error) {
+            console.error('Error updating event:', error);
+            setError('Failed to update event: ' + error.message);
+            if (error.message.includes('authentication')) {
+                googleLogin();
+            }
+        }
+    };
     const nextMonth = () => {
         setCurrentMonth((prev) => (prev === 11 ? 0 : prev + 1));
         if (currentMonth === 11) setCurrentYear((prev) => prev + 1);
@@ -431,17 +468,6 @@ const AdminCalendar = () => {
                     </button>
                 </div>
 
-                {/* Add Appointment Button */}
-                <div className="mt-4 flex justify-end">
-                    <button
-                        onClick={() => setShowAppointmentForm(true)}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center"
-                    >
-                        <FontAwesomeIcon icon={faCalendarAlt} className="mr-2" />
-                        Add Appointment
-                    </button>
-                </div>
-
                 {/* Calendar Area */}
                 <div className="mt-4 grid grid-cols-7 gap-4">
                     {/* Day Labels */}
@@ -449,13 +475,13 @@ const AdminCalendar = () => {
                         <div key={day} className="text-xl font-semibold text-center text-blue-700">{day}</div>
                     ))}
 
-                    {/* Empty boxes for alignment */}
-                    {Array.from({ length: startDay }).map((_, index) => (
-                        <div key={`empty-${index}`} className="bg-gray-50 border border-gray-200 p-4 rounded-lg"></div>
-                    ))}
+            {/* Empty boxes for alignment */}
+                {Array.from({ length: startDay }).map((_, index) => (
+                    <div key={`empty-${index}`} className="bg-gray-50 border border-gray-200 p-4 rounded-lg"></div>
+                ))}
 
-                                        {/* Days of the month */}
-                                        {Array.from({ length: daysInMonth }).map((_, index) => {
+                {/* Days of the month */}
+                    {Array.from({ length: daysInMonth }).map((_, index) => {
                         const currentDate = new Date(currentYear, currentMonth, index + 1);
                         const isToday = currentDate.toDateString() === new Date().toDateString();
                         const hasEvent = events.some((event) => {
@@ -467,12 +493,15 @@ const AdminCalendar = () => {
                             <div
                                 key={index}
                                 className={`p-4 rounded-lg cursor-pointer ${isToday ? 'bg-blue-200' : 'bg-gray-50'} 
-                                ${hasEvent ? 'border-2 border-blue-500' : 'border border-gray-200'} text-center`}
+                                ${hasEvent ? 'border-2 border-blue-500' : 'border border-gray-200'} text-center 
+                                hover:bg-gray-100 transition-colors duration-200`}
                                 onClick={() => {
-                                    // Show the event form if an event is clicked
-                                    if (hasEvent) {
-                                        handleShowEventForm();
-                                    }
+                                    const selectedDate = new Date(currentYear, currentMonth, index + 1);
+                                    handleViewEvents(selectedDate);  // This will show existing events or an empty list
+                                    setNewEvent(prev => ({
+                                        ...prev,
+                                        date: selectedDate.toISOString().split('T')[0]
+                                    }));
                                 }}
                             >
                                 <span className={`font-semibold ${isToday ? 'text-blue-900' : 'text-gray-700'}`}>
@@ -483,132 +512,133 @@ const AdminCalendar = () => {
                     })}
                 </div>
 
-                {/* Event Form */}
-                {showEventForm && (
-                    <div className="mt-8 p-6 bg-white rounded-lg shadow-lg">
-                        <h3 className="text-2xl font-semibold mb-4">Add Event</h3>
-                        <div className="space-y-4">
-                            <input
-                                type="text"
-                                name="summary"
-                                value={newEvent.summary}
-                                onChange={handleInputChange}
-                                placeholder="Event Title"
-                                className="w-full p-3 border border-gray-300 rounded-lg"
-                            />
-                            <textarea
-                                name="description"
-                                value={newEvent.description}
-                                onChange={handleInputChange}
-                                placeholder="Event Description"
-                                rows="4"
-                                className="w-full p-3 border border-gray-300 rounded-lg"
-                            ></textarea>
-                            <div className="flex space-x-4">
-                                <input
-                                    type="date"
-                                    name="date"
-                                    value={newEvent.date}
-                                    onChange={handleInputChange}
-                                    className="w-1/2 p-3 border border-gray-300 rounded-lg"
-                                />
-                                <input
-                                    type="time"
-                                    name="startTime"
-                                    value={newEvent.startTime}
-                                    onChange={handleInputChange}
-                                    className="w-1/2 p-3 border border-gray-300 rounded-lg"
-                                />
-                                <input
-                                    type="time"
-                                    name="endTime"
-                                    value={newEvent.endTime}
-                                    onChange={handleInputChange}
-                                    className="w-1/2 p-3 border border-gray-300 rounded-lg"
-                                />
+                    {/* Event Form Modal */}
+                    {showEventsModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-semibold">Events on {selectedDateEvents[0]?.start.dateTime ? 
+                                    new Date(selectedDateEvents[0].start.dateTime).toLocaleDateString() : 
+                                    'this date'}
+                                </h3>
+                                <button
+                                    onClick={() => setShowEventsModal(false)}
+                                    className="text-gray-500 hover:text-gray-700"
+                                >
+                                    ✕
+                                </button>
                             </div>
-                            <button
-                                onClick={handleAddEvent}
-                                className="w-full py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600"
-                            >
-                                Add Event
-                            </button>
+                                
+                            <div className="max-h-96 overflow-y-auto">
+                                        {selectedDateEvents.map((event, index) => (
+                                            <div key={index} className="border-b border-gray-200 py-4 last:border-0">
+                                                <h4 className="font-semibold text-lg">{event.summary}</h4>
+                                                {event.description && (
+                                                    <p className="text-gray-600 mt-1">{event.description}</p>
+                                                )}
+                                                <div className="text-sm text-gray-500 mt-2">
+                                                    {new Date(event.start.dateTime).toLocaleTimeString()} - 
+                                                    {new Date(event.end.dateTime).toLocaleTimeString()}
+                                                </div>
+                                                <div className="mt-2 flex space-x-2">
+                                                    <button
+                                                        onClick={() => handleEditEvent(event)}
+                                                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteEvent(event.id)}
+                                                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                <div className="mt-6 flex space-x-4">
+                                    <button
+                                        onClick={() => {
+                                            setShowEventsModal(false);
+                                            handleShowEventForm();
+                                        }}
+                                        className="flex-1 bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600"
+                                    >
+                                        Add New Event
+                                    </button>
+                                    <button
+                                        onClick={() => setShowEventsModal(false)}
+                                        className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Appointment Form Modal */}
-                {showAppointmentForm && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                            <h3 className="text-2xl font-semibold mb-4">Schedule Dental Appointment</h3>
+            {/* Add this new Edit Form Modal */}
+            {showEditForm && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+                            <h3 className="text-xl font-semibold mb-4">Edit Event</h3>
                             <div className="space-y-4">
                                 <input
                                     type="text"
-                                    name="studentName"
-                                    value={newAppointment.studentName}
-                                    onChange={handleAppointmentInputChange}
-                                    placeholder="Student Name"
-                                    className="w-full p-3 border border-gray-300 rounded-lg bg-white text-black placeholder-black"
+                                    name="summary"
+                                    value={editingEvent.summary}
+                                    onChange={(e) => setEditingEvent({...editingEvent, summary: e.target.value})}
+                                    className="w-full p-2 border rounded"
+                                    placeholder="Event Title"
+                                />
+                                <textarea
+                                    name="description"
+                                    value={editingEvent.description}
+                                    onChange={(e) => setEditingEvent({...editingEvent, description: e.target.value})}
+                                    className="w-full p-2 border rounded"
+                                    placeholder="Description"
                                 />
                                 <input
-                                    type="text"
-                                    name="studentId"
-                                    value={newAppointment.studentId}
-                                    onChange={handleAppointmentInputChange}
-                                    placeholder="Student ID"
-                                    className="w-full p-3 border border-gray-300 rounded-lg bg-white text-black placeholder-black"
+                                    type="date"
+                                    name="date"
+                                    value={editingEvent.date}
+                                    onChange={(e) => setEditingEvent({...editingEvent, date: e.target.value})}
+                                    className="w-full p-2 border rounded"
                                 />
-                                <select
-                                    name="serviceType"
-                                    value={newAppointment.serviceType}
-                                    onChange={handleAppointmentInputChange}
-                                    className="w-full p-3 border border-gray-300 rounded-lg bg-white text-black"
-                                >
-                                    <option value="">Select Service Type</option>
-                                    <option value="Dental Checkup">Dental Checkup</option>
-                                    <option value="Tooth Extraction">Tooth Extraction</option>
-                                    <option value="Cleaning">Cleaning</option>
-                                    <option value="Consultation">Consultation</option>
-                                </select>
                                 <div className="flex space-x-4">
                                     <input
-                                        type="date"
-                                        name="date"
-                                        value={newAppointment.date}
-                                        onChange={handleAppointmentInputChange}
-                                        className="w-1/2 p-3 border border-gray-300 rounded-lg bg-white"
+                                        type="time"
+                                        name="startTime"
+                                        value={editingEvent.startTime}
+                                        onChange={(e) => setEditingEvent({...editingEvent, startTime: e.target.value})}
+                                        className="w-1/2 p-2 border rounded"
                                     />
                                     <input
                                         type="time"
-                                        name="time"
-                                        value={newAppointment.time}
-                                        onChange={handleAppointmentInputChange}
-                                        className="w-1/2 p-3 border border-gray-300 rounded-lg bg-white"
+                                        name="endTime"
+                                        value={editingEvent.endTime}
+                                        onChange={(e) => setEditingEvent({...editingEvent, endTime: e.target.value})}
+                                        className="w-1/2 p-2 border rounded"
                                     />
                                 </div>
-                                <textarea
-                                    name="notes"
-                                    value={newAppointment.notes}
-                                    onChange={handleAppointmentInputChange}
-                                    placeholder="Additional Notes"
-                                    rows="3"
-                                    className="w-full p-3 border border-gray-300 rounded-lg bg-white text-black placeholder-black"
-                                ></textarea>
-                                <div className="flex space-x-4">
-                                    <button
-                                        onClick={handleAddAppointment}
-                                        className="w-1/2 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600"
-                                    >
-                                        Schedule Appointment
-                                    </button>
-                                    <button
-                                        onClick={() => setShowAppointmentForm(false)}
-                                        className="w-1/2 py-3 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400"
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
+                            </div>
+                            <div className="mt-6 flex space-x-4">
+                                <button
+                                    onClick={handleUpdateEvent}
+                                    className="flex-1 bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600"
+                                >
+                                    Update Event
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowEditForm(false);
+                                        setEditingEvent(null);
+                                    }}
+                                    className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300"
+                                >
+                                    Cancel
+                                </button>
                             </div>
                         </div>
                     </div>

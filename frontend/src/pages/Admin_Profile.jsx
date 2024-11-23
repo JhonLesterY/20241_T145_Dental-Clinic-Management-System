@@ -8,6 +8,7 @@ const AdminProfile = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
     fullname: "",
+      username: "",
     email: sessionStorage.getItem('email') || "",
     phoneNumber: "",
     sex: "",
@@ -150,7 +151,15 @@ const handleSubmit = async (e) => {
   }
 };
 // Update password change handler
-const handlePasswordChange = async (currentPassword, newPassword) => {
+// Update the password change handler
+const handlePasswordChange = async (e) => {  // Add 'e' parameter
+  e.preventDefault();  // Add this to prevent form submission
+  
+  if (passwordData.newPassword !== passwordData.confirmPassword) {
+    alert("New passwords don't match!");
+    return;
+  }
+
   try {
       const adminId = sessionStorage.getItem('admin_id');
       const token = sessionStorage.getItem('token');
@@ -161,7 +170,10 @@ const handlePasswordChange = async (currentPassword, newPassword) => {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ currentPassword, newPassword })
+          body: JSON.stringify({
+              currentPassword: passwordData.currentPassword,
+              newPassword: passwordData.newPassword
+          })
       });
 
       const data = await response.json();
@@ -172,20 +184,22 @@ const handlePasswordChange = async (currentPassword, newPassword) => {
 
       // Update session storage and state
       sessionStorage.setItem('hasChangedPassword', 'true');
-      setHasChangedPassword(true);
+      setRequiresPasswordChange(false);  // Add this line
       setShowPasswordModal(false);
       
       alert('Password changed successfully');
       
-      // Refresh the page to update all states
-      window.location.reload();
+      // Clear password fields
+      setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+      });
   } catch (error) {
       console.error('Error changing password:', error);
       alert(error.message);
   }
 };
-    
-
 const handleLogout = () => {
   sessionStorage.removeItem('token');
   sessionStorage.removeItem('admin_id');
@@ -203,144 +217,98 @@ const handleLogout = () => {
   }
 
   return (
-    <div className="flex h-screen w-screen bg-gray-50 overflow-hidden">
-      <AdminSideBar />
-      <div className="flex-1 flex flex-col items-center justify-center bg-gray-100 text-white p-8">
-        {!userData.isProfileComplete && (
-          <div className="w-full max-w-2xl mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-lg">
-            ⚠️ Please complete your profile to access all features
-          </div>
-        )}
+        <div className="flex h-screen w-screen bg-gray-50 overflow-hidden">
+        <AdminSideBar />
+        <div className="flex-1 flex flex-col items-center justify-center bg-gray-100 text-white p-8">
+          {!userData.isProfileComplete && (
+            <div className="w-full max-w-2xl mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-lg">
+              ⚠️ Please complete your profile to access all features
+            </div>
+          )}
 
-        <div className="w-full max-w-2xl p-8 bg-white text-gray-800 rounded-lg shadow-lg">
-        <div className="flex justify-center mb-6">
-    <div className="relative group">
-        <img
-            className="h-24 w-24 rounded-full border-4 shadow-lg object-cover"
-            src={previewUrl}
-            alt="Profile"
-            onError={(e) => {
-                console.error('Error loading image:', e);
-                e.target.src = User_Profile; // Fallback to default image
-            }}
-        />
-        <div 
-            className="absolute inset-0 flex items-center justify-center rounded-full bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity"
-            onClick={() => fileInputRef.current?.click()}
-        >
-            <span className="text-white text-sm">Change Photo</span>
-        </div>
-        <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/*"
-            className="hidden"
-        />
-    </div>
-</div>
-          <div className="text-center text-2xl font-semibold text-blue-900">
-            {`${userData.firstName} ${userData.lastName}`}
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5 mt-8">
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-gray-600">First Name*</label>
-                <input
-                  type="text"
-                  value={userData.firstName}
-                  onChange={(e) => setUserData({ ...userData, firstName: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+          <div className="w-full max-w-2xl p-8 bg-white text-gray-800 rounded-lg shadow-lg">
+            <div className="flex flex-col items-center mb-6">
+              <div className="relative group">
+                  <img
+                      className="h-24 w-24 rounded-full border-4 shadow-lg object-cover"
+                      src={previewUrl}
+                      alt="Profile"
+                      onError={(e) => {
+                          console.error('Error loading image:', e);
+                          e.target.src = User_Profile;
+                      }}
+                  />
+                  <div 
+                      className="absolute inset-0 flex items-center justify-center rounded-full bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity"
+                      onClick={() => fileInputRef.current?.click()}
+                  >
+                      <span className="text-white text-sm">Change Photo</span>
+                  </div>
+                  <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      className="hidden"
+                  />
               </div>
-              <div className="flex-1">
-                <label className="block text-gray-600">Middle Name</label>
-                <input
-                  type="text"
-                  value={userData.middleName}
-                  onChange={(e) => setUserData({ ...userData, middleName: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              {/* Display fullname under profile picture */}
+              <div className="text-center mt-4">
+                  <h2 className="text-2xl font-semibold text-blue-900">{userData.fullname}</h2>
+                  <p className="text-gray-500">{userData.email}</p>
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-gray-600">Last Name*</label>
-                <input
-                  type="text"
-                  value={userData.lastName}
-                  onChange={(e) => setUserData({ ...userData, lastName: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+            <form onSubmit={handleSubmit} className="space-y-5 mt-8">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-gray-600">Username*</label>
+                  <input
+                    type="text"
+                    value={userData.username}
+                    onChange={(e) => setUserData({ ...userData, username: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-gray-600">Contact Number*</label>
+                  <input
+                    type="text"
+                    value={userData.phoneNumber}
+                    onChange={(e) => setUserData({ ...userData, phoneNumber: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
               </div>
-              <div className="flex-1">
-                <label className="block text-gray-600">Suffix</label>
-                <select 
-                  value={userData.suffix}
-                  onChange={(e) => setUserData({ ...userData, suffix: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="None">None</option>
-                  <option value="Jr.">Jr.</option>
-                  <option value="II">II</option>
-                  <option value="III">III</option>
-                </select>
-              </div>
-            </div>
 
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-gray-600">Contact Number*</label>
-                <input
-                  type="text"
-                  value={userData.phoneNumber}
-                  onChange={(e) => setUserData({ ...userData, phoneNumber: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-gray-600">Sex at Birth*</label>
+                  <select 
+                    value={userData.sex}
+                    onChange={(e) => setUserData({ ...userData, sex: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Select Sex</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-gray-600">Birthday*</label>
+                  <input
+                    type="date"
+                    value={userData.birthday}
+                    onChange={(e) => setUserData({ ...userData, birthday: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
               </div>
-              <div className="flex-1">
-                <label className="block text-gray-600">Email</label>
-                <input
-                  type="email"
-                  value={userData.email}
-                  onChange={(e) => setUserData({ ...userData, email: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-            </div>
 
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-gray-600">Sex at Birth*</label>
-                <select 
-                  value={userData.sex}
-                  onChange={(e) => setUserData({ ...userData, sex: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg 
-                   focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select Sex</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-              <div className="flex-1">
-                <label className="block text-gray-600">Birthday*</label>
-                <input
-                  type="date"
-                  value={userData.birthday}
-                  onChange={(e) => setUserData({ ...userData, birthday: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-            </div>
 
             <div className="flex gap-4 mt-6">
               <button

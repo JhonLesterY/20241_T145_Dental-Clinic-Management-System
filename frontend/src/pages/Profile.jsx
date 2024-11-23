@@ -6,16 +6,13 @@ import User_Profile from "/src/images/user.png";
 const Profile = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
-    firstName: "",
-    middleName: "",
-    lastName: "",
-    suffix: "None",
+    fullname: "",
+    email: sessionStorage.getItem('email') || "",
     phoneNumber: "",
-    email: "",
     sex: "Male",
     birthday: "",
     isProfileComplete: false
-  });
+});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [profilePicture, setProfilePicture] = useState(null);
@@ -342,13 +339,14 @@ const handlePasswordChange = async (e) => {
               <div className="flex-1">
                 <label className="block text-gray-600">Email</label>
                 <input
-                  type="email"
-                  value={userData.email}
-                  onChange={(e) => setUserData({ ...userData, email: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                    type="email"
+                    value={userData.email}
+                    className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none cursor-not-allowed"
+                    required
+                    readOnly
+                    disabled
                 />
-              </div>
+            </div>
             </div>
 
             <div className="flex gap-4">

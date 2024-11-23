@@ -95,8 +95,6 @@ const Login = () => {
     }
 };
 
-
-// Google login handler
 // In your Google login handler
 const googleLogin = useGoogleLogin({
   onSuccess: async (response) => {
