@@ -1,82 +1,86 @@
-import React from 'react';
-import { Link } from 'react-router-dom'; // Import Link for navigation
-import Logo from '/src/images/Dental_logo.png';
-import bell from '/src/images/bell.png';
-import magnify from '/src/images/magnifying-glass.png';
-import SideNavBar from '../components/SideNavBar'; // Ensure SideNavBar is imported
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import Logo from "/src/images/Dental_logo.png";
+import bell from "/src/images/bell.png";
+import userIcon from "/src/images/user.png";
+import AdminSideBar from "../components/AdminSideBar";
 
-const AdminInventory = () => {
-    // Inventory items and their corresponding images
-    const inventoryItems = [
-        { name: 'Gloves', image: '/src/assets/gloves.jpg' },
-        { name: 'Handpieces', image: '/src/assets/handpieces.jpg' },
-        { name: 'Mask', image: '/src/assets/mask.jpg' },
-        { name: 'Needles', image: '/src/assets/needles.jpg' },
-        { name: 'Sterilizer', image: '/src/assets/sterlizer.jpg' },
-        { name: 'Syringes', image: '/src/assets/syringes.jpg' },
-        { name: 'Composite Resins', image: '/src/assets/composite-resins.jpg' },
-        { name: 'Denture Cleaner', image: '/src/assets/denture-cleaner.jpg' },
-        { name: 'Electric Micro Motor', image: '/src/assets/electric-micro-motor.jpg' },
-        { name: 'Mouth Props', image: '/src/assets/silicon-mouth-props.jpg' },
-        { name: 'Scaler', image: '/src/assets/scaler.jpg' },
-        { name: 'Fluoride Varnish', image: '/src/assets/flouride-varnish.jpg' },
-    ];
+// Inventory items and their corresponding images
+const inventoryItems = [
+    { name: 'Gloves', image: '/src/assets/gloves.jpg' },
+    { name: 'Handpieces', image: '/src/assets/handpieces.jpg' },
+    { name: 'Mask', image: '/src/assets/mask.jpg' },
+    { name: 'Needles', image: '/src/assets/needles.jpg' },
+    { name: 'Sterilizer', image: '/src/assets/sterlizer.jpg' },
+    { name: 'Syringes', image: '/src/assets/syringes.jpg' },
+    { name: 'Composite Resins', image: '/src/assets/composite-resins.jpg' },
+    { name: 'Denture Cleaner', image: '/src/assets/denture-cleaner.jpg' },
+    { name: 'Electric Micro Motor', image: '/src/assets/electric-micro-motor.jpg' },
+    { name: 'Mouth Props', image: '/src/assets/silicon-mouth-props.jpg' },
+    { name: 'Scaler', image: '/src/assets/scaler.jpg' },
+    { name: 'Fluoride Varnish', image: '/src/assets/flouride-varnish.jpg' },
+];
+
+const Admin_Inventory = () => {
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex h-screen bg-gray-100">
             {/* Sidebar */}
-            <div className="hidden lg:block w-1/4 bg-[#003367] text-white">
-                <SideNavBar />
-            </div>
+            <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col items-center">
+            <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
                 {/* Header */}
-                <header className="w-full shadow-lg">
-                    <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
-                        {/* Logo and Appointment Link */}
+                <header className="bg-white shadow-md">
+                    <div className="flex items-center justify-between px-6 py-4">
                         <div className="flex items-center space-x-4">
-                            <img className="w-11 cursor-pointer" src={Logo} alt="Dental Logo" />
-                            <Link to="/admin-inventory" className="text-xl font-semibold text-[#003367] hover:text-blue-500 transition">
-                                Inventory
-                            </Link>
+                            <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
+                            <h1 className="text-2xl font-semibold text-[#003367]">Inventory</h1>
                         </div>
 
-                        {/* Search Bar */}
-                        <div className="flex items-center bg-white border rounded-xl px-3 py-1">
-                            <img className="w-5" src={magnify} alt="Search icon" />
-                            <input
-                                type="text"
-                                placeholder="Search"
-                                className="ml-2 p-1 outline-none w-full"
-                                aria-label="Search for appointments"
-                            />
-                        </div>
+                        <div className="flex items-center space-x-4">
+                            {/* Search Bar */}
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search"
+                                    className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                {/* Search Icon */}
+                                <svg
+                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M21 21l-4.35-4.35M16 10a6 6 0 1112 0 6 6 0 01-12 0z"
+                                    />
+                                </svg>
+                            </div>
 
-                        {/* Bell Icon */}
-                        <div className="flex items-center">
-                            <button className="bg-gray-100 border-0 p-3 rounded-full hover:bg-gray-200">
-                                <img className="w-6" src={bell} alt="Notifications" />
+                            <button className="p-2 rounded-full hover:bg-gray-100 transition" aria-label="Notifications">
+                                <img className="w-6 h-6" src={bell} alt="Notifications" />
                             </button>
                         </div>
                     </div>
                 </header>
+                <div className="w-[78rem] mx-auto my-4"></div>
 
-                {/* Divider */}
-                <div className='w-[95rem] mx-auto my-4'></div>
-
-                 {/* Clinic Inventory Section */}
-                 <div className="space-y-4 mt-5 mx-auto w-full max-w-5xl px-4">
-                    <h2 className="text-3xl font-semibold text-[#003367] mb-6 text-center tracking-tight">
-                        Clinic Inventory
-                    </h2>
+                {/* Clinic Inventory Section */}
+                <div className="space-y-4 mt-8 mx-auto w-full max-w-9xl px-4">
 
                     {/* Inventory Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-6 gap-6 px-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-6 gap-8 px-4">
                         {inventoryItems.map((item) => (
-                            <div key={item.name} className="bg-gray-50 border shadow-lg border-gray-300 p-6 rounded-lg transform transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-2xl">
-                                <img src={item.image} alt={item.name} className="h-24 mx-auto mb-4 object-cover rounded-lg" />
-                                <h4 className="text-lg text-[#003367]">{item.name}</h4>
+                            <div key={item.name} className="bg-white border rounded-lg shadow-lg transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-2xl p-6">
+                                <img src={item.image} alt={item.name} className="h-32 mx-auto mb-4 object-cover rounded-lg" />
+                                <h4 className="text-lg font-semibold text-[#003367] text-center">{item.name}</h4>
                             </div>
                         ))}
                     </div>
@@ -86,4 +90,4 @@ const AdminInventory = () => {
     );
 };
 
-export default AdminInventory;
+export default Admin_Inventory;
