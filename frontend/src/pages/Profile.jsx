@@ -1,204 +1,470 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react"; 
 import { useNavigate } from "react-router-dom";
-import UserSideBar from "../components/UserSideBar";
-import User_Profile from "/src/images/user.png"; // Default user profile image
+import Dashboard from "../components/Dashboard";
+import User_Profile from "/src/images/user.png";
 
 const Profile = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
-    firstName: "",
-    middleName: "",
-    lastName: "",
-    suffix: "None",
+    fullname: "",
+    email: sessionStorage.getItem('email') || "",
     phoneNumber: "",
-    email: sessionStorage.getItem("email") || "",
     sex: "Male",
     birthday: "",
-    isProfileComplete: false,
-  });
+    isProfileComplete: false
+});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [profilePicture, setProfilePicture] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(User_Profile);
+  const fileInputRef = useRef(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [requiresPasswordChange, setRequiresPasswordChange] = useState(false);
   const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
-  const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchUserProfile();
   }, []);
-
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setProfilePicture(file);
+      // Create preview URL
       const reader = new FileReader();
-      reader.onloadend = () => setPreviewUrl(reader.result);
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
       reader.readAsDataURL(file);
     }
   };
 
   const fetchUserProfile = async () => {
     try {
-      setIsLoading(true);
-      const patientId = sessionStorage.getItem("patient_id");
-      const token = sessionStorage.getItem("token");
-
-      if (!token || !patientId) {
-        navigate("/login");
-        return;
-      }
-
-      const response = await fetch(
-        `http://localhost:5000/patients/${patientId}/profile`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+        setIsLoading(true);
+        const patientId = sessionStorage.getItem('patient_id');
+        const token = sessionStorage.getItem('token');
+  
+        if (!token || !patientId) {
+            navigate('/login');
+            return;
         }
-      );
+  
+        const response = await fetch(`http://localhost:5000/patients/${patientId}/profile`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+        });
+  
+        if (!response.ok) throw new Error('Failed to fetch profile');
+      
+        const data = await response.json();
+        console.log('Profile data received:', data); // Debug log
 
-      if (!response.ok) throw new Error("Failed to fetch profile");
+        // Split the full name for Google users
+        let firstName = "", middleName = "", lastName = "";
+        if (data.isGoogleUser && data.name) {
+            const nameParts = data.name.split(' ');
+            if (nameParts.length === 3) {
+                [firstName, middleName, lastName] = nameParts;
+            } else if (nameParts.length === 2) {
+                [firstName, lastName] = nameParts;
+            } else {
+                firstName = data.name;
+            }
+        }
 
-      const data = await response.json();
-      const nameParts = data.name?.split(" ") || [];
-      setUserData({
-        firstName: data.firstName || nameParts[0] || "",
-        middleName: data.middleName || nameParts[1] || "",
-        lastName: data.lastName || nameParts[2] || "",
-        suffix: data.suffix || "None",
-        phoneNumber: data.phoneNumber || "",
-        email: data.email || "",
-        sex: data.sex || "Male",
-        birthday: data.birthday
-          ? new Date(data.birthday).toISOString().split("T")[0]
-          : "",
-        isProfileComplete: data.isProfileComplete || false,
-      });
+        setUserData({
+            firstName: data.firstName || firstName,
+            middleName: data.middleName || middleName,
+            lastName: data.lastName || lastName,
+            suffix: data.suffix || "None",
+            phoneNumber: data.phoneNumber || "",
+            email: data.email || "",
+            sex: data.sex || "Male",
+            birthday: data.birthday ? new   
+            Date(data.birthday).toISOString().split('T')[0] : "",
+            isProfileComplete: data.isProfileComplete || false,
+            hasChangedPassword: data.hasChangedPassword || false,
+            isGoogleUser: data.isGoogleUser || false
 
-      setPreviewUrl(data.profilePicture || User_Profile);
-      setRequiresPasswordChange(!data.isGoogleUser && !data.hasChangedPassword);
-      setShowPasswordModal(!data.isGoogleUser && !data.hasChangedPassword);
+        });
+
+        const needsPasswordChange = !data.isGoogleUser && !data.hasChangedPassword;
+        console.log('Needs password change:', needsPasswordChange); // Debug log
+        console.log('Is Google user:', data.isGoogleUser);
+        console.log('Has changed password:', data.hasChangedPassword);
+
+        setRequiresPasswordChange(needsPasswordChange);
+        setShowPasswordModal(needsPasswordChange);
+
+
+        // Set profile picture with debug logs
+        console.log('Profile picture URL:', data.profilePicture); // Debug log
+        if (data.profilePicture) {
+            setPreviewUrl(data.profilePicture);
+            console.log('Setting preview URL to:', data.profilePicture); // Debug log
+        } else {
+            console.log('No profile picture found, using default'); // Debug log
+        }
     } catch (err) {
-      setError(err.message);
+        setError(err.message);
+        console.error('Error fetching profile:', err);
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
+};
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setUserData((prev) => ({ ...prev, [name]: value }));
+  const handleLogout = () => {
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('patient_id');
+    sessionStorage.removeItem('role');
+    navigate('/login');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!userData.firstName || !userData.lastName || !userData.phoneNumber) {
-      alert("Please fill in all required fields.");
+
+    if (requiresPasswordChange && !userData.hasChangedPassword) {
+      alert('Please change your temporary password before updating your profile.');
+      setShowPasswordModal(true);
       return;
-    }
-
+  }
     try {
-      const formData = new FormData();
-      Object.keys(userData).forEach((key) => formData.append(key, userData[key]));
-      if (profilePicture) formData.append("profilePicture", profilePicture);
+        const formData = new FormData();
+        
+        // Add all user data
+        Object.keys(userData).forEach(key => {
+            formData.append(key, userData[key]);
+        });
 
-      const patientId = sessionStorage.getItem("patient_id");
-      const token = sessionStorage.getItem("token");
-
-      const response = await fetch(
-        `http://localhost:5000/patients/${patientId}/profile`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
+        // Add profile picture if selected
+        if (profilePicture) {
+            formData.append('profilePicture', profilePicture);
         }
-      );
 
-      if (!response.ok) throw new Error("Failed to update profile");
-      alert("Profile updated successfully!");
-      navigate("/dashboard");
+        const patientId = sessionStorage.getItem('patient_id');
+        const token = sessionStorage.getItem('token');
+
+        const response = await fetch(`http://localhost:5000/patients/${patientId}/profile`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`
+                // Don't set Content-Type header when sending FormData
+            },
+            body: formData
+        });
+
+        if (!response.ok) throw new Error('Failed to update profile');
+
+        const data = await response.json();
+        console.log('Profile updated:', data);
+
+        // Update the preview URL if a new picture was uploaded
+        if (data.profilePicture) {
+            setPreviewUrl(data.profilePicture.startsWith('http') 
+                ? data.profilePicture 
+                : `http://localhost:5000${data.profilePicture}`
+            );
+        }
+
+        alert('Profile updated successfully!');
+        navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+        setError(err.message);
+        console.error('Error updating profile:', err);
     }
-  };
+};
 
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("Passwords do not match.");
+const handlePasswordChange = async (e) => {
+  e.preventDefault();
+  
+  if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert("New passwords don't match!");
       return;
-    }
+  }
 
-    try {
-      const patientId = sessionStorage.getItem("patient_id");
-      const token = sessionStorage.getItem("token");
+  try {
+      const patientId = sessionStorage.getItem('patient_id');
+      const token = sessionStorage.getItem('token');
 
-      const response = await fetch(
-        `http://localhost:5000/patients/${patientId}/change-password`,
-        {
-          method: "PUT",
+      const response = await fetch(`http://localhost:5000/patients/${patientId}/change-password`, {
+          method: 'PUT',
           headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
           },
-          body: JSON.stringify(passwordData),
-        }
-      );
+          body: JSON.stringify({
+              currentPassword: passwordData.currentPassword,
+              newPassword: passwordData.newPassword
+          })
+      });
 
-      if (!response.ok) throw new Error("Failed to change password");
-      alert("Password changed successfully!");
+      const data = await response.json();
+      
+      if (!response.ok) {
+          throw new Error(data.message || 'Failed to change password');
+      }
+
+      // Update local state with the response data
+      setUserData(prev => ({
+          ...prev,
+          hasChangedPassword: data.hasChangedPassword,
+          hasLocalPassword: data.hasLocalPassword
+      }));
+
+      setRequiresPasswordChange(false);
       setShowPasswordModal(false);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      
+      alert('Password changed successfully!');
+  } catch (err) {
+      alert(err.message);
+      console.error('Error changing password:', err);
+  }
+};
   if (isLoading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <div className="text-blue-600 text-xl">Loading...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex">
-      <UserSideBar />
-      <div className="flex-1 p-6">
-        <div className="text-center">
-          <img
+    <div className="flex h-screen w-screen bg-gray-50 overflow-hidden">
+      <Dashboard />
+      <div className="flex-1 flex flex-col items-center justify-center bg-gray-100 text-white p-8">
+        {!userData.isProfileComplete && (
+          <div className="w-full max-w-2xl mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-lg">
+            ⚠️ Please complete your profile to access all features
+          </div>
+        )}
+
+        <div className="w-full max-w-2xl p-8 bg-white text-gray-800 rounded-lg shadow-lg">
+        <div className="flex justify-center mb-6">
+    <div className="relative group">
+        <img
+            className="h-24 w-24 rounded-full border-4 shadow-lg object-cover"
             src={previewUrl}
             alt="Profile"
-            className="w-36 h-36 rounded-full mx-auto"
-          />
-          <label>
-            <input
-              type="file"
-              onChange={handleFileChange}
-              className="hidden"
-              ref={fileInputRef}
-            />
-            <button className="bg-blue-500 text-white px-4 py-2 mt-4">Upload</button>
-          </label>
+            onError={(e) => {
+                console.error('Error loading image:', e);
+                e.target.src = User_Profile; // Fallback to default image
+            }}
+        />
+        <div 
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity"
+            onClick={() => fileInputRef.current?.click()}
+        >
+            <span className="text-white text-sm">Change Photo</span>
         </div>
-
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <label>First Name</label>
-            <input
-              type="text"
-              name="firstName"
-              value={userData.firstName}
-              onChange={handleInputChange}
-            />
+        <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            className="hidden"
+        />
+    </div>
+</div>
+          <div className="text-center text-2xl font-semibold text-blue-900">
+            {`${userData.firstName} ${userData.lastName}`}
           </div>
-          <button type="submit">Save</button>
-        </form>
+
+          <form onSubmit={handleSubmit} className="space-y-5 mt-8">
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-gray-600">First Name*</label>
+                <input
+                  type="text"
+                  value={userData.firstName}
+                  onChange={(e) => setUserData({ ...userData, firstName: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-gray-600">Middle Name</label>
+                <input
+                  type="text"
+                  value={userData.middleName}
+                  onChange={(e) => setUserData({ ...userData, middleName: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-gray-600">Last Name*</label>
+                <input
+                  type="text"
+                  value={userData.lastName}
+                  onChange={(e) => setUserData({ ...userData, lastName: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-gray-600">Suffix</label>
+                <select 
+                  value={userData.suffix}
+                  onChange={(e) => setUserData({ ...userData, suffix: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="None">None</option>
+                  <option value="Jr.">Jr.</option>
+                  <option value="II">II</option>
+                  <option value="III">III</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-gray-600">Contact Number*</label>
+                <input
+                  type="text"
+                  value={userData.phoneNumber}
+                  onChange={(e) => setUserData({ ...userData, phoneNumber: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-gray-600">Email</label>
+                <input
+                    type="email"
+                    value={userData.email}
+                    className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none cursor-not-allowed"
+                    required
+                    readOnly
+                    disabled
+                />
+            </div>
+            </div>
+
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-gray-600">Sex at Birth*</label>
+                <select 
+                  value={userData.sex}
+                  onChange={(e) => setUserData({ ...userData, sex: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-gray-600">Birthday*</label>
+                <input
+                  type="date"
+                  value={userData.birthday}
+                  onChange={(e) => setUserData({ ...userData, birthday: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
+        <div className="flex gap-4 mt-6">
+          <button
+            type="submit"
+            className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            {userData.isProfileComplete ? 'Update Profile' : 'Complete Profile'}
+          </button>
+          {!userData.isGoogleUser && (
+            <button
+              type="button"
+              onClick={() => setShowPasswordModal(true)}
+              className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            >
+              Change Password
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex-1 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+          >
+            Logout
+          </button>
+        </div>
+         </form>
+        </div>
+       
+
+        {/* Add this modal at the end of your return statement, before the closing div */}
+        {showPasswordModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-lg w-96">
+            <h2 className="text-xl font-bold mb-4">
+                {requiresPasswordChange ? 'Change Default Password' : 'Change Password'}
+            </h2>
+
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div>
+                  <label className="block text-gray-600">Current Password</label>
+                  <input
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                    className="w-full px-4 py-2 border rounded bg-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-600">New Password</label>
+                  <input
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                    className="w-full px-4 py-2 border rounded bg-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-600">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                    className="w-full px-4 py-2 border rounded bg-white "
+                    required
+                  />
+                </div>
+                <div className="flex gap-4">
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 bg-blue-600 text-white rounded hover:bg- 
+                     blue-700"
+                  >
+                    Change Password
+                  </button>
+                  {!requiresPasswordChange && (
+                <button
+                    type="button"
+                    onClick={() => setShowPasswordModal(false)}
+                    className="flex-1 py-2 bg-gray-300 text-gray-700 rounded 
+                     hover:bg-gray-400"
+                >
+                    Cancel
+                </button>
+            )}
+
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

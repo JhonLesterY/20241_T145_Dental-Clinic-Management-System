@@ -21,7 +21,8 @@ const menuItems = [
   { icons: <TbReportSearch size={24} />, label: "Reports", path: "/user-reports" },
 ];
 
-export default function Sidebar({ open, setOpen }) {
+export default function Sidebar() {
+  const [open, setOpen] = useState(true);
   const [adminData, setAdminData] = useState({ email: "Loading..." });
   const navigate = useNavigate();
 

@@ -22,14 +22,16 @@ const menuItems = [
   { icons: <TbReportSearch size={24} />, label: "Reports", path: "/admin-report" },
 ];
 
-export default function Sidebar({ open, setOpen }) {
+export default function Sidebar({ open = true, setOpen }) {
   const [adminData, setAdminData] = useState({ email: "Loading..." });
   const navigate = useNavigate();
 
   // Add this effect to open the sidebar on mount
   useEffect(() => {
-    setOpen(true);
-  }, []);
+    if (setOpen && typeof setOpen === 'function') {
+      setOpen(true);
+    }
+  }, [setOpen]);
 
   // Fetch admin details from the backend
   useEffect(() => {
@@ -71,11 +73,13 @@ export default function Sidebar({ open, setOpen }) {
             open ? "w-12" : "w-0"
           }`}
         />
-        <MdMenuOpen
-          size={28}
-          className="cursor-pointer hover:text-gray-200"
-          onClick={() => setOpen(!open)}
-        />
+        {setOpen && typeof setOpen === 'function' && (
+          <MdMenuOpen
+            size={28}
+            className="cursor-pointer hover:text-gray-200"
+            onClick={() => setOpen(!open)}
+          />
+        )}
       </div>
 
       {/* Menu Items */}

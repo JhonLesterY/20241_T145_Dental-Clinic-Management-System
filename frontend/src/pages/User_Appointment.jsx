@@ -35,6 +35,7 @@ const User_Appointment = () => {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     checkProfileCompletion();
@@ -52,9 +53,11 @@ const User_Appointment = () => {
     try {
       const patientId = sessionStorage.getItem('patient_id');
       const token = sessionStorage.getItem('token');
-  
+      
+      console.log('Checking profile with:', { patientId, token }); // Debug log
+      
       if (!token || !patientId) {
-        console.log('Missing authentication credentials');
+        console.log('Missing credentials');
         navigate('/login');
         return;
       }
@@ -67,9 +70,9 @@ const User_Appointment = () => {
       });
   
       if (!response.ok) {
+        console.log('Profile response not ok:', response.status);
         if (response.status === 401) {
-          sessionStorage.removeItem('token');
-          sessionStorage.removeItem('patient_id');
+          sessionStorage.clear(); // Clear all session data
           navigate('/login');
           return;
         }
@@ -77,8 +80,11 @@ const User_Appointment = () => {
       }
       
       const data = await response.json();
-      console.log('Profile data:', data);
-
+      console.log('Profile data received:', data); // Debug log
+  
+      // Store user data in session storage
+      sessionStorage.setItem('userData', JSON.stringify(data));
+      
       if (!data.isProfileComplete) {
         navigate('/profile', { 
           state: { message: 'Please complete your profile before making an appointment' }
@@ -96,20 +102,34 @@ const User_Appointment = () => {
 
   const fetchAvailableSlots = async (date) => {
     try {
-      const response = await fetch(`/appointments/available?date=${date}`);
+      const formattedDate = date.toISOString().split('T')[0];
+      console.log('Fetching slots for date:', formattedDate);
+      
+      const response = await fetch(`http://localhost:5000/appointments/available?date=${formattedDate}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch slots: ${response.statusText}`);
+        throw new Error(`Failed to fetch slots: ${response.status}`);
       }
-
+  
       const data = await response.json();
-      return data;
+      console.log('Received slots:', data);
+      setAvailableSlots(data);
     } catch (error) {
       console.error('Error fetching slots:', error);
-      toast.error('Failed to fetch available slots');
-      return [];
+      // Fallback to default slots
+      setAvailableSlots(TIME_SLOTS.map(slot => ({
+        ...slot,
+        available: true
+      })));
     }
   };
+
+  
 
   const formatDate = (date) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -124,14 +144,49 @@ const User_Appointment = () => {
     setSelectedSlot(slotId);
   };
 
-  const handleNext = () => {
-    if (selectedSlot) {
-      sessionStorage.setItem('appointmentDate', currentDate.toISOString());
-      sessionStorage.setItem('appointmentSlot', selectedSlot);
+  const handleNext = async () => {
+    if (!selectedSlot) return;
+  
+    setIsSubmitting(true);
+    try {
+      const userData = JSON.parse(sessionStorage.getItem('userData'));
+      if (!userData) {
+        throw new Error('User data not found');
+      }
+  
+      const appointmentData = {
+        studentName: `${userData.firstName} ${userData.lastName}`,
+        appointmentDate: currentDate.toISOString(),
+        timeSlot: selectedSlot
+      };
+  
+      console.log('Sending appointment data:', appointmentData);
+  
+      const response = await fetch('http://localhost:5000/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        },
+        body: JSON.stringify(appointmentData)
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create appointment');
+      }
+  
+      const result = await response.json();
+      console.log('Appointment created:', result);
       navigate('/upload-requirements');
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      alert(error.message || 'Failed to create appointment. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
+  
   if (isLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
@@ -212,14 +267,16 @@ const User_Appointment = () => {
             </div>
 
             <div className="space-y-4">
-              {TIME_SLOTS.map((slot) => {
-                const isAvailable = availableSlots.find(s => s.id === slot.id)?.available;
-                
-                return (
-                  <div
-                    key={slot.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                  >
+            {TIME_SLOTS.map((slot) => {
+                  // Find the availability status from availableSlots
+                  const slotData = availableSlots.find(s => s.id === slot.id);
+                  const isAvailable = slotData ? slotData.available : false;
+                  
+                  return (
+                    <div
+                      key={slot.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    >
                     <div className="flex items-center gap-3 flex-1">
                       <input
                         type="radio"
@@ -260,20 +317,20 @@ const User_Appointment = () => {
           </div>
 
           {/* Next Button */}
-          <div className="flex justify-center mt-6">
-            <button
+          <div className="flex justify-end mt-4">
+                  <button
               onClick={handleNext}
-              disabled={!selectedSlot}
+              disabled={!selectedSlot || isSubmitting}
               className={`
-                cursor-pointer rounded-xl px-6 py-3
-                ${selectedSlot 
-                  ? 'hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out'
-                  : 'bg-[#3b82f6] text-white hover:bg-[#2563eb]cursor-not-allowed text-gray-300 transition-colors duration-200 text-center transform hover:scale-105 transition-transform duration-200 ease-in-out'
+                cursor-pointer shadow-sm rounded-xl px-5 py-2 
+                ${selectedSlot && !isSubmitting
+                  ? 'bg-[#003367] hover:shadow-lg transform hover:scale-105 transition- transform duration-200 ease-in-out' 
+                  : 'bg-gray-400 cursor-not-allowed'
                 }
                 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500
               `}
             >
-              Next
+              {isSubmitting ? 'Submitting...' : 'Next'}
             </button>
           </div>
           </div>

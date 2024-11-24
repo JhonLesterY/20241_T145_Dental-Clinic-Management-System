@@ -1,38 +1,30 @@
 const mongoose = require('mongoose');
 
 const appointmentSchema = new mongoose.Schema({
-    studentName: {
-        type: String,
-        required: true
-    },
-    studentId: {
-        type: String,
-        required: true
-    },
-    serviceType: {
-        type: String,
-        required: true,
-        enum: ['Dental Checkup', 'Tooth Extraction', 'Cleaning', 'Consultation']
-    },
-    date: {
-        type: Date,
-        required: true
-    },
-    time: {
-        type: String,
-        required: true
-    },
-    notes: String,
-    googleCalendarEventId: String,
-    status: {
-        type: String,
-        enum: ['pending', 'confirmed', 'cancelled', 'completed'],
-        default: 'pending'
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+  appointmentId: {
+    type: String,
+    unique: true,
+    default: () => 'APT' + Date.now().toString().slice(-6) // Creates APT + last 6 digits of timestamp
+  },
+  patientName: {
+    type: String,
+    required: true
+  },
+  appointmentTime: {
+    type: String,
+    required: true
+  },
+  appointmentDate: {
+    type: Date,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'confirmed', 'declined'],
+    default: 'pending'
+  }
+}, {
+  timestamps: true // This will add createdAt and updatedAt fields
 });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

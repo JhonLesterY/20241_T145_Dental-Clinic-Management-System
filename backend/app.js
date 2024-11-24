@@ -11,7 +11,8 @@ connectDB();
 // CORS Middleware
 app.use(cors({
     origin: 'http://localhost:5173', // Frontend origin
-    methods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE'],
+    methods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true // Allow credentials to be passed
 }));
 
@@ -31,16 +32,24 @@ const authRoutes = require('./routes/authRoutes');
 const patientRoutes = require('./routes/patientRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const dentistRoutes = require('./routes/dentistRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
 const fs = require('fs');
 const uploadDir = path.join(__dirname, 'uploads/profile-pictures');
 if (!fs.existsSync(uploadDir)){
     fs.mkdirSync(uploadDir, { recursive: true });
+
+    app.use((req, res, next) => {
+        console.log(`${req.method} ${req.url}`);
+        next();
+      });
 }
 
 app.use('/auth', authRoutes);
 app.use('/patients', patientRoutes);
 app.use('/admin', adminRoutes);
 app.use('/dentists', dentistRoutes);
+app.use('/appointments', appointmentRoutes);
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

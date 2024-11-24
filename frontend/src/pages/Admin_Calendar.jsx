@@ -180,14 +180,25 @@ const AdminCalendar = () => {
         );
     }
 
-    const handleViewEvents = (date) => {
-        const eventsOnDate = events.filter(event => {
-            const eventDate = new Date(event.start.dateTime || event.start.date);
-            return eventDate.toDateString() === date.toDateString();
-        });
-        setSelectedDateEvents(eventsOnDate);
-        setShowEventsModal(true);
-    };
+    const handleViewEvents = async (date) => {
+        try {
+          // Format the date for comparison
+          const formattedDate = date.toISOString().split('T')[0];
+          
+          // Filter events for the selected date
+          const dateEvents = events.filter(event => {
+            const eventDate = new Date(event.start.dateTime || event.start.date)
+              .toISOString().split('T')[0];
+            return eventDate === formattedDate;
+          });
+      
+          setSelectedDateEvents(dateEvents);
+          setShowEventsModal(true);
+        } catch (error) {
+          console.error('Error fetching events:', error);
+          setError('Failed to fetch events for this date');
+        }
+      };
 
     const handleShowEventForm = () => setShowEventForm(true);
 
@@ -513,70 +524,122 @@ const AdminCalendar = () => {
                 </div>
 
                     {/* Event Form Modal */}
-                    {showEventsModal && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-lg p-6 w-full max-w-lg">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-xl font-semibold">Events on {selectedDateEvents[0]?.start.dateTime ? 
-                                    new Date(selectedDateEvents[0].start.dateTime).toLocaleDateString() : 
-                                    'this date'}
-                                </h3>
-                                <button
-                                    onClick={() => setShowEventsModal(false)}
-                                    className="text-gray-500 hover:text-gray-700"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                                
-                            <div className="max-h-96 overflow-y-auto">
-                                        {selectedDateEvents.map((event, index) => (
-                                            <div key={index} className="border-b border-gray-200 py-4 last:border-0">
-                                                <h4 className="font-semibold text-lg">{event.summary}</h4>
-                                                {event.description && (
-                                                    <p className="text-gray-600 mt-1">{event.description}</p>
-                                                )}
-                                                <div className="text-sm text-gray-500 mt-2">
-                                                    {new Date(event.start.dateTime).toLocaleTimeString()} - 
-                                                    {new Date(event.end.dateTime).toLocaleTimeString()}
-                                                </div>
-                                                <div className="mt-2 flex space-x-2">
-                                                    <button
-                                                        onClick={() => handleEditEvent(event)}
-                                                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteEvent(event.id)}
-                                                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                <div className="mt-6 flex space-x-4">
-                                    <button
-                                        onClick={() => {
-                                            setShowEventsModal(false);
-                                            handleShowEventForm();
-                                        }}
-                                        className="flex-1 bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600"
-                                    >
-                                        Add New Event
-                                    </button>
-                                    <button
-                                        onClick={() => setShowEventsModal(false)}
-                                        className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300"
-                                    >
-                                        Close
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                   {showEventsModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="bg-white rounded-lg p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-semibold">
+          Events on {selectedDateEvents[0]?.start.dateTime ? 
+            new Date(selectedDateEvents[0].start.dateTime).toLocaleDateString() : 
+            new Date(newEvent.date).toLocaleDateString()}
+        </h3>
+        <button
+          onClick={() => setShowEventsModal(false)}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Existing Events List */}
+      <div className="max-h-96 overflow-y-auto mb-4">
+        {selectedDateEvents.length > 0 ? (
+          selectedDateEvents.map((event, index) => (
+            <div key={index} className="border-b border-gray-200 py-4 last:border-0">
+              <h4 className="font-semibold text-lg">{event.summary}</h4>
+              {event.description && (
+                <p className="text-gray-600 mt-1">{event.description}</p>
+              )}
+              <div className="text-sm text-gray-500 mt-2">
+                {new Date(event.start.dateTime).toLocaleTimeString()} - 
+                {new Date(event.end.dateTime).toLocaleTimeString()}
+              </div>
+              <div className="mt-2 flex space-x-2">
+                <button
+                  onClick={() => handleEditEvent(event)}
+                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteEvent(event.id)}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-gray-500 text-center py-4">No events scheduled for this date</p>
+        )}
+      </div>
+
+      {/* Add New Event Form */}
+      <form onSubmit={handleAddEvent} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Event Title</label>
+          <input
+            type="text"
+            value={newEvent.summary}
+            onChange={(e) => setNewEvent({...newEvent, summary: e.target.value})}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 ">Description</label>
+          <textarea
+            value={newEvent.description}
+            onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
+            rows="3"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Start Time</label>
+            <input
+              type="time"
+              value={newEvent.startTime}
+              onChange={(e) => setNewEvent({...newEvent, startTime: e.target.value})}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">End Time</label>
+            <input
+              type="time"
+              value={newEvent.endTime}
+              onChange={(e) => setNewEvent({...newEvent, endTime: e.target.value})}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-3">
+          <button
+            type="button"
+            onClick={() => setShowEventsModal(false)}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+          >
+            Add Event
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
 
             {/* Add this new Edit Form Modal */}
             {showEditForm && (

@@ -1,0 +1,189 @@
+const express = require('express');
+const router = express.Router();
+const jwt = require('jsonwebtoken');
+const Appointment = require('../models/Appointment');
+
+// Define time slots (same as frontend)
+const TIME_SLOTS = [
+  { time: "8:00 - 10:00 AM", id: 1 },
+  { time: "10:30 - 12:30 NN", id: 2 },
+  { time: "1:00 - 3:00 PM", id: 3 },
+  { time: "3:00 - 5:00 PM", id: 4 }
+];
+
+router.use((req, res, next) => {
+  console.log(`Appointment Route accessed: ${req.method} ${req.url}`);
+  next();
+});
+
+router.get('/latest', async (req, res) => {
+  try {
+    // Get the token from the request headers
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Decode the token to get the user ID
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const userId = decoded.userId;
+
+    // Get the user's latest appointment
+    const appointment = await Appointment.findOne({ userId }) // Add userId filter
+      .sort({ createdAt: -1 }) // Sort by creation date, newest first
+      .select('appointmentId patientName appointmentTime appointmentDate status')
+      .limit(1);
+    
+    if (!appointment) {
+      return res.status(404).json({ error: 'No appointments found' });
+    }
+    
+    console.log('Latest appointment found:', appointment); // Debug log
+    res.json(appointment);
+  } catch (error) {
+    console.error('Error fetching latest appointment:', error);
+    res.status(500).json({ error: 'Failed to fetch latest appointment' });
+  }
+});
+
+// GET /appointments/available
+router.get('/available', async (req, res) => {
+  try {
+    const { date } = req.query;
+    
+    // Get all appointments for the specified date
+    const appointments = await Appointment.find({
+      date: {
+        $gte: new Date(date),
+        $lt: new Date(new Date(date).setDate(new Date(date).getDate() + 1))
+      }
+    });
+
+    // Count bookings for each time slot
+    const slotCounts = appointments.reduce((acc, curr) => {
+      acc[curr.time] = (acc[curr.time] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Maximum appointments per slot
+    const MAX_APPOINTMENTS_PER_SLOT = 3;
+
+    // Create availability data
+    const availableSlots = TIME_SLOTS.map(slot => ({
+      id: slot.id,
+      time: slot.time,
+      available: (slotCounts[slot.time] || 0) < MAX_APPOINTMENTS_PER_SLOT
+    }));
+
+    res.json(availableSlots);
+  } catch (error) {
+    console.error('Error fetching available slots:', error);
+    res.status(500).json({ error: 'Failed to fetch available slots' });
+  }
+});
+
+// Update your POST route error handling
+router.post('/', async (req, res) => {
+  try {
+    // Get user ID from token
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const userId = decoded.userId;
+
+    console.log('Received appointment data:', req.body);
+
+    const selectedSlot = TIME_SLOTS.find(slot => slot.id === parseInt(req.body.timeSlot));
+    if (!selectedSlot) {
+      return res.status(400).json({ error: 'Invalid time slot selected' });
+    }
+
+    // Create appointment with userId
+    const appointment = new Appointment({
+      userId,  // Add the userId
+      patientName: req.body.studentName,
+      appointmentTime: selectedSlot.time,
+      appointmentDate: new Date(req.body.appointmentDate),
+      status: 'pending'
+    });
+
+    const savedAppointment = await appointment.save();
+    console.log('Saved appointment:', savedAppointment);
+    res.status(201).json(savedAppointment);
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    res.status(500).json({ error: 'Failed to create appointment', details: error.message });
+  }
+});
+
+router.get('/', async (req, res) => {
+  try {
+    // Get user ID from token
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const userId = decoded.userId;
+
+    const appointments = await Appointment.find({ userId }) // Add userId filter
+      .select('appointmentId patientName appointmentTime appointmentDate status')
+      .sort({ appointmentDate: 1, appointmentTime: 1 });
+    
+    res.json(appointments);
+  } catch (error) {
+    console.error('Error fetching appointments:', error);
+    res.status(500).json({ error: 'Failed to fetch appointments' });
+  }
+});
+
+router.patch('/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    console.log('Updating appointment status:', { id, status }); // Debug log
+
+    // Validate status
+    if (!['confirmed', 'declined'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    // Try to find appointment by appointmentId first
+    let appointment = await Appointment.findOneAndUpdate(
+      { appointmentId: id },
+      { status },
+      { new: true }
+    );
+
+    // If not found by appointmentId, try _id
+    if (!appointment) {
+      appointment = await Appointment.findByIdAndUpdate(
+        id,
+        { status },
+        { new: true }
+      );
+    }
+
+    if (!appointment) {
+      console.log('Appointment not found:', id); // Debug log
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    console.log('Updated appointment:', appointment); // Debug log
+    res.json(appointment);
+  } catch (error) {
+    console.error('Error updating appointment status:', error);
+    res.status(500).json({ error: 'Failed to update appointment status' });
+  }
+});
+
+router.options('/:id/status', (req, res) => {
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+  res.sendStatus(200);
+});
+module.exports = router;
