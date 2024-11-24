@@ -195,7 +195,7 @@ A_route.post('/add-dentist', authenticateAdmin, adminService.addDentist);
 A_route.post('/create', authenticateAdmin, adminService.createAdmin);
 
 
-A_route.get('/appointments', adminService.getAllAppointments);
+A_route.get('/appointments', authenticateAdmin, adminService.getAllAppointments);
 A_route.post('/appointments/reminders', adminService.sendReminders);
 A_route.post('/calendar', adminService.updateCalendar);
 A_route.get('/reports', adminService.getReports);

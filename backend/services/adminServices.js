@@ -313,18 +313,27 @@ async function deleteAdmin(req, res) {
 
 async function getAllAppointments(req, res) {
     try {
-        const appointments = await Appointment.find({});
+        // Verify admin is authenticated
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
 
-        // Log activity
-        await logActivity({
-            userId: req.user._id,
-            userRole: 'admin',
-            action: 'getAllAppointments',
-            details: { count: appointments.length }
-        });
+        const appointments = await Appointment.find({})
+            .sort({ appointmentDate: -1, appointmentTime: 1 })
+            .select('appointmentId patientName appointmentTime appointmentDate status userId');
 
+        // Log activity with proper user data
+        await logActivity(
+            req.user.id,
+            'admin',
+            'getAllAppointments',
+            { count: appointments.length }
+        );
+
+        console.log(`Admin fetched ${appointments.length} appointments`);
         return res.status(200).json(appointments);
     } catch (error) {
+        console.error('Error in getAllAppointments:', error);
         res.status(500).json({ message: 'Failed to retrieve appointments: ' + error.message });
     }
 }

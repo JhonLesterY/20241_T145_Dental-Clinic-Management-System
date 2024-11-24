@@ -15,16 +15,20 @@ const Appointment_Confirmation = () => {
 
   const fetchAppointment = async () => {
     try {
-      // Get the user's latest appointment
+      // Add this console log to verify the token
+      const token = sessionStorage.getItem('token');
+      console.log('Current token:', token);
+  
       const response = await fetch('http://localhost:5000/appointments/latest', {
         headers: {
           'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         }
       });
-
+  
       if (!response.ok) throw new Error('Failed to fetch appointment');
       
       const data = await response.json();
+      console.log('Fetched appointment data:', data); // Add this debug log
       setAppointment(data);
     } catch (error) {
       console.error('Error:', error);

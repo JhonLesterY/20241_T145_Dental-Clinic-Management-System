@@ -15,7 +15,7 @@ const Admin_ViewAppointment = () => {
 
   const fetchAppointments = async () => {
     try {
-      const response = await fetch('http://localhost:5000/appointments', {
+      const response = await fetch('http://localhost:5000/admin/appointments', {
         headers: {
           'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         }
@@ -24,6 +24,7 @@ const Admin_ViewAppointment = () => {
       if (!response.ok) throw new Error('Failed to fetch appointments');
       
       const data = await response.json();
+      console.log('Fetched appointments:', data);
       setAppointments(data);
     } catch (error) {
       console.error('Error:', error);

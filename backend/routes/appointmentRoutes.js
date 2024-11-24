@@ -11,6 +11,17 @@ const TIME_SLOTS = [
   { time: "3:00 - 5:00 PM", id: 4 }
 ];
 
+const verifyAndDecodeToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    console.log('Decoded token:', decoded); // Add this debug log
+    return decoded;
+  } catch (error) {
+    console.error('Token verification failed:', error);
+    throw error;
+  }
+};
+
 router.use((req, res, next) => {
   console.log(`Appointment Route accessed: ${req.method} ${req.url}`);
   next();
@@ -26,19 +37,25 @@ router.get('/latest', async (req, res) => {
 
     // Decode the token to get the user ID
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const userId = decoded.userId;
+    const userId = decoded.id;
 
-    // Get the user's latest appointment
-    const appointment = await Appointment.findOne({ userId }) // Add userId filter
-      .sort({ createdAt: -1 }) // Sort by creation date, newest first
-      .select('appointmentId patientName appointmentTime appointmentDate status')
-      .limit(1);
+    console.log('Token:', token);
+    console.log('Decoded token:', decoded);
+    console.log('Fetching appointment for userId:', userId);
+
+    // Get the user's latest appointment with strict userId matching
+    const appointment = await Appointment.findOne({ 
+      userId: userId  // Ensure exact match with the logged-in user's ID
+    })
+    .sort({ createdAt: -1 }) // Sort by creation date, newest first
+    .select('appointmentId patientName appointmentTime appointmentDate status');
     
+    console.log('Found appointment:', appointment);
+
     if (!appointment) {
       return res.status(404).json({ error: 'No appointments found' });
     }
     
-    console.log('Latest appointment found:', appointment); // Debug log
     res.json(appointment);
   } catch (error) {
     console.error('Error fetching latest appointment:', error);
@@ -85,24 +102,22 @@ router.get('/available', async (req, res) => {
 // Update your POST route error handling
 router.post('/', async (req, res) => {
   try {
-    // Get user ID from token
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const userId = decoded.userId;
+    const userId = decoded.id; // Using decoded.id instead of decoded.userId
 
-    console.log('Received appointment data:', req.body);
+    console.log('Creating appointment with userId:', userId);
 
     const selectedSlot = TIME_SLOTS.find(slot => slot.id === parseInt(req.body.timeSlot));
     if (!selectedSlot) {
       return res.status(400).json({ error: 'Invalid time slot selected' });
     }
 
-    // Create appointment with userId
     const appointment = new Appointment({
-      userId,  // Add the userId
+      userId: userId,
       patientName: req.body.studentName,
       appointmentTime: selectedSlot.time,
       appointmentDate: new Date(req.body.appointmentDate),
@@ -126,7 +141,7 @@ router.get('/', async (req, res) => {
       return res.status(401).json({ error: 'No token provided' });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const userId = decoded.userId;
+    const userId = decoded.id;
 
     const appointments = await Appointment.find({ userId }) // Add userId filter
       .select('appointmentId patientName appointmentTime appointmentDate status')

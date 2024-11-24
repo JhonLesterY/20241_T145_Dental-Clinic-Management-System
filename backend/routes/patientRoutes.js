@@ -24,7 +24,7 @@ const upload = multer({ storage: storage });
 // Book Appointment
 P_route.post('/:patient_id/appointments', authenticatePatient, checkProfileCompletion, async (req, res) => {
     try {
-        const patientId = req.params.patient_id; // Should be defined
+        const patientId = req.params.patient_id; 
         const result = await patientService.bookAppointment(patientId, req.body);
         res.status(200).json(result);
     } catch (error) {
