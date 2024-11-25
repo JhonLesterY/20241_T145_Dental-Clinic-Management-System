@@ -72,15 +72,17 @@ router.get('/available', async (req, res) => {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 1);
 
-    // Get all appointments for the specified date
+    // Get appointments only for the specific date
     const appointments = await Appointment.find({
       appointmentDate: {
         $gte: startDate,
         $lt: endDate
-      }
+      },
+      // Only count appointments that aren't declined
+      status: { $ne: 'declined' }
     });
 
-    // Count bookings for each time slot
+    // Count bookings for each time slot for this specific date
     const slotCounts = {};
     appointments.forEach(appointment => {
       TIME_SLOTS.forEach(slot => {
@@ -100,7 +102,7 @@ router.get('/available', async (req, res) => {
       };
     });
 
-    console.log('Availability data:', availabilityData); // Debug log
+    console.log('Availability data for', date, ':', availabilityData); // Debug log
     res.json(availabilityData);
   } catch (error) {
     console.error('Error fetching available slots:', error);
