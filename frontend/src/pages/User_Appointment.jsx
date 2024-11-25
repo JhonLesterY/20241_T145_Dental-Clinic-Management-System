@@ -9,10 +9,10 @@ import UserSideBar from "../components/UserSideBar";
 import userIcon from "/src/images/user.png";
 
 const TIME_SLOTS = [
-  { time: "8:00 - 10:00 AM", id: 1 },
-  { time: "10:30 - 12:30 NN", id: 2 },
-  { time: "1:00 - 3:00 PM", id: 3 },
-  { time: "3:00 - 5:00 PM", id: 4 }
+  { time: "8:00 - 10:00 AM", id: 1, maxSlots: 3 },
+  { time: "10:30 - 12:30 NN", id: 2, maxSlots: 3 },
+  { time: "1:00 - 3:00 PM", id: 3, maxSlots: 3 },
+  { time: "3:00 - 5:00 PM", id: 4, maxSlots: 3 }
 ];
 
 // Helper function to format dates
@@ -118,16 +118,31 @@ const User_Appointment = () => {
   
       const data = await response.json();
       console.log('Received slots:', data);
-      setAvailableSlots(data);
+      
+      // Transform the data to include remaining slots
+      const slotsWithAvailability = TIME_SLOTS.map(slot => {
+        const slotData = data.find(s => s.id === slot.id) || {};
+        const bookedCount = slotData.bookedCount || 0;
+        const remainingSlots = slot.maxSlots - bookedCount;
+        return {
+          ...slot,
+          available: remainingSlots > 0,
+          remainingSlots: remainingSlots
+        };
+      });
+      
+      setAvailableSlots(slotsWithAvailability);
     } catch (error) {
       console.error('Error fetching slots:', error);
-      // Fallback to default slots
+      // Fallback to default slots with max availability
       setAvailableSlots(TIME_SLOTS.map(slot => ({
         ...slot,
-        available: true
+        available: true,
+        remainingSlots: slot.maxSlots
       })));
     }
   };
+  
 
   
 
@@ -268,15 +283,15 @@ const User_Appointment = () => {
 
             <div className="space-y-4">
             {TIME_SLOTS.map((slot) => {
-                  // Find the availability status from availableSlots
-                  const slotData = availableSlots.find(s => s.id === slot.id);
-                  const isAvailable = slotData ? slotData.available : false;
-                  
-                  return (
-                    <div
-                      key={slot.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                    >
+                const slotData = availableSlots.find(s => s.id === slot.id) || {};
+                const isAvailable = slotData.available;
+                const remainingSlots = slotData.remainingSlots || 0;
+                
+                return (
+                  <div
+                    key={slot.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  >
                     <div className="flex items-center gap-3 flex-1">
                       <input
                         type="radio"
@@ -300,7 +315,9 @@ const User_Appointment = () => {
                             isAvailable ? 'text-blue-500' : 'text-red-500'
                           }`}
                         >
-                          {isAvailable ? 'Available Slots' : 'Fully Booked'}
+                          {isAvailable 
+                            ? `Available Slots: ${remainingSlots}` 
+                            : 'Fully Booked'}
                         </span>
                       </label>
                     </div>

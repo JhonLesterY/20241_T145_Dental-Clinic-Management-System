@@ -14,6 +14,8 @@ const Admin_ViewAppointment = () => {
   }, []);
 
   const fetchAppointments = async () => {
+
+    
     try {
       const response = await fetch('http://localhost:5000/admin/appointments', {
         headers: {
@@ -156,22 +158,22 @@ const Admin_ViewAppointment = () => {
                       {appointment.status === 'pending' && (
                         <div className="flex space-x-2">
                           <button
-  onClick={() => confirmStatusUpdate(appointment.appointmentId, 'confirmed')}
-  disabled={updateStatus.loading}
-  className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
->
-  <FaCheck className="mr-2" />
-  Accept
-</button>
+                            onClick={() => confirmStatusUpdate(appointment.appointmentId, 'confirmed')}
+                            disabled={updateStatus.loading}
+                            className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                          >
+                            <FaCheck className="mr-2" />
+                            Accept
+                          </button>
 
-<button
-  onClick={() => confirmStatusUpdate(appointment.appointmentId, 'declined')}
-  disabled={updateStatus.loading}
-  className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
->
-  <FaTimes className="mr-2" />
-  Decline
-</button>
+                          <button
+                            onClick={() => confirmStatusUpdate(appointment.appointmentId, 'declined')}
+                            disabled={updateStatus.loading}
+                            className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                          >
+                            <FaTimes className="mr-2" />
+                            Decline
+                          </button>
                         </div>
                       )}
                       {appointment.status !== 'pending' && (

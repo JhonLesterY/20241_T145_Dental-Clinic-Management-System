@@ -5,10 +5,10 @@ const Appointment = require('../models/Appointment');
 
 // Define time slots (same as frontend)
 const TIME_SLOTS = [
-  { time: "8:00 - 10:00 AM", id: 1 },
-  { time: "10:30 - 12:30 NN", id: 2 },
-  { time: "1:00 - 3:00 PM", id: 3 },
-  { time: "3:00 - 5:00 PM", id: 4 }
+  { time: "8:00 - 10:00 AM", id: 1, maxSlots: 3 },
+  { time: "10:30 - 12:30 NN", id: 2, maxSlots: 3 },
+  { time: "1:00 - 3:00 PM", id: 3, maxSlots: 3 },
+  { time: "3:00 - 5:00 PM", id: 4, maxSlots: 3 }
 ];
 
 const verifyAndDecodeToken = (token) => {
@@ -67,32 +67,41 @@ router.get('/latest', async (req, res) => {
 router.get('/available', async (req, res) => {
   try {
     const { date } = req.query;
-    
+    const startDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 1);
+
     // Get all appointments for the specified date
     const appointments = await Appointment.find({
-      date: {
-        $gte: new Date(date),
-        $lt: new Date(new Date(date).setDate(new Date(date).getDate() + 1))
+      appointmentDate: {
+        $gte: startDate,
+        $lt: endDate
       }
     });
 
     // Count bookings for each time slot
-    const slotCounts = appointments.reduce((acc, curr) => {
-      acc[curr.time] = (acc[curr.time] || 0) + 1;
-      return acc;
-    }, {});
+    const slotCounts = {};
+    appointments.forEach(appointment => {
+      TIME_SLOTS.forEach(slot => {
+        if (appointment.appointmentTime === slot.time) {
+          slotCounts[slot.id] = (slotCounts[slot.id] || 0) + 1;
+        }
+      });
+    });
 
-    // Maximum appointments per slot
-    const MAX_APPOINTMENTS_PER_SLOT = 3;
+    // Create availability data with booked counts
+    const availabilityData = TIME_SLOTS.map(slot => {
+      const bookedCount = slotCounts[slot.id] || 0;
+      return {
+        id: slot.id,
+        bookedCount: bookedCount,
+        available: bookedCount < slot.maxSlots
+      };
+    });
 
-    // Create availability data
-    const availableSlots = TIME_SLOTS.map(slot => ({
-      id: slot.id,
-      time: slot.time,
-      available: (slotCounts[slot.time] || 0) < MAX_APPOINTMENTS_PER_SLOT
-    }));
-
-    res.json(availableSlots);
+    console.log('Availability data:', availabilityData); // Debug log
+    res.json(availabilityData);
   } catch (error) {
     console.error('Error fetching available slots:', error);
     res.status(500).json({ error: 'Failed to fetch available slots' });
@@ -107,20 +116,36 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ error: 'No token provided' });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const userId = decoded.id; // Using decoded.id instead of decoded.userId
-
-    console.log('Creating appointment with userId:', userId);
+    const userId = decoded.id;
 
     const selectedSlot = TIME_SLOTS.find(slot => slot.id === parseInt(req.body.timeSlot));
     if (!selectedSlot) {
       return res.status(400).json({ error: 'Invalid time slot selected' });
     }
 
+    // Check if slot is available
+    const appointmentDate = new Date(req.body.appointmentDate);
+    appointmentDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(appointmentDate);
+    endDate.setDate(endDate.getDate() + 1);
+
+    const existingAppointments = await Appointment.countDocuments({
+      appointmentDate: {
+        $gte: appointmentDate,
+        $lt: endDate
+      },
+      appointmentTime: selectedSlot.time
+    });
+
+    if (existingAppointments >= selectedSlot.maxSlots) {
+      return res.status(400).json({ error: 'This time slot is fully booked' });
+    }
+
     const appointment = new Appointment({
       userId: userId,
       patientName: req.body.studentName,
       appointmentTime: selectedSlot.time,
-      appointmentDate: new Date(req.body.appointmentDate),
+      appointmentDate: appointmentDate,
       status: 'pending'
     });
 
