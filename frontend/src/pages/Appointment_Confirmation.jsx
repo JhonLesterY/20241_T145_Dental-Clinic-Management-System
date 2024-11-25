@@ -10,7 +10,16 @@ const Appointment_Confirmation = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+
     fetchAppointment();
+
+    // Set up auto-refresh every 30 seconds
+    const refreshInterval = setInterval(() => {
+      fetchAppointment();
+    }, 30000); // 30 seconds
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const fetchAppointment = async () => {

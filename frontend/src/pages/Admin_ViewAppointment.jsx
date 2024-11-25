@@ -11,8 +11,16 @@ const Admin_ViewAppointment = () => {
 
   useEffect(() => {
     fetchAppointments();
+
+    // Set up auto-refresh every 30 seconds
+    const refreshInterval = setInterval(() => {
+      fetchAppointments();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(refreshInterval);
   }, []);
 
+  
   const fetchAppointments = async () => {
 
     

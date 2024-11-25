@@ -12,7 +12,10 @@ const oauth2Client = new google.auth.OAuth2(
 const SCOPES = [
     'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/gmail.compose',
-    'https://www.googleapis.com/auth/userinfo.email'
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/drive',        // Full Drive access
+    'https://www.googleapis.com/auth/drive.file',   // Per-file access
+    'https://www.googleapis.com/auth/drive.appdata' // Application data folder
 ];
 
 // Set credentials immediately
@@ -20,6 +23,17 @@ oauth2Client.setCredentials({
     refresh_token: process.env.GOOGLE_REFRESH_TOKEN
 });
 
+const getDriveService = async () => {
+    try {
+        return google.drive({ 
+            version: 'v3', 
+            auth: oauth2Client 
+        });
+    } catch (error) {
+        console.error('Error creating Drive service:', error);
+        throw new Error('Failed to create Drive service: ' + error.message);
+    }
+};
 // Function to get a fresh access token
 const getAccessToken = async () => {
   try {
@@ -80,5 +94,6 @@ module.exports = {
     getAccessToken,
     getGmailService,
     SCOPES,
-    verifySetup
+    verifySetup,
+    getDriveService
 };
