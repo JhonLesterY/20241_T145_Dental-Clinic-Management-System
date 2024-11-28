@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"; 
 import { useNavigate } from "react-router-dom";
-import Dashboard from "../components/Dashboard";
+import UserSideBar from "../components/UserSideBar";
 import User_Profile from "/src/images/user.png";
 
 const Profile = () => {
@@ -237,7 +237,7 @@ const handlePasswordChange = async (e) => {
 
   return (
     <div className="flex h-screen w-screen bg-gray-50 overflow-hidden">
-      <Dashboard />
+      <UserSideBar />
       <div className="flex-1 flex flex-col items-center justify-center bg-gray-100 text-white p-8">
         {!userData.isProfileComplete && (
           <div className="w-full max-w-2xl mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-lg">
