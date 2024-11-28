@@ -248,12 +248,14 @@ async function normalLogin({ email, password, recaptchaToken }) {
 
 async function loginWithGoogle(payload, recaptchaToken) {
     try {
+        console.log('Starting Google login process with payload:', { email: payload.email });
+        
         const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
         if (!isRecaptchaValid) {
             throw new Error('reCAPTCHA verification failed');
         }
         
-        const { email, sub: googleId, picture } = payload; // Make sure picture is destructured
+        const { email, name, sub: googleId, picture } = payload;
         
         let patient = await Patient.findOne({ email });
 
@@ -276,11 +278,18 @@ async function loginWithGoogle(payload, recaptchaToken) {
         }
 
         const token = jwt.sign(
-            { id: patient._id, role: 'patient' },
+            { 
+                id: patient._id, 
+                email: patient.email,
+                name: patient.name,
+                role: 'patient' 
+            },
             process.env.JWT_SECRET_KEY,
             { expiresIn: '24h' }
         );
 
+        console.log('Google login successful for:', email);
+        
         return {
             token,
             user: {
@@ -289,7 +298,8 @@ async function loginWithGoogle(payload, recaptchaToken) {
                 name: patient.name,
                 role: 'patient',
                 profilePicture: patient.profilePicture,
-                isGoogleUser: true
+                isGoogleUser: true,
+                patient_id: patient.patient_id
             }
         };
     } catch (error) {

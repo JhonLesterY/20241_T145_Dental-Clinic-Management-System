@@ -13,9 +13,6 @@ import {
     faChevronLeft,
     faChevronRight
 } from '@fortawesome/free-solid-svg-icons';
-import { initClient, getEvents, addEventToGoogleCalendar } from '../components/calendarHelper';
-import { gapi } from 'gapi-script';
-import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 
 const AdminCalendar = () => {
@@ -180,6 +177,26 @@ const AdminCalendar = () => {
         );
     }
 
+    const fetchEvents = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/calendar/events', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch events');
+            }
+            
+            const data = await response.json();
+            setEvents(data);
+        } catch (error) {
+            console.error('Error fetching events:', error);
+            setError('Failed to load calendar events');
+        }
+    };
+    
     const handleViewEvents = async (date) => {
         try {
           // Format the date for comparison

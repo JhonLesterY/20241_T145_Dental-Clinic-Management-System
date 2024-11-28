@@ -4,20 +4,54 @@ require('dotenv').config();
 const connectDB = require('./db');
 const path = require('path');
 const cors = require('cors');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
 
 // Connect to the database
 connectDB();
 
-// CORS Middleware
+// CORS Middleware - Must be before session middleware
 app.use(cors({
-    origin: 'http://localhost:5173', // Frontend origin
-    methods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true // Allow credentials to be passed
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Email'],
+    credentials: true,
+    maxAge: 86400 // 24 hours
 }));
 
-// Middleware for parsing JSON
+// Parse JSON bodies
 app.use(express.json());
+
+// Session middleware
+app.use(session({
+    secret: process.env.JWT_SECRET_KEY || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI,
+        collectionName: 'sessions',
+        ttl: 24 * 60 * 60 // 24 hours
+    }),
+    cookie: {
+        secure: false, // Set to true in production with HTTPS
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'lax',
+        path: '/'
+    },
+    name: 'sessionId' // Custom name for the session cookie
+}));
+
+// Debug middleware to log session
+app.use((req, res, next) => {
+    console.log('Session Debug:', {
+        hasSession: !!req.session,
+        sessionID: req.sessionID,
+        user: req.session?.user,
+        cookies: req.headers.cookie
+    });
+    next();
+});
 
 // Set custom headers for enhanced security
 app.use((req, res, next) => {
@@ -25,6 +59,7 @@ app.use((req, res, next) => {
     res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
     next();
 });
+
 app.use('/uploads', express.static('uploads'));
 
 // Import and use routes
@@ -33,6 +68,8 @@ const patientRoutes = require('./routes/patientRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const dentistRoutes = require('./routes/dentistRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const formRoutes = require('./routes/formRoutes');
 const fs = require('fs');
 const uploadDir = path.join(__dirname, 'uploads/profile-pictures');
 if (!fs.existsSync(uploadDir)){
@@ -49,7 +86,8 @@ app.use('/patients', patientRoutes);
 app.use('/admin', adminRoutes);
 app.use('/dentists', dentistRoutes);
 app.use('/appointments', appointmentRoutes);
-
+app.use('/upload', uploadRoutes);
+app.use('/form', formRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import AdminSideBar from '../components/AdminSideBar';
 import Logo from "/src/images/Dental_logo.png";
-import { FaCheck, FaTimes } from 'react-icons/fa'; // For confirm/decline icons
+import { FaCheck, FaTimes, FaEye, FaFileAlt } from 'react-icons/fa'; // For confirm/decline icons
 
 const Admin_ViewAppointment = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updateStatus, setUpdateStatus] = useState({ loading: false, error: null });
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
 
   useEffect(() => {
     fetchAppointments();
@@ -20,10 +22,7 @@ const Admin_ViewAppointment = () => {
     return () => clearInterval(refreshInterval);
   }, []);
 
-  
   const fetchAppointments = async () => {
-
-    
     try {
       const response = await fetch('http://localhost:5000/admin/appointments', {
         headers: {
@@ -89,6 +88,192 @@ const Admin_ViewAppointment = () => {
     if (window.confirm(`Are you sure you want to ${action} this appointment?`)) {
       handleStatusUpdate(appointmentId, newStatus);
     }
+  };
+
+  const handleViewDocuments = (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowDocumentModal(true);
+  };
+
+  const DocumentModal = ({ appointment, onClose }) => {
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [fileContent, setFileContent] = useState(null);
+    const [fileType, setFileType] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    const documents = [
+      { type: 'School ID', data: appointment.requirements?.schoolId },
+      { type: 'Registration Certificate', data: appointment.requirements?.registrationCert },
+      { type: 'Vaccination Card', data: appointment.requirements?.vaccinationCard }
+    ];
+
+    const handleViewFile = async (fileId) => {
+      try {
+        setLoading(true);
+        console.log('Fetching file:', fileId);
+        
+        // Create URL for the file
+        const fileUrl = `http://localhost:5000/upload/file/${fileId}`;
+        
+        // Set up headers
+        const headers = {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        };
+
+        // First check if file exists and get content type
+        const headResponse = await fetch(fileUrl, {
+          method: 'HEAD',
+          headers
+        });
+
+        if (!headResponse.ok) throw new Error('Failed to fetch file');
+
+        const contentType = headResponse.headers.get('content-type');
+        console.log('Content Type:', contentType);
+        setFileType(contentType);
+
+        // For all files, get the blob and create URL
+        const response = await fetch(fileUrl, { headers });
+        if (!response.ok) throw new Error('Failed to fetch file content');
+        
+        const blob = await response.blob();
+        console.log('Blob size:', blob.size, 'Blob type:', blob.type);
+        
+        const url = URL.createObjectURL(blob);
+        console.log('Created URL:', url);
+        setFileContent(url);
+        setSelectedFile(fileId);
+      } catch (error) {
+        console.error('Error viewing file:', error);
+        alert('Failed to load file');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const renderFilePreview = () => {
+      console.log('Rendering preview with:', { fileType, fileContent });
+      if (!selectedFile || !fileContent) return null;
+
+      if (fileType && fileType.startsWith('image/')) {
+        console.log('Rendering as image');
+        return (
+          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+            <div className="relative max-w-full max-h-[60vh]">
+              <img 
+                src={fileContent} 
+                alt="Document Preview" 
+                className="object-contain w-full h-full"
+                onError={(e) => {
+                  console.error('Image load error:', e);
+                  const errorDiv = document.createElement('div');
+                  errorDiv.className = 'text-red-500';
+                  errorDiv.textContent = 'Failed to load image';
+                  e.target.parentElement.appendChild(errorDiv);
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+          </div>
+        );
+      } else if (fileType === 'application/pdf') {
+        console.log('Rendering as PDF');
+        return (
+          <div className="w-full h-full">
+            <object
+              data={fileContent}
+              type="application/pdf"
+              className="w-full h-full"
+            >
+              <p>Unable to display PDF. <a href={fileContent} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Download PDF</a></p>
+            </object>
+          </div>
+        );
+      } else {
+        console.log('Rendering as other file type');
+        return (
+          <div className="flex items-center justify-center h-full">
+            <a 
+              href={fileContent} 
+              download 
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Download File
+            </a>
+          </div>
+        );
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 h-[80vh] flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Required Documents</h2>
+            <button
+              onClick={() => {
+                setSelectedFile(null);
+                setFileContent(null);
+                onClose();
+              }}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          <div className="flex h-full">
+            {/* Document List */}
+            <div className="w-1/3 border-r pr-4 overflow-y-auto">
+              {documents.map((doc, index) => (
+                <div key={index} className="border rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <FaFileAlt className="text-blue-500" />
+                      <span className="font-medium">{doc.type}</span>
+                    </div>
+                    {doc.data ? (
+                      <button
+                        onClick={() => handleViewFile(doc.data.fileId)}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                      >
+                        <FaEye className="mr-2" />
+                        View File
+                      </button>
+                    ) : (
+                      <span className="text-red-500 text-sm">Not uploaded</span>
+                    )}
+                  </div>
+                  {doc.data && (
+                    <div className="mt-2 text-sm text-gray-500">
+                      <p>Filename: {doc.data.fileName}</p>
+                      <p>Uploaded: {new Date(doc.data.uploadedAt).toLocaleString()}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* File Preview */}
+            <div className="w-2/3 pl-4 flex flex-col">
+              {loading ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                </div>
+              ) : selectedFile ? (
+                <div className="flex-1 flex items-center justify-center">
+                  {renderFilePreview()}
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-gray-500">
+                  Select a file to preview
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -166,6 +351,13 @@ const Admin_ViewAppointment = () => {
                       {appointment.status === 'pending' && (
                         <div className="flex space-x-2">
                           <button
+                            onClick={() => handleViewDocuments(appointment)}
+                            className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          >
+                            <FaEye className="mr-2" />
+                            View Files
+                          </button>
+                          <button
                             onClick={() => confirmStatusUpdate(appointment.appointmentId, 'confirmed')}
                             disabled={updateStatus.loading}
                             className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
@@ -173,7 +365,6 @@ const Admin_ViewAppointment = () => {
                             <FaCheck className="mr-2" />
                             Accept
                           </button>
-
                           <button
                             onClick={() => confirmStatusUpdate(appointment.appointmentId, 'declined')}
                             disabled={updateStatus.loading}
@@ -206,6 +397,15 @@ const Admin_ViewAppointment = () => {
           )}
         </div>
       </div>
+      {showDocumentModal && (
+        <DocumentModal
+          appointment={selectedAppointment}
+          onClose={() => {
+            setShowDocumentModal(false);
+            setSelectedAppointment(null);
+          }}
+        />
+      )}
     </div>
   );
 };

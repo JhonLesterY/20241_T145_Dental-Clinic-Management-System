@@ -1,38 +1,41 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-// Define the feedback schema
-const feedbackSchema = new Schema({
-    patientId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Patient',
+const feedbackSchema = new mongoose.Schema({
+    patient: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Patient'
+    },
+    overallExperience: {
+        type: String,
         required: true
     },
-    appointmentId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Appointment',
+    staffProfessionalism: {
+        type: String,
         required: true
     },
-    rating: {
-        type: Number,
-        min: 1,
-        max: 5,
+    treatmentSatisfaction: {
+        type: String,
         required: true
     },
-    comments: {
+    clinicCleanliness: {
+        type: String,
+        required: true
+    },
+    waitingTime: {
+        type: String,
+        required: true
+    },
+    recommendations: {
+        type: String,
+        required: true
+    },
+    additionalComments: {
         type: String
     },
     createdAt: {
         type: Date,
         default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     }
 });
 
-// Create the model using the schema
-const Feedback = mongoose.model('Feedback', feedbackSchema);
-
-module.exports = Feedback;
+module.exports = mongoose.model('Feedback', feedbackSchema);

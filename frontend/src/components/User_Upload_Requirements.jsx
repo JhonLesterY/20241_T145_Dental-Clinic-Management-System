@@ -3,15 +3,16 @@ import { Link, useNavigate } from "react-router-dom";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import UserSideBar from "../components/UserSideBar";
+import toast from 'react-hot-toast';
 
 const User_Upload_Requirements = () => {
   const navigate = useNavigate();
   const [isProfileComplete, setIsProfileComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [schoolIdFile, setSchoolIdFile] = useState(""); // State for school ID file
-  const [registrationCertFile, setRegistrationCertFile] = useState(""); // State for registration certificate
-  const [vaccinationCardFile, setVaccinationCardFile] = useState(""); // State for vaccination card file
+  const [schoolIdFile, setSchoolIdFile] = useState(""); 
+  const [registrationCertFile, setRegistrationCertFile] = useState(""); 
+  const [vaccinationCardFile, setVaccinationCardFile] = useState(""); 
   const [uploadStatus, setUploadStatus] = useState({
     schoolId: { status: '', link: '' },
     registrationCert: { status: '', link: '' },
@@ -29,6 +30,7 @@ const User_Upload_Requirements = () => {
   
       if (!token || !patientId) {
         console.log('Missing authentication credentials');
+        sessionStorage.clear();
         navigate('/login');
         return;
       }
@@ -40,22 +42,26 @@ const User_Upload_Requirements = () => {
         },
       });
   
+      const data = await response.json();
+      
       if (!response.ok) {
-        if (response.status === 401) {
-          sessionStorage.removeItem('token');
-          sessionStorage.removeItem('patient_id');
-          navigate('/login');
+        console.error('Profile fetch error:', data);
+        if (response.status === 401 || response.status === 404) {
+          sessionStorage.clear();
+          navigate('/login', { 
+            state: { message: data.message || 'Please login again.' }
+          });
           return;
         }
-        throw new Error('Failed to fetch profile');
+        throw new Error(data.message || 'Failed to fetch profile');
       }
       
-      const data = await response.json();
-      console.log('Profile data:', data);
+      console.log('Profile data received:', data);
+      sessionStorage.setItem('userData', JSON.stringify(data));
       
       if (!data.isProfileComplete) {
         navigate('/profile', { 
-          state: { message: 'Please complete your profile to access the dashboard' }
+          state: { message: 'Please complete your profile before uploading requirements' }
         });
         return;
       }
@@ -63,25 +69,75 @@ const User_Upload_Requirements = () => {
       setIsProfileComplete(true);
     } catch (error) {
       console.error('Error checking profile:', error);
+      sessionStorage.clear();
+      navigate('/login', {
+        state: { message: 'An error occurred. Please login again.' }
+      });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (file, fileType) => {
+    try {
+      setUploadStatus(prev => ({
+        ...prev,
+        [fileType]: { status: 'uploading', link: '' }
+      }));
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('patientId', sessionStorage.getItem('patient_id'));
+      formData.append('patientName', `${JSON.parse(sessionStorage.getItem('userData') || '{}').firstName || ''}_${JSON.parse(sessionStorage.getItem('userData') || '{}').lastName || ''}`);
+      formData.append('fileType', fileType);
+
+      const response = await fetch('http://localhost:5000/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      const uploadResult = await response.json();
+
+      if (!response.ok) {
+        throw new Error(uploadResult.error || 'Upload failed');
+      }
+
+      setUploadStatus(prev => ({
+        ...prev,
+        [fileType]: { 
+          status: 'success', 
+          link: uploadResult.webViewLink 
+        }
+      }));
+
+      if (fileType === "schoolId") setSchoolIdFile(uploadResult.fileName);
+      if (fileType === "registrationCert") setRegistrationCertFile(uploadResult.fileName);
+      if (fileType === "vaccinationCard") setVaccinationCardFile(uploadResult.fileName);
+
+      alert('File uploaded successfully');
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadStatus(prev => ({
+        ...prev,
+        [fileType]: { status: 'error', link: '' }
+      }));
+      alert(error.message || 'Failed to upload file');
     }
   };
 
   const handleFileChange = async (event, fileType) => {
     const file = event.target.files[0];
     if (file) {
-      // Update the file name display
       if (fileType === "schoolId") setSchoolIdFile(file.name);
       if (fileType === "registrationCert") setRegistrationCertFile(file.name);
       if (fileType === "vaccinationCard") setVaccinationCardFile(file.name);
-
-      // Upload the file
       await handleFileUpload(file, fileType);
     }
   };
 
-  // Render upload status
   const renderUploadStatus = (fileType) => {
     const status = uploadStatus[fileType].status;
     if (status === 'uploading') {
@@ -105,57 +161,6 @@ const User_Upload_Requirements = () => {
     }
     return null;
   };
-
-  const handleFileUpload = async (file, fileType) => {
-    if (!file) return;
-
-    try {
-        setUploadStatus(prev => ({
-            ...prev,
-            [fileType]: { status: 'uploading', link: '' }
-        }));
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const token = sessionStorage.getItem('token');
-        console.log('Uploading file:', file.name); // Debug log
-
-        const response = await fetch('http://localhost:5000/upload', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            body: formData
-        });
-
-        console.log('Response status:', response.status); // Debug log
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Upload failed');
-        }
-
-        const data = await response.json();
-        console.log('Upload response:', data); // Debug log
-
-        setUploadStatus(prev => ({
-            ...prev,
-            [fileType]: { status: 'success', link: data.webViewLink }
-        }));
-
-        alert(`File uploaded successfully! You can view it here: ${data.webViewLink}`);
-
-    } catch (error) {
-        console.error('Upload error:', error);
-        setUploadStatus(prev => ({
-            ...prev,
-            [fileType]: { status: 'error', link: '' }
-        }));
-        alert('Failed to upload file: ' + error.message);
-    }
-};
-  
 
   if (isLoading) {
     return (
@@ -219,72 +224,72 @@ const User_Upload_Requirements = () => {
 
           {/* Upload Requirements Section */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      {/* School ID Card */}
-      <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-        <h3 className="text-xl font-semibold text-[#003367] mb-4">School ID</h3>
-        <p className="text-gray-600 mb-4">
-          Upload your valid school ID to verify your enrollment status.
-        </p>
-        <input 
-          type="file" 
-          className="hidden" 
-          id="schoolId" 
-          onChange={(e) => handleFileChange(e, "schoolId")} 
-          accept=".pdf,.jpg,.jpeg,.png"
-        />
-        <label 
-          htmlFor="schoolId" 
-          className="cursor-pointer inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center"
-        >
-          {schoolIdFile || "Choose a file"}
-        </label>
-        {renderUploadStatus("schoolId")}
-      </div>
+            {/* School ID Card */}
+            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+              <h3 className="text-xl font-semibold text-[#003367] mb-4">School ID</h3>
+              <p className="text-gray-600 mb-4">
+                Upload your valid school ID to verify your enrollment status.
+              </p>
+              <input 
+                type="file" 
+                className="hidden" 
+                id="schoolId" 
+                onChange={(e) => handleFileChange(e, "schoolId")} 
+                accept=".pdf,.jpg,.jpeg,.png"
+              />
+              <label 
+                htmlFor="schoolId" 
+                className="cursor-pointer inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center"
+              >
+                {schoolIdFile || "Choose a file"}
+              </label>
+              {renderUploadStatus("schoolId")}
+            </div>
 
-      {/* Certificate of Registration */}
-      <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-        <h3 className="text-xl font-semibold text-[#003367] mb-4">Certificate of Registration</h3>
-        <p className="text-gray-600 mb-4">
-          Upload your Certificate of Registration to confirm your academic registration.
-        </p>
-        <input 
-          type="file" 
-          className="hidden" 
-          id="registrationCert" 
-          onChange={(e) => handleFileChange(e, "registrationCert")} 
-          accept=".pdf,.jpg,.jpeg,.png"
-        />
-        <label 
-          htmlFor="registrationCert" 
-          className="cursor-pointer inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center"
-        >
-          {registrationCertFile || "Choose a file"}
-        </label>
-        {renderUploadStatus("registrationCert")}
-      </div>
+            {/* Certificate of Registration */}
+            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+              <h3 className="text-xl font-semibold text-[#003367] mb-4">Certificate of Registration</h3>
+              <p className="text-gray-600 mb-4">
+                Upload your Certificate of Registration to confirm your academic registration.
+              </p>
+              <input 
+                type="file" 
+                className="hidden" 
+                id="registrationCert" 
+                onChange={(e) => handleFileChange(e, "registrationCert")} 
+                accept=".pdf,.jpg,.jpeg,.png"
+              />
+              <label 
+                htmlFor="registrationCert" 
+                className="cursor-pointer inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center"
+              >
+                {registrationCertFile || "Choose a file"}
+              </label>
+              {renderUploadStatus("registrationCert")}
+            </div>
 
-      {/* Vaccination Card */}
-      <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-        <h3 className="text-xl font-semibold text-[#003367] mb-4">Vaccination Card</h3>
-        <p className="text-gray-600 mb-4">
-          Upload your vaccination card to verify your immunization status.
-        </p>
-        <input 
-          type="file" 
-          className="hidden" 
-          id="vaccinationCard" 
-          onChange={(e) => handleFileChange(e, "vaccinationCard")} 
-          accept=".pdf,.jpg,.jpeg,.png"
-        />
-        <label 
-          htmlFor="vaccinationCard" 
-          className="cursor-pointer inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center"
-        >
-          {vaccinationCardFile || "Choose a file"}
-        </label>
-        {renderUploadStatus("vaccinationCard")}
-      </div>
-    </div>
+            {/* Vaccination Card */}
+            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+              <h3 className="text-xl font-semibold text-[#003367] mb-4">Vaccination Card</h3>
+              <p className="text-gray-600 mb-4">
+                Upload your vaccination card to verify your immunization status.
+              </p>
+              <input 
+                type="file" 
+                className="hidden" 
+                id="vaccinationCard" 
+                onChange={(e) => handleFileChange(e, "vaccinationCard")} 
+                accept=".pdf,.jpg,.jpeg,.png"
+              />
+              <label 
+                htmlFor="vaccinationCard" 
+                className="cursor-pointer inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center"
+              >
+                {vaccinationCardFile || "Choose a file"}
+              </label>
+              {renderUploadStatus("vaccinationCard")}
+            </div>
+          </div>
         </div>
       </div>
     </div>

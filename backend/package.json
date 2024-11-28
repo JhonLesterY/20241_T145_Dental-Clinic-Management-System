@@ -15,9 +15,11 @@
     "base64url": "^3.0.1",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
+    "connect-mongo": "^5.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "express-session": "^1.18.1",
     "google-auth-library": "^9.15.0",
     "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.2",
@@ -25,6 +27,7 @@
     "mongoose": "^8.8.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.16",
+    "toast": "^0.5.4",
     "vite": "^5.4.10"
   },
   "devDependencies": {

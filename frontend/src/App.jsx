@@ -35,6 +35,7 @@ import DentistSideBar from "./components/DentistSidebar";
 import Dentist_Report from "./pages/Dentist_Report";
 import User_Report from "./pages/User_Report";
 import Admin_Report from "./pages/Admin_Report";
+import FormCreator from "./components/FormCreator";
 
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 

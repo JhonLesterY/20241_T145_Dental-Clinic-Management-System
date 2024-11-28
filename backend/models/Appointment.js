@@ -4,7 +4,7 @@ const appointmentSchema = new mongoose.Schema({
   appointmentId: {
     type: String,
     unique: true,
-    default: () => 'APT' + Date.now().toString().slice(-6) // Creates APT + last 6 digits of timestamp
+    default: () => 'APT' + Date.now().toString().slice(-6)
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -27,9 +27,34 @@ const appointmentSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'confirmed', 'declined'],
     default: 'pending'
+  },
+  requirements: {
+    schoolId: {
+      fileId: String,
+      webViewLink: String,
+      fileName: String,
+      uploadedAt: Date
+    },
+    registrationCert: {
+      fileId: String,
+      webViewLink: String,
+      fileName: String,
+      uploadedAt: Date
+    },
+    vaccinationCard: {
+      fileId: String,
+      webViewLink: String,
+      fileName: String,
+      uploadedAt: Date
+    }
+  },
+  requirementsStatus: {
+    type: String,
+    enum: ['pending', 'incomplete', 'complete'],
+    default: 'pending'
   }
 }, {
-  timestamps: true // This will add createdAt and updatedAt fields
+  timestamps: true
 });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

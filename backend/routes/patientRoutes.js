@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const patientService = require('../services/patientServices');
 const { authenticatePatient } = require('../middleware/authMiddleware');
 const { checkProfileCompletion } = require('../middleware/profileCheckMiddleware');
+const mongoose = require('mongoose');
 //const { sendWelcomeEmail, generatePassword } = require('../emailService');
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -18,7 +19,7 @@ const storage = multer.diskStorage({
     }
 });
 
-
+//const upload = multer({ dest: 'uploads/profile-pictures' });
 const upload = multer({ storage: storage });
 
 // Book Appointment
@@ -31,7 +32,6 @@ P_route.post('/:patient_id/appointments', authenticatePatient, checkProfileCompl
         res.status(400).json({ error: error.message });
     }
 });
-
 
 // Get All Appointments
 P_route.get('/:patient_id/appointments', authenticatePatient, checkProfileCompletion, async (req, res) => {
@@ -85,11 +85,10 @@ P_route.get('/:patient_id/profile', authenticatePatient, async (req, res) => {
     try {
         const patientId = req.params.patient_id;
         
-        if (!patientId || patientId === 'undefined') {
-            console.log('Invalid patient ID received:', patientId);
-            return res.status(400).json({ 
-                message: 'Invalid patient ID. Please login again.' 
-            });
+        // Validate MongoDB ObjectID
+        if (!mongoose.Types.ObjectId.isValid(patientId)) {
+            console.log('Invalid MongoDB ObjectID:', patientId);
+            return res.status(400).json({ message: 'Invalid patient ID format' });
         }
 
         console.log('Attempting to fetch profile for patient:', patientId);
@@ -101,7 +100,7 @@ P_route.get('/:patient_id/profile', authenticatePatient, async (req, res) => {
         res.json(patient);
     } catch (error) {
         console.error('Error in get profile route:', error);
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
 });
   
@@ -196,6 +195,28 @@ P_route.put('/:patient_id/change-password', authenticatePatient, async (req, res
     } catch (error) {
         console.error('Password change error:', error);
         res.status(400).json({ message: error.message || 'Failed to change password' });
+    }
+});
+
+// Submit feedback
+P_route.post('/feedback', authenticatePatient, async (req, res) => {
+    try {
+        const feedback = new Feedback({
+            patient: req.body.patient,
+            overallExperience: req.body.overallExperience,
+            staffProfessionalism: req.body.staffProfessionalism,
+            treatmentSatisfaction: req.body.treatmentSatisfaction,
+            clinicCleanliness: req.body.clinicCleanliness,
+            waitingTime: req.body.waitingTime,
+            recommendations: req.body.recommendations,
+            additionalComments: req.body.additionalComments
+        });
+
+        await feedback.save();
+        res.status(201).json({ message: 'Feedback submitted successfully' });
+    } catch (error) {
+        console.error('Error submitting feedback:', error);
+        res.status(500).json({ message: 'Failed to submit feedback' });
     }
 });
 

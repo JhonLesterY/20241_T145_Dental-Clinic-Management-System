@@ -1,118 +1,144 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import buksubg from '/src/images/BukSU-Dental-Clinic.jpg';
 import Logo from '/src/images/Dental_logo.png';
-import bell from '/src/images/bell.png';
 
 const User_Feedback = () => {
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
-  const [feedbackSuccess, setFeedbackSuccess] = useState(false);
+    const [formUrl, setFormUrl] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch('http://localhost:5000/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, message }),
-      });
+    useEffect(() => {
+        const getActiveForm = async () => {
+            try {
+                setLoading(true);
+                const token = sessionStorage.getItem('token');
+                const role = sessionStorage.getItem('role');
+                const email = sessionStorage.getItem('email');
+                
+                if (!token || !role) {
+                    console.log('No token or role found in session');
+                    setError('Please log in to access the feedback form');
+                    navigate('/login');
+                    return;
+                }
 
-      if (response.ok) {
-        setFeedbackSuccess(true);
-        setEmail('');
-        setMessage('');
-        setTimeout(() => setFeedbackSuccess(false), 3000);
-      } else {
-        console.error('Failed to send feedback');
-      }
-    } catch (error) {
-      console.error('Error:', error);
+                if (!email) {
+                    console.log('No email found in session');
+                    setError('Session invalid. Please log in again.');
+                    navigate('/login');
+                    return;
+                }
+
+                console.log('Requesting form with credentials:', {
+                    token: token ? 'present' : 'missing',
+                    role,
+                    email
+                });
+
+                const response = await fetch('http://localhost:5000/form/active-form-url', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'X-User-Email': email
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        console.log('Session expired or invalid');
+                        sessionStorage.clear();
+                        setError('Session expired. Please log in again.');
+                        navigate('/login');
+                        return;
+                    }
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to get feedback form');
+                }
+
+                const data = await response.json();
+                console.log('Form data received:', data);
+                
+                if (!data.formUrl) {
+                    setError('No feedback form is currently available');
+                    return;
+                }
+
+                setFormUrl(data.formUrl);
+                setError(null);
+            } catch (err) {
+                console.error('Error fetching form:', err);
+                setError(err.message || 'Unable to load feedback form');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        getActiveForm();
+    }, [navigate]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Loading...</p>
+                </div>
+            </div>
+        );
     }
-  };
 
-  return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Left Side with Image and Heading */}
-      <div
-        className="md:w-1/2 w-full bg-cover bg-center relative"
-        style={{ backgroundImage: `url(${buksubg})` }}
-      >
-        <div className="absolute inset-0 bg-blue-900 bg-opacity-50"></div>
-        <div className="relative z-10 flex flex-col items-center justify-center h-full p-8 text-center">
-          <img className="w-16 mb-6" src={Logo} alt="dental-logo" />
-          <h1 className="text-4xl md:text-5xl text-white font-bold">We Value Your Feedback</h1>
-          <p className="mt-4 text-lg text-white">Your input helps us improve our services!</p>
-
-      {/* Back Button */}
-      <Link 
-  to="/Dashboard" 
-  className="absolute top-4 left-4 flex items-center space-x-2 inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center transform hover:scale-105 transition-transform duration-200 ease-in-out"
->
-  <span className="text-lg">Back</span>
-</Link>
-          </div>
-          </div>
-      
-      {/* Right Side with Form */}
-      <div className="md:w-1/2 w-full bg-blue-900 flex items-center justify-center p-10">
-        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg relative">
-          {/* Header */}
-          <header className="flex justify-between items-center mb-2 p-6">
-            <h2 className="text-3xl font-semibold text-blue-900">Feedback</h2>
-            <button className="bg-gray-200 p-2 rounded-full hover:bg-gray-300">
-              <img className="w-5" src={bell} alt="Notifications" />
-            </button>
-          </header>
-
-          {feedbackSuccess && (
-            <div className="bg-green-100 text-green-700 p-4 rounded-md mb-4">
-              Feedback sent successfully!
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Error</h2>
+                    <p className="text-gray-600 mb-6">{error}</p>
+                    <div className="space-y-4">
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+                        >
+                            Try Again
+                        </button>
+                        <Link 
+                            to="/login" 
+                            className="block w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+                        >
+                            Return to Login
+                        </Link>
+                    </div>
+                </div>
             </div>
-          )}
+        );
+    }
 
-          {/* Feedback Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                placeholder="Enter your email"
-                required
-              />
+    return (
+        <div className="min-h-screen flex flex-col md:flex-row">
+            <div className="md:w-1/3 w-full bg-cover bg-center relative" style={{ backgroundImage: `url(${buksubg})` }}>
+                <div className="absolute inset-0 bg-black opacity-50"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <img src={Logo} alt="Logo" className="w-32 h-32" />
+                </div>
             </div>
-
-            <div>
-              <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-                Message
-              </label>
-              <textarea
-                id="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none bg-white text-gray-900"
-                placeholder="Your feedback"
-                required
-              ></textarea>
+            <div className="md:w-2/3 w-full">
+                <iframe
+                    src={formUrl}
+                    width="100%"
+                    height="800px"
+                    frameBorder="0"
+                    marginHeight="0"
+                    marginWidth="0"
+                    title="Feedback Form"
+                >
+                    Loading...
+                </iframe>
             </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition transform hover:scale-105 transition-transform duration-200 ease-in-out"
-            >
-              Send Feedback
-            </button>
-          </form>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default User_Feedback;

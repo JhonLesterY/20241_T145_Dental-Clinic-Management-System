@@ -320,7 +320,7 @@ async function getAllAppointments(req, res) {
 
         const appointments = await Appointment.find({})
             .sort({ appointmentDate: -1, appointmentTime: 1 })
-            .select('appointmentId patientName appointmentTime appointmentDate status userId');
+            .select('appointmentId patientName appointmentTime appointmentDate status userId requirements');
 
         // Log activity with proper user data
         await logActivity(

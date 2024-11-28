@@ -1,30 +1,31 @@
-const { google } = require('googleapis');
-const { getDriveService } = require('./googleAuth');
 const fs = require('fs');
+const { getDriveService } = require('./googleAuth');
 
-const uploadToDrive = async (filePath, fileName, mimeType) => {
+const uploadToDrive = async (file, patientDetails) => {
     try {
         const drive = await getDriveService();
-        console.log('Drive service initialized'); // Debug log
+        console.log('Drive service initialized');
         
+        // Get or create patient folder
+        const patientFolderId = await getOrCreatePatientFolder(drive, patientDetails);
+        console.log('Patient folder ID:', patientFolderId);
+
+        // Upload file to Drive
         const fileMetadata = {
-            name: fileName,
-            parents: [process.env.GOOGLE_DRIVE_FOLDER_ID]
+            name: file.originalname,
+            parents: [patientFolderId]
         };
-        console.log('File metadata:', fileMetadata); // Debug log
 
         const media = {
-            mimeType: mimeType,
-            body: fs.createReadStream(filePath)
+            mimeType: file.mimetype,
+            body: fs.createReadStream(file.path)
         };
-        console.log('Media prepared'); // Debug log
 
         const response = await drive.files.create({
             requestBody: fileMetadata,
             media: media,
             fields: 'id, webViewLink'
         });
-        console.log('Drive API response:', response.data); // Debug log
 
         // Make the file viewable by anyone with the link
         await drive.permissions.create({
@@ -35,47 +36,100 @@ const uploadToDrive = async (filePath, fileName, mimeType) => {
             }
         });
 
+        // Clean up temporary file
+        fs.unlinkSync(file.path);
+
         return {
             fileId: response.data.id,
             webViewLink: response.data.webViewLink
         };
     } catch (error) {
-        console.error('Detailed upload error:', error); // More detailed error
-        console.error('Error stack:', error.stack); // Stack trace
-        throw new Error('Failed to upload file to Google Drive: ' + error.message);
+        console.error('Upload error details:', error);
+        // Clean up temporary file if it exists
+        if (file && file.path) {
+            try {
+                fs.unlinkSync(file.path);
+            } catch (unlinkError) {
+                console.error('Error cleaning up temporary file:', unlinkError);
+            }
+        }
+        throw new Error(`Failed to upload file to Google Drive: ${error.message}`);
     }
 };
 
-const deleteFromDrive = async (fileId) => {
+const getOrCreatePatientFolder = async (drive, patientDetails) => {
     try {
-        const drive = await getDriveService();
-        await drive.files.delete({
-            fileId: fileId
-        });
-        return true;
-    } catch (error) {
-        console.error('Error deleting from Google Drive:', error);
-        throw new Error('Failed to delete file from Google Drive');
-    }
-};
+        const folderName = `Patient_${patientDetails.patientId}_${patientDetails.patientName}`;
+        const parentFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
-const listFiles = async () => {
-    try {
-        const drive = await getDriveService();
+        // Check if folder exists
         const response = await drive.files.list({
-            pageSize: 10,
-            fields: 'files(id, name, webViewLink)',
-            q: `'${process.env.GOOGLE_DRIVE_FOLDER_ID}' in parents`
+            q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and '${parentFolderId}' in parents`,
+            fields: 'files(id, name)',
+            spaces: 'drive'
         });
-        return response.data.files;
+
+        if (response.data.files.length > 0) {
+            return response.data.files[0].id;
+        }
+
+        // Create new folder
+        const folderMetadata = {
+            name: folderName,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [parentFolderId]
+        };
+
+        const folder = await drive.files.create({
+            requestBody: folderMetadata,
+            fields: 'id'
+        });
+
+        // Set folder permissions
+        await drive.permissions.create({
+            fileId: folder.data.id,
+            requestBody: {
+                role: 'reader',
+                type: 'anyone'
+            }
+        });
+
+        return folder.data.id;
     } catch (error) {
-        console.error('Error listing files from Google Drive:', error);
-        throw new Error('Failed to list files from Google Drive');
+        console.error('Error creating folder:', error);
+        throw new Error(`Failed to get/create patient folder: ${error.message}`);
+    }
+};
+
+const getFileContent = async (fileId) => {
+    try {
+        const drive = await getDriveService();
+        
+        // Get file metadata
+        const file = await drive.files.get({
+            fileId: fileId,
+            fields: 'mimeType'
+        });
+
+        // Get file content
+        const response = await drive.files.get({
+            fileId: fileId,
+            alt: 'media'
+        }, {
+            responseType: 'stream'
+        });
+
+        return {
+            content: response.data,
+            mimeType: file.data.mimeType
+        };
+    } catch (error) {
+        console.error('Error getting file from Drive:', error);
+        throw new Error(`Failed to get file from Google Drive: ${error.message}`);
     }
 };
 
 module.exports = {
     uploadToDrive,
-    deleteFromDrive,
-    listFiles
+    getFileContent
 };

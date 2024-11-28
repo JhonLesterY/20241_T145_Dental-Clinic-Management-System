@@ -6,6 +6,8 @@ const { OAuth2Client } = require('google-auth-library');
 const { normalLogin, loginWithGoogle, registerUser, registerWithGoogle } = require('../services/authServices');
 const jwt = require('jsonwebtoken');
 const Patient = require('../models/Patient');
+const Admin = require('../models/Admin');
+const Dentist = require('../models/Dentist');
 const { sendPasswordResetEmail } = require('../emailService');
 const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
@@ -90,42 +92,81 @@ router.post('/google-signup', async (req, res) => {
 
 // Login endpoint for normal email/password login
 router.post('/login', async (req, res) => {
-  try {
-      const { email, password, recaptchaToken } = req.body;
-      
-      console.log('Login request received for:', email); // Debug log
-      console.log('reCAPTCHA token present:', !!recaptchaToken); // Debug log
+    try {
+        const { email, password, recaptchaToken } = req.body;
 
-      if (!recaptchaToken) {
-          return res.status(400).json({ 
-              message: 'reCAPTCHA token is required' 
-          });
-      }
+        if (!recaptchaToken) {
+            return res.status(400).json({ message: 'reCAPTCHA verification required' });
+        }
 
-      const result = await normalLogin({ 
-          email, 
-          password, 
-          recaptchaToken 
-      });
+        // Find user in any of the collections
+        let user = await Patient.findOne({ email });
+        let userType = 'patient';
+        
+        if (!user) {
+            user = await Admin.findOne({ email });
+            userType = 'admin';
+        }
+        
+        if (!user) {
+            user = await Dentist.findOne({ email });
+            userType = 'dentist';
+        }
 
-      res.json(result);
-  } catch (error) {
-      console.error('Login route error:', error);
-      
-      // Send appropriate error response
-      if (error.message.includes('reCAPTCHA')) {
-          res.status(400).json({ 
-              message: 'reCAPTCHA verification failed' 
-          });
-      } else {
-          res.status(500).json({ 
-              message: 'An error occurred during login',
-              details: process.env.NODE_ENV === 'development' ? error.message : undefined
-          });
-      }
-  }
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Check password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Generate token (if you're using JWT)
+        const token = jwt.sign(
+            { id: user._id, email: user.email, role: userType },
+            process.env.JWT_SECRET_KEY,
+            { expiresIn: '24h' }
+        );
+
+        // Store user data in session
+        req.session.user = {
+            id: user._id,
+            email: user.email,
+            role: userType,
+            name: user.name || user.fullname // handle both name formats
+        };
+
+        // Return user data in the format expected by frontend
+        const userData = {
+            user: {
+                _id: user._id,
+                id: user._id, // include both formats for compatibility
+                name: user.name || user.fullname,
+                email: user.email,
+                role: userType,
+                profilePicture: user.profilePicture
+            },
+            token
+        };
+
+        res.json(userData);
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Server error during login' });
+    }
 });
 
+// Logout route
+router.post('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return res.status(500).json({ message: 'Error logging out' });
+        }
+        res.json({ message: 'Logged out successfully' });
+    });
+});
 
 // Login endpoint for Google OAuth login
 router.post('/google-login', async (req, res) => {
@@ -228,6 +269,7 @@ router.post('/forgot-password', async (req, res) => {
         });
     }
 });
+
 // Test OAuth route
 router.post('/test-oauth', async (req, res) => {
     try {

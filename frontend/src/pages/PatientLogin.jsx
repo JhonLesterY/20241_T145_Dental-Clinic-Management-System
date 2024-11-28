@@ -41,6 +41,7 @@ const Login = () => {
 
         const response = await fetch('http://localhost:5000/auth/login', {
             method: 'POST',
+            credentials: 'include',
             headers: { 
                 'Content-Type': 'application/json'
             },
@@ -115,6 +116,7 @@ const googleLogin = useGoogleLogin({
 
           const res = await fetch('http://localhost:5000/auth/google-login', {
               method: 'POST',
+              credentials: 'include',
               headers: {
                   'Content-Type': 'application/json'
               },
@@ -123,23 +125,30 @@ const googleLogin = useGoogleLogin({
                   recaptchaToken: recaptchaToken,
                   email: userInfo.email,
                   name: userInfo.name,
-                  picture: userInfo.picture // Make sure this is included
+                  picture: userInfo.picture
               })
           });
 
           if (!res.ok) {
               const errorData = await res.json();
-              console.error('Server error:', errorData); // Debug log
+              console.error('Server error:', errorData);
               throw new Error(errorData.message || 'Failed to login with Google');
           }
 
           const data = await res.json();
-          console.log('Login response:', data); // Debug log
+          console.log('Login response:', data);
 
+          // Store all user data in session storage
           sessionStorage.setItem('token', data.token);
           sessionStorage.setItem('patient_id', data.user.id);
           sessionStorage.setItem('role', 'patient');
+          sessionStorage.setItem('email', userInfo.email);
+          sessionStorage.setItem('name', userInfo.name);
+          if (userInfo.picture) {
+              sessionStorage.setItem('profilePicture', userInfo.picture);
+          }
 
+          // Redirect after successful login
           navigate('/dashboard');
       } catch (error) {
           console.error('Google login error:', error);
