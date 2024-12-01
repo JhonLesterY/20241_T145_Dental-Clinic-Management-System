@@ -7,7 +7,10 @@ const multer = require('multer');
 const bcrypt = require('bcrypt'); 
 const Admin = require('../models/Admin');
 const path = require('path');
-const { checkAdminProfileCompletion } = require('../middleware/profileCheckMiddleware');
+
+const ActivityLog = require('../models/ActivityLog');
+const lockService = require('../services/lockService');
+
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -160,7 +163,6 @@ A_route.put('/:id/profile', authenticateAdmin, upload.single('profilePicture'), 
     }
 });
 
-
 A_route.use((req, res, next) => {
     console.log('Admin route request:', {
         method: req.method,
@@ -172,28 +174,35 @@ A_route.use((req, res, next) => {
     next();
 });
 
+A_route.get('/check-add-admin-lock', authenticateAdmin, async (req, res) => {
+    const lockStatus = await adminService.checkAddUserLock('admin');
+    res.json(lockStatus);
+});
+
+A_route.get('/check-add-dentist-lock', authenticateAdmin, async (req, res) => {
+    const lockStatus = await adminService.checkAddUserLock('dentist');
+    res.json(lockStatus);
+});
 
 A_route.get('/patients', authenticateAdmin, async (req, res) => {
+    console.log('Patients route hit');
     try {
-        const patients = await adminService.getAllPatients(req);
-        res.status(200).json(patients);
+        const result = await adminService.getAllPatients(req, res);
+        console.log('Patients fetched:', result);
     } catch (error) {
-        console.error('Error fetching patients:', error);
+        console.error('Error in patients route:', error);
         res.status(500).json({ message: 'Failed to fetch patients' });
     }
 });
 A_route.get('/admins', authenticateAdmin, adminService.getAllAdmins);
 A_route.get('/dentists', authenticateAdmin, adminService.getAllDentists);
 
-
 A_route.delete('/admins/:admin_id', authenticateAdmin, adminService.deleteAdmin);
 A_route.delete('/patients/:patient_id', authenticateAdmin, adminService.deletePatient);
 A_route.delete('/dentists/:dentist_id', authenticateAdmin, adminService.deleteDentist);    
 
-
 A_route.post('/add-dentist', authenticateAdmin, adminService.addDentist);
 A_route.post('/create', authenticateAdmin, adminService.createAdmin);
-
 
 A_route.get('/appointments', authenticateAdmin, adminService.getAllAppointments);
 A_route.post('/appointments/reminders', adminService.sendReminders);
@@ -201,12 +210,44 @@ A_route.post('/calendar', adminService.updateCalendar);
 A_route.get('/reports', adminService.getReports);
 
 // Inventory Management
-A_route.get('/inventory', adminService.getInventory);
+A_route.get('/inventory', authenticateAdmin, adminService.getInventory);
 A_route.post('/inventory', adminService.addInventoryItem);
 A_route.put('/inventory/:item_id', adminService.updateInventoryItem);
 A_route.delete('/inventory/:item_id', adminService.deleteInventoryItem);
 
-A_route.get('/activity-logs', adminService.getActivityLogs); // New route for activity logs
+A_route.get('/activity-logs', authenticateAdmin, async (req, res) => {
+    try {
+        const logs = await ActivityLog.find()
+            .sort({ timestamp: -1 })
+            .limit(500)
+            .lean() // Convert to plain JavaScript objects
+            .exec();
 
-A_route.use(checkAdminProfileCompletion);
+        // Format the logs without population
+        const formattedLogs = logs.map(log => ({
+            ...log,
+            timestamp: log.timestamp,
+            action: log.action,
+            userRole: log.userRole,
+            details: log.details || {}
+        }));
+
+        res.json(formattedLogs);
+    } catch (error) {
+        console.error('Error fetching activity logs:', error);
+        res.status(500).json({ message: 'Error fetching activity logs' });
+    }
+});
+
+A_route.post('/check-user-lock', authenticateAdmin, (req, res) => {
+    const lockStatus = lockService.acquireLock('add-user');
+    res.json(lockStatus);
+});
+
+A_route.post('/release-user-lock', authenticateAdmin, (req, res) => {
+    lockService.releaseLock('add-user');
+    res.json({ message: 'Lock released' });
+});
+
+
 module.exports = A_route;

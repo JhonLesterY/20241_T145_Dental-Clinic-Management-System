@@ -9,6 +9,7 @@ import { IoHomeOutline, IoLogoBuffer } from "react-icons/io5";
 import { FaUserCircle, FaEye, FaPlusCircle, FaBoxes } from "react-icons/fa"; // Updated Icons
 import { TbReportSearch } from "react-icons/tb";
 import { CiSettings } from "react-icons/ci";
+import { VscOutput } from "react-icons/vsc"; // Add this import for the activity log icon
 
 // Menu Items
 const menuItems = [
@@ -18,6 +19,7 @@ const menuItems = [
   { icons: <MdCalendarToday size={24} />, label: "Calendar", path: "/admin-calendar" },
   { icons: <FaBoxes size={24} />, label: "Inventory", path: "/admin-inventory" },
   { icons: <MdOutlineDashboard size={24} />, label: "View Feedback", path: "/admin-viewFeedback" },
+  { icons: <VscOutput size={24} />, label: "Activity Logs", path: "/activity-logs" },
   { icons: <CiSettings size={24} />, label: "Settings", path: "/admin-settings" },
   { icons: <TbReportSearch size={24} />, label: "Reports", path: "/admin-report" },
 ];

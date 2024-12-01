@@ -5,7 +5,22 @@ import { faThLarge, faFileAlt, faCalendarAlt, faClipboardList, faComments, faCog
 import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
-  
+  const [adminData, setAdminData] = useState({
+    fullname: '',
+    profilePicture: ''
+  });
+
+  useEffect(() => {
+    // Get admin data from session storage
+    const name = sessionStorage.getItem('name');
+    const profilePic = sessionStorage.getItem('profilePicture');
+    
+    setAdminData({
+      fullname: name || 'Admin Name',
+      profilePicture: profilePic || '/src/assets/profile.jpg'
+    });
+  }, []);
+
   return (
     <div className="flex h-screen w-screen">
       {/* Sidebar */}
@@ -13,9 +28,9 @@ const AdminDashboard = () => {
         {/* Profile Section */}
         <div className="flex items-center justify-between mb-4">
           <Link to="/admin-profile" className="flex items-center">
-            <img src="/src/assets/profile.jpg" alt="Profile" className="w-10 h-10 rounded-full mr-2" />
+            <img src={adminData.profilePicture} alt="Profile" className="w-10 h-10 rounded-full mr-2" />
             <div className="flex flex-col">
-              <span className="text-lg font-semibold">Admin Name</span>
+              <span className="text-lg font-semibold">{adminData.fullname}</span>
             </div>
           </Link>
         </div>

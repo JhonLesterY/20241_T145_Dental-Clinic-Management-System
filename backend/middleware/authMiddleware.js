@@ -1,5 +1,6 @@
 // backend/middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
+const Admin = require('../models/Admin');
 
 const authenticateAdmin = (req, res, next) => {
     const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];

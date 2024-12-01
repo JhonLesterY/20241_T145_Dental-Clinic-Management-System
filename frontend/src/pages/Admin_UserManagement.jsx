@@ -23,6 +23,8 @@ const AdminDashboard = () => {
     dentist_id: '' // Add this field
   });
     const [error, setError] = useState(null);
+    const [isLocked, setIsLocked] = useState(false);
+    const [lockMessage, setLockMessage] = useState('');
 
   const handleSearchChange = (e) => setSearchQuery(e.target.value);
   const toggleModal = () => setIsModalOpen(!isModalOpen);
@@ -32,19 +34,51 @@ const AdminDashboard = () => {
     setNewAdminData((prevData) => ({ ...prevData, [name]: value }));
   };
 
+  const checkLock = async () => {
+    try {
+        const token = sessionStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/admin/check-user-lock', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await response.json();
+        
+        if (data.locked) {
+            setIsLocked(true);
+            setLockMessage(`Another admin is currently adding a user. Please wait ${data.remainingTime} seconds or until the transaction is finished.`);
+            return true;
+        }
+        
+        setIsLocked(false);
+        setLockMessage('');
+        return false;
+    } catch (error) {
+        console.error('Error checking lock:', error);
+        return true;
+    }
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const token = sessionStorage.getItem('token');
-    console.log('Token:', token); 
-
-    if (!token) {
-      console.error('No token found, user not authorized.');
-      return;
+    
+    // Check lock first
+    const isCurrentlyLocked = await checkLock();
+    if (isCurrentlyLocked) {
+        alert(lockMessage);
+        return;
     }
 
     try {
+      const token = sessionStorage.getItem('token');
+      console.log('Token:', token); 
+
+      if (!token) {
+        console.error('No token found, user not authorized.');
+        return;
+      }
+
       const response = await fetch('http://localhost:5000/admin/create', {
         method: 'POST',
         headers: { 
@@ -71,6 +105,19 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error adding admin:', error);
       alert(error.message);
+    } finally {
+        // Release the lock
+        try {
+            const token = sessionStorage.getItem('token');
+            await fetch('http://localhost:5000/admin/release-user-lock', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+        } catch (error) {
+            console.error('Error releasing lock:', error);
+        }
     }
 };
  
@@ -128,15 +175,24 @@ const fetchAdmins = async () => {
 
 const fetchAllPatients = async () => {
     try {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
         const response = await fetch('http://localhost:5000/admin/patients', {
             headers: {
-                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
         });
+
         if (!response.ok) {
             throw new Error('Failed to fetch patients');
         }
+
         const data = await response.json();
+        console.log('Fetched patients:', data); // Debug log
         setPatients(data);
     } catch (error) {
         console.error('Error fetching patients:', error);
@@ -146,6 +202,14 @@ const fetchAllPatients = async () => {
 
 const handleCreateDentist = async (e) => {
   e.preventDefault();
+  
+  // Check lock first
+  const isCurrentlyLocked = await checkLock();
+  if (isCurrentlyLocked) {
+      alert(lockMessage);
+      return;
+  }
+
   try {
     const requestData = {
       name: dentistFormData.name,
@@ -183,6 +247,19 @@ const handleCreateDentist = async (e) => {
   } catch (error) {
     console.error('Error creating dentist:', error);
     setError(error.message || 'Failed to create dentist');
+  } finally {
+      // Release the lock
+      try {
+          const token = sessionStorage.getItem('token');
+          await fetch('http://localhost:5000/admin/release-user-lock', {
+              method: 'POST',
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              }
+          });
+      } catch (error) {
+          console.error('Error releasing lock:', error);
+      }
   }
 };
 
@@ -282,7 +359,9 @@ const handleDeleteAdmin = async (adminId) => {
 };
 
 
-
+useEffect(() => {
+  fetchAllPatients();
+}, []);
 useEffect(() => {
   fetchDentists();
 }, []);
@@ -291,9 +370,7 @@ useEffect(() => {
   fetchAdmins();
 }, []);
 
-useEffect(() => {
-  fetchAllPatients();
-}, []);
+
 
 
 
@@ -611,6 +688,11 @@ useEffect(() => {
   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
     <div className="bg-white p-6 rounded shadow-lg w-96">
       <h2 className="text-2xl font-bold mb-4 text-black">Add New Admin</h2>
+      {lockMessage && (
+          <div className="mb-4 text-red-500 text-sm">
+              {lockMessage}
+          </div>
+      )}
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -642,6 +724,11 @@ useEffect(() => {
         <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
           <div className="mt-3">
             <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Add Dentist</h3>
+            {lockMessage && (
+                <div className="mb-4 text-red-500 text-sm">
+                    {lockMessage}
+                </div>
+            )}
             <form onSubmit={handleCreateDentist}>
               <div className="mb-4">
                 <input

@@ -35,8 +35,7 @@ import DentistSideBar from "./components/DentistSidebar";
 import Dentist_Report from "./pages/Dentist_Report";
 import User_Report from "./pages/User_Report";
 import Admin_Report from "./pages/Admin_Report";
-import FormCreator from "./components/FormCreator";
-
+import ActivityLogs from "./pages/ActivityLogs";
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
   return (
@@ -77,6 +76,7 @@ function App() {
           <Route path="/admin-sidebar" element={<AdminSideBar />} />
           <Route path="/admin-userManagement" element={<Admin_UserManagement />} />
           <Route path="/admin-report" element={<Admin_Report />} />
+          <Route path="/activity-logs" element={<ActivityLogs />} />
         </Route>
         
         {/* Protected Routes for Dentists */}

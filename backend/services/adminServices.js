@@ -82,31 +82,22 @@ async function getAllDentists(req, res) {
         res.status(500).json({ message: 'Failed to retrieve dentists: ' + error.message });
     }
 };
-const getAllPatients = async (req) => {
+const getAllPatients = async (req, res) => {
     try {
-        const patients = await Patient.find();
+        const patients = await Patient.find().select('-password');
         
-        // Debug logs
-        console.log('User from request:', req.user);
-        console.log('User ID:', req.user.id);
-        
-        // Make sure we have the user info
-        if (!req.user || !req.user.id) {
-            throw new Error('User information not available');
-        }
-
-        // Log activity with proper parameters
+        // Log activity
         await logActivity(
-            req.user.id,      // User ID from request
-            'admin',          // Role
-            'getAllPatients', // Action
+            req.user.id,
+            'admin',
+            'getAllPatients',
             { count: patients.length }
         );
-        
-        return patients;
+
+        res.status(200).json(patients);
     } catch (error) {
-        console.error('Error in getAllPatients:', error);
-        throw error;
+        console.error('Error fetching patients:', error);
+        res.status(500).json({ message: 'Failed to fetch patients' });
     }
 };
 

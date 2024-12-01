@@ -15,13 +15,17 @@ const SCOPES = [
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/drive.file',
-    'https://www.googleapis.com/auth/drive.metadata'
+    'https://www.googleapis.com/auth/drive.metadata',
+    'https://www.googleapis.com/auth/forms.body',
+    'https://www.googleapis.com/auth/forms.responses.readonly'
 ];
 
-// Set credentials immediately
-oauth2Client.setCredentials({
-    refresh_token: process.env.GOOGLE_REFRESH_TOKEN
-});
+// Set credentials immediately if refresh token exists
+if (process.env.GOOGLE_REFRESH_TOKEN) {
+    oauth2Client.setCredentials({
+        refresh_token: process.env.GOOGLE_REFRESH_TOKEN
+    });
+}
 
 // Function to get a fresh access token
 const getAccessToken = async () => {
@@ -34,7 +38,7 @@ const getAccessToken = async () => {
         return token;
     } catch (error) {
         console.error('Error refreshing access token:', error);
-        throw error;
+        throw new Error('Failed to refresh access token: ' + error.message);
     }
 };
 
@@ -68,32 +72,36 @@ const getGmailService = async () => {
     }
 };
 
+// Get Google Forms service
+const getFormsService = async () => {
+    try {
+        // Ensure we have a fresh access token
+        await getAccessToken();
+        
+        // Create and return the forms service
+        return google.forms({
+            version: 'v1',
+            auth: oauth2Client
+        });
+    } catch (error) {
+        console.error('Error creating Forms service:', error);
+        throw new Error('Failed to create Forms service: ' + error.message);
+    }
+};
+
+// Verify Google API setup
 const verifySetup = async () => {
     try {
-        // Verify required environment variables
-        const requiredVars = [
-            'GOOGLE_CLIENT_ID',
-            'GOOGLE_CLIENT_SECRET',
-            'GOOGLE_REFRESH_TOKEN',
-            'GOOGLE_DRIVE_FOLDER_ID'
-        ];
+        if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REFRESH_TOKEN) {
+            throw new Error('Missing required Google API credentials');
+        }
         
-        for (const varName of requiredVars) {
-            if (!process.env[varName]) {
-                throw new Error(`Missing required environment variable: ${varName}`);
-            }
-        }
-
-        // Test token refresh
-        const accessToken = await getAccessToken();
-        if (!accessToken) {
-            throw new Error('Failed to get access token');
-        }
-
-        console.log('OAuth2 setup verified successfully');
+        // Test Forms API access
+        const forms = await getFormsService();
+        console.log('Google Forms API setup verified successfully');
         return true;
     } catch (error) {
-        console.error('OAuth2 setup verification failed:', error);
+        console.error('Google API setup verification failed:', error);
         throw error;
     }
 };
@@ -103,6 +111,7 @@ module.exports = {
     getAccessToken,
     getDriveService,
     getGmailService,
+    getFormsService,
     verifySetup,
     SCOPES
 };

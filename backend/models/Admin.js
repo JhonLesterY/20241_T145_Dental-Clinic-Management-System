@@ -46,10 +46,6 @@ const adminSchema = new Schema({
         type: Boolean,
         default: true
     },
-    role: {
-        type: String,
-        default: 'admin'
-    },
     createdAt: {
         type: Date,
         default: Date.now

@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const FormCreator = () => {
     const [title, setTitle] = useState('Dental Clinic Feedback Form');
     const [description, setDescription] = useState('Please help us improve our services by providing your feedback.');
     const [questions, setQuestions] = useState([]);
+    const [activeFormUrl, setActiveFormUrl] = useState(null);
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        fetchActiveForm();
+        
         // Predefined questions for the feedback form
         const feedbackQuestions = [
             {
@@ -54,29 +60,65 @@ const FormCreator = () => {
         setQuestions(feedbackQuestions);
     }, []);
 
-    const handleCreateForm = async () => {
+    const fetchActiveForm = async () => {
         try {
-            const response = await fetch('http://localhost:5000/forms/create', {
-                method: 'POST',
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const response = await axios.get('http://localhost:5000/form/active-form-url', {
                 headers: {
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    title,
-                    description,
-                    questions
-                })
+                }
             });
 
-            const data = await response.json();
-            if (response.ok) {
-                alert('Feedback form created successfully!');
+            if (response.data.formUrl) {
+                setActiveFormUrl(response.data.formUrl);
+                setError(null);
+            }
+        } catch (error) {
+            if (error.response?.status === 404) {
+                // This is normal when no form exists yet
+                setActiveFormUrl(null);
+                setError(null);
             } else {
-                throw new Error(data.message || 'Failed to create form');
+                console.error('Error fetching active form:', error);
+                setError(error.response?.data?.error || error.message);
+            }
+        }
+    };
+
+    const handleCreateForm = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const response = await axios.post('http://localhost:5000/form/create', {}, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.data.responderUri) {
+                setActiveFormUrl(response.data.responderUri);
+                setError(null);
+            } else {
+                throw new Error('No form URL in response');
             }
         } catch (error) {
             console.error('Error creating form:', error);
-            alert('Failed to create form: ' + error.message);
+            setError(error.response?.data?.error || error.message);
+            setActiveFormUrl(null);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -85,6 +127,33 @@ const FormCreator = () => {
             <h2 className="text-2xl font-bold mb-4">{title}</h2>
             <p className="text-gray-600 mb-6">{description}</p>
             
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    {error}
+                </div>
+            )}
+
+            {activeFormUrl ? (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded">
+                    <p className="text-green-700">Active Form URL:</p>
+                    <a href={activeFormUrl} target="_blank" rel="noopener noreferrer" 
+                       className="text-blue-600 hover:text-blue-800 break-all">
+                        {activeFormUrl}
+                    </a>
+                </div>
+            ) : (
+                <div className="mb-4">
+                    <p className="text-gray-600 mb-2">No active feedback form found.</p>
+                    <button
+                        onClick={handleCreateForm}
+                        disabled={loading}
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                    >
+                        {loading ? 'Creating...' : 'Create Feedback Form'}
+                    </button>
+                </div>
+            )}
+
             <div className="mb-4">
                 <h3 className="text-xl mb-4">Questions</h3>
                 {questions.map((q, index) => (
@@ -100,10 +169,10 @@ const FormCreator = () => {
                                         <div key={i} className="flex items-center">
                                             <input
                                                 type="radio"
-                                                name={`question_${index}`}
+                                                name={`question-${index}`}
                                                 value={option}
-                                                className="mr-2"
                                                 disabled
+                                                className="mr-2"
                                             />
                                             <label>{option}</label>
                                         </div>
@@ -111,22 +180,16 @@ const FormCreator = () => {
                                 </div>
                             ) : (
                                 <textarea
-                                    className="w-full p-2 border rounded bg-gray-50"
-                                    placeholder="Long answer text"
+                                    className="w-full p-2 border rounded"
+                                    rows="3"
                                     disabled
+                                    placeholder="Space for additional comments..."
                                 />
                             )}
                         </div>
                     </div>
                 ))}
             </div>
-
-            <button
-                onClick={handleCreateForm}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition transform hover:scale-105 duration-200 ease-in-out"
-            >
-                Create Feedback Form
-            </button>
         </div>
     );
 };

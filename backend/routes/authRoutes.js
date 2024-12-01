@@ -125,7 +125,12 @@ router.post('/login', async (req, res) => {
 
         // Generate token (if you're using JWT)
         const token = jwt.sign(
-            { id: user._id, email: user.email, role: userType },
+            { 
+                id: user._id, 
+                email: user.email, 
+                role: user.role || userType,
+                permissions: user.permissions
+            },
             process.env.JWT_SECRET_KEY,
             { expiresIn: '24h' }
         );
@@ -134,8 +139,9 @@ router.post('/login', async (req, res) => {
         req.session.user = {
             id: user._id,
             email: user.email,
-            role: userType,
-            name: user.name || user.fullname // handle both name formats
+            role: user.role || userType,
+            name: user.name || user.fullname,
+            permissions: user.permissions
         };
 
         // Return user data in the format expected by frontend
@@ -145,7 +151,7 @@ router.post('/login', async (req, res) => {
                 id: user._id, // include both formats for compatibility
                 name: user.name || user.fullname,
                 email: user.email,
-                role: userType,
+                role: user.role || userType,
                 profilePicture: user.profilePicture
             },
             token

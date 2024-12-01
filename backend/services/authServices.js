@@ -184,15 +184,14 @@ async function normalLogin({ email, password, recaptchaToken }) {
             throw new Error('reCAPTCHA verification failed');
         }
 
-
-        // Find user in any collection without domain restrictions
+        // Find user in any collection
         const admin = await Admin.findOne({ email });
         const dentist = await Dentist.findOne({ email });
         const patient = await Patient.findOne({ email });
 
         // Get the user and their role
         let user = admin || dentist || patient;
-        let role = admin ? 'admin' : dentist ? 'dentist' : patient ? 'patient' : null;
+        let role = admin ? (admin.role || 'admin') : dentist ? 'dentist' : patient ? 'patient' : null;
 
         if (!user) {
             throw new Error('User not found');
@@ -206,13 +205,15 @@ async function normalLogin({ email, password, recaptchaToken }) {
         const token = jwt.sign(
             { 
                 id: user._id, 
-                role 
+                email: user.email,
+                role: role
             }, 
             secretKey, 
             { expiresIn: '24h' }
         );
 
-        if (role === 'admin') {
+        // Return appropriate user data based on role
+        if (role === 'admin' || role === 'superadmin') {
             return {
                 token,
                 user: {
@@ -220,7 +221,7 @@ async function normalLogin({ email, password, recaptchaToken }) {
                     admin_id: admin.admin_id,
                     email: admin.email,
                     fullname: admin.fullname,
-                    role: 'admin',
+                    role: admin.role || 'admin',
                     isProfileComplete: admin.isProfileComplete || false,
                     hasChangedPassword: admin.hasChangedPassword || false,
                     profilePicture: admin.profilePicture || ''

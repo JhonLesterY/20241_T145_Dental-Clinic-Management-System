@@ -4,12 +4,17 @@ const activityLogSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        ref: 'User'  // Reference to your User model
+        refPath: 'userModel'
+    },
+    userModel: {
+        type: String,
+        required: true,
+        enum: ['Admin', 'Dentist', 'Patient']
     },
     userRole: {
         type: String,
         required: true,
-        enum: ['admin', 'patient', 'dentist']  // Add any other roles you have
+        enum: ['admin', 'dentist', 'patient']
     },
     action: {
         type: String,

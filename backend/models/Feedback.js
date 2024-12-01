@@ -38,4 +38,5 @@ const feedbackSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Feedback', feedbackSchema);
+// Check if the model exists before compiling it
+module.exports = mongoose.models.Feedback || mongoose.model('Feedback', feedbackSchema);
