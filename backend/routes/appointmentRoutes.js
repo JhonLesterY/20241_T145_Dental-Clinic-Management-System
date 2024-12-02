@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const Appointment = require('../models/Appointment');
+const { logActivity, ACTIONS } = require('../services/activitylogServices');
 
 // Define time slots (same as frontend)
 const TIME_SLOTS = [
@@ -39,9 +40,11 @@ router.get('/latest', async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const userId = decoded.id;
 
-    console.log('Token:', token);
-    console.log('Decoded token:', decoded);
-    console.log('Fetching appointment for userId:', userId);
+        const updatedAppointment = await adminService.updateAppointmentStatus(
+            adminId,
+            id,
+            status
+        );
 
     // Get the user's latest appointment with strict userId matching
     const appointment = await Appointment.findOne({ 
@@ -153,10 +156,30 @@ router.post('/', async (req, res) => {
 
     const savedAppointment = await appointment.save();
     console.log('Saved appointment:', savedAppointment);
+
+    // Add activity logging
+    try {
+        await logActivity(
+            userId,
+            'patient',
+            ACTIONS.APPOINTMENT_CREATE,
+            {
+                appointmentId: savedAppointment.appointmentId,
+                appointmentDate: savedAppointment.appointmentDate,
+                appointmentTime: savedAppointment.appointmentTime,
+                status: 'Successful',
+                patientName: savedAppointment.patientName
+            }
+        );
+    } catch (logError) {
+        console.error('Activity logging failed:', logError);
+        // Don't throw error, continue with appointment creation
+    }
+
     res.status(201).json(savedAppointment);
   } catch (error) {
     console.error('Error creating appointment:', error);
-    res.status(500).json({ error: 'Failed to create appointment', details: error.message });
+    res.status(500).json({ error: 'Failed to create appointment' });
   }
 });
 
@@ -185,36 +208,36 @@ router.patch('/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
+    
+    const token = req.headers.authorization?.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const userId = decoded.id;
 
-    console.log('Updating appointment status:', { id, status }); // Debug log
-
-    // Validate status
-    if (!['confirmed', 'declined'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
-    }
-
-    // Try to find appointment by appointmentId first
-    let appointment = await Appointment.findOneAndUpdate(
+    const appointment = await Appointment.findOneAndUpdate(
       { appointmentId: id },
       { status },
       { new: true }
     );
 
-    // If not found by appointmentId, try _id
-    if (!appointment) {
-      appointment = await Appointment.findByIdAndUpdate(
-        id,
-        { status },
-        { new: true }
-      );
+    if (appointment) {
+      // Add activity logging
+      try {
+        await logActivity(
+          userId,
+          decoded.role || 'admin', // Use role from token or default to admin
+          ACTIONS.APPOINTMENT_UPDATE,
+          {
+            appointmentId: id,
+            newStatus: status,
+            status: 'Successful'
+          }
+        );
+      } catch (logError) {
+        console.error('Activity logging failed:', logError);
+        // Don't throw error, continue with appointment update
+      }
     }
 
-    if (!appointment) {
-      console.log('Appointment not found:', id); // Debug log
-      return res.status(404).json({ error: 'Appointment not found' });
-    }
-
-    console.log('Updated appointment:', appointment); // Debug log
     res.json(appointment);
   } catch (error) {
     console.error('Error updating appointment status:', error);

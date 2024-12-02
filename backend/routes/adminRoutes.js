@@ -163,17 +163,6 @@ A_route.put('/:id/profile', authenticateAdmin, upload.single('profilePicture'), 
     }
 });
 
-A_route.use((req, res, next) => {
-    console.log('Admin route request:', {
-        method: req.method,
-        path: req.path,
-        params: req.params,
-        query: req.query,
-        body: req.body
-    });
-    next();
-});
-
 A_route.get('/check-add-admin-lock', authenticateAdmin, async (req, res) => {
     const lockStatus = await adminService.checkAddUserLock('admin');
     res.json(lockStatus);
@@ -184,16 +173,7 @@ A_route.get('/check-add-dentist-lock', authenticateAdmin, async (req, res) => {
     res.json(lockStatus);
 });
 
-A_route.get('/patients', authenticateAdmin, async (req, res) => {
-    console.log('Patients route hit');
-    try {
-        const result = await adminService.getAllPatients(req, res);
-        console.log('Patients fetched:', result);
-    } catch (error) {
-        console.error('Error in patients route:', error);
-        res.status(500).json({ message: 'Failed to fetch patients' });
-    }
-});
+A_route.get('/patients', authenticateAdmin, adminService.getAllPatients);
 A_route.get('/admins', authenticateAdmin, adminService.getAllAdmins);
 A_route.get('/dentists', authenticateAdmin, adminService.getAllDentists);
 

@@ -1,25 +1,34 @@
 const mongoose = require('mongoose');
 
 const feedbackSchema = new mongoose.Schema({
+    responseId: {
+        type: String,
+        required: true,
+        unique: true
+    },
     patient: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Patient'
+        type: String,
+        required: true
     },
     overallExperience: {
         type: String,
-        required: true
+        required: true,
+        enum: ['Excellent', 'Good', 'Fair', 'Poor']
     },
     staffProfessionalism: {
         type: String,
-        required: true
+        required: true,
+        enum: ['Excellent', 'Good', 'Fair', 'Poor']
     },
     treatmentSatisfaction: {
         type: String,
-        required: true
+        required: true,
+        enum: ['Very Satisfied', 'Satisfied', 'Neutral', 'Dissatisfied']
     },
     clinicCleanliness: {
         type: String,
-        required: true
+        required: true,
+        enum: ['Excellent', 'Good', 'Fair', 'Poor']
     },
     waitingTime: {
         type: String,
@@ -27,10 +36,11 @@ const feedbackSchema = new mongoose.Schema({
     },
     recommendations: {
         type: String,
-        required: true
+        default: 'N/A'
     },
     additionalComments: {
-        type: String
+        type: String,
+        default: ''
     },
     createdAt: {
         type: Date,
@@ -38,5 +48,4 @@ const feedbackSchema = new mongoose.Schema({
     }
 });
 
-// Check if the model exists before compiling it
-module.exports = mongoose.models.Feedback || mongoose.model('Feedback', feedbackSchema);
+module.exports = mongoose.model('Feedback', feedbackSchema);

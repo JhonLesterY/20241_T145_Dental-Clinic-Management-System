@@ -12,8 +12,16 @@ const feedbackFormSchema = new mongoose.Schema({
     },
     emailFieldId: {
         type: String,
-        required: true,
-        default: '1234567890' // Default email field ID from Google Form
+        required: true
+    },
+    fieldIds: {
+        EMAIL: String,
+        OVERALL_EXPERIENCE: String,
+        STAFF_PROFESSIONALISM: String,
+        TREATMENT_SATISFACTION: String,
+        CLINIC_CLEANLINESS: String,
+        DOCTOR_RATING: String,
+        COMMENTS: String
     },
     createdAt: {
         type: Date,

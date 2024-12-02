@@ -2,19 +2,39 @@ const Patient = require('../models/Patient');  // Patient model
 const Appointment = require('../models/Appointment');  // Appointment model
 const Feedback = require('../models/Feedback');  // Feedback model
 const bcrypt = require('bcrypt');
+const { logActivity, ACTIONS } = require('./activitylogServices');  // Add this import
 
 
 // Book a new appointment for a patient
 async function bookAppointment(patient_id, appointmentData) {
     try {
+        console.log('Starting bookAppointment:', { patient_id, appointmentData });
+        
         const appointment = new Appointment({
             ...appointmentData,
-            patient_id,  // Associate the appointment with the patient
+            patient_id,
         });
 
-        const savedAppointment = await appointment.save(); // Save the appointment to the database
+        const savedAppointment = await appointment.save();
+        console.log('Appointment saved:', savedAppointment);
+        
+        // Log the activity with standardized action
+        await logActivity(
+            patient_id,
+            'patient',
+            ACTIONS.APPOINTMENT_CREATE,
+            {
+                appointmentId: savedAppointment.appointmentId,
+                appointmentDate: savedAppointment.appointmentDate,
+                appointmentTime: savedAppointment.appointmentTime,
+                status: 'Successful',
+                patientName: savedAppointment.patientName
+            }
+        );
+
         return savedAppointment;
     } catch (error) {
+        console.error('Error in bookAppointment:', error);
         throw new Error(error.message);
     }
 }
@@ -40,6 +60,19 @@ async function updateAppointment(patient_id, appointmentId, updateData) {
         if (!updatedAppointment) {
             throw new Error('Appointment not found.');
         }
+
+        // Log the activity
+        await logActivity(
+            patient_id,
+            'patient',
+            ACTIONS.APPOINTMENT_UPDATE,
+            {
+                appointmentId: appointmentId,
+                changes: updateData,
+                status: 'Successful'
+            }
+        );
+
         return updatedAppointment;
     } catch (error) {
         throw new Error(error.message);
@@ -62,17 +95,34 @@ async function getConsultationHistory(patient_id) {
 // Submit feedback from a patient
 async function submitFeedback(patient_id, feedbackData) {
     try {
+        // Create new feedback document
         const feedback = new Feedback({
             ...feedbackData,
             patient_id,  // Associate the feedback with the patient
         });
 
-        const savedFeedback = await feedback.save(); // Save feedback to the database
+        // Save feedback to database
+        const savedFeedback = await feedback.save();
+        
+        // Log the activity
+        await logActivity(
+            patient_id,
+            'patient',
+            ACTIONS.FEEDBACK_SUBMIT, // Changed from PATIENT_UPDATE to FEEDBACK_SUBMIT
+            {
+                feedbackId: savedFeedback._id,
+                rating: feedbackData.rating,
+                status: 'Successful'
+            }
+        );
+
         return savedFeedback;
     } catch (error) {
+        console.error('Error in submitFeedback:', error);
         throw new Error(error.message);
     }
 }
+
 async function getPatientProfile(patient_id) {
     try {
         console.log('Looking for patient with ID:', patient_id);
@@ -130,6 +180,17 @@ async function updatePatientProfile(patient_id, updateData) {
         if (!updatedPatient) {
             throw new Error('Patient not found');
         }
+
+        // Log the activity
+        await logActivity(
+            patient_id,
+            'patient',
+            ACTIONS.PATIENT_UPDATE,
+            {
+                updatedFields: Object.keys(updateData),
+                status: 'Successful'
+            }
+        );
 
         return updatedPatient;
     } catch (error) {

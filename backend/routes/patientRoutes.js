@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const patientService = require('../services/patientServices');
 const { authenticatePatient } = require('../middleware/authMiddleware');
 const { checkProfileCompletion } = require('../middleware/profileCheckMiddleware');
+const { logActivity } = require('../services/activitylogServices');
 const mongoose = require('mongoose');
 //const { sendWelcomeEmail, generatePassword } = require('../emailService');
 const storage = multer.diskStorage({
@@ -25,10 +26,17 @@ const upload = multer({ storage: storage });
 // Book Appointment
 P_route.post('/:patient_id/appointments', authenticatePatient, checkProfileCompletion, async (req, res) => {
     try {
-        const patientId = req.params.patient_id; 
+        const patientId = req.params.patient_id;
+        console.log('\n--- Appointment Booking Start ---');
+        console.log('Patient ID:', patientId);
+        console.log('Request body:', req.body);
+        
         const result = await patientService.bookAppointment(patientId, req.body);
+        
         res.status(200).json(result);
+        console.log('--- Appointment Booking End ---\n');
     } catch (error) {
+        console.error('Error in appointment booking route:', error);
         res.status(400).json({ error: error.message });
     }
 });
@@ -47,6 +55,18 @@ P_route.get('/:patient_id/appointments', authenticatePatient, checkProfileComple
 P_route.put('/:patient_id/appointments/:appointment_id', authenticatePatient, checkProfileCompletion, async (req, res) => {
     try {
         const result = await patientService.updateAppointment(req.params.patient_id, req.params.appointment_id, req.body);
+        
+        // Log appointment update
+        await logActivity(
+            req.params.patient_id,
+            'patient',
+            'updateAppointment',
+            { 
+                appointmentId: req.params.appointment_id,
+                changes: req.body
+            }
+        );
+
         res.status(200).json(result);
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -64,12 +84,33 @@ P_route.get('/:patient_id/consultation-history', authenticatePatient, checkProfi
 });
 
 // Submit Feedback
-P_route.post('/:patient_id/feedback', authenticatePatient, checkProfileCompletion, async (req, res) => {
+P_route.post('/:patient_id/feedback', authenticatePatient, async (req, res) => {
     try {
-        const result = await patientService.submitFeedback(req.params.patient_id, req.body);
-        res.status(200).json(result);
+        const patientId = req.params.patient_id;
+        console.log('Submitting feedback for patient:', patientId);
+        console.log('Feedback data:', req.body);
+        
+        const result = await patientService.submitFeedback(patientId, req.body);
+        
+        res.status(201).json({ 
+            message: 'Feedback submitted successfully',
+            feedback: result 
+        });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        console.error('Error submitting feedback:', error);
+        res.status(500).json({ message: error.message || 'Failed to submit feedback' });
+    }
+});
+
+// Get feedback
+P_route.get('/:patient_id/feedback', authenticatePatient, async (req, res) => {
+    try {
+        const patientId = req.params.patient_id;
+        const feedback = await Feedback.find({ patient_id: patientId });
+        res.json(feedback);
+    } catch (error) {
+        console.error('Error fetching feedback:', error);
+        res.status(500).json({ message: 'Failed to fetch feedback' });
     }
 });
 
@@ -121,6 +162,17 @@ P_route.get('/:patient_id/profile', authenticatePatient, async (req, res) => {
         const updatedPatient = await patientService.updatePatientProfile(
             req.params.patient_id,
             updateData
+        );
+
+        // Log profile update
+        await logActivity(
+            req.params.patient_id,
+            'patient',
+            'updateProfile',
+            { 
+                updatedFields: Object.keys(updateData),
+                hasProfilePicture: !!req.file
+            }
         );
 
         console.log('Profile updated successfully:', updatedPatient);
@@ -182,6 +234,17 @@ P_route.put('/:patient_id/change-password', authenticatePatient, async (req, res
             hasLocalPassword: updatedPatient.hasLocalPassword
         });
 
+        // Log password change
+        await logActivity(
+            patientId,
+            'patient',
+            'changePassword',
+            { 
+                hasChangedPassword: true,
+                hasLocalPassword: true
+            }
+        );
+
         res.json({
             message: 'Password updated successfully',
             hasChangedPassword: true,
@@ -201,22 +264,15 @@ P_route.put('/:patient_id/change-password', authenticatePatient, async (req, res
 // Submit feedback
 P_route.post('/feedback', authenticatePatient, async (req, res) => {
     try {
-        const feedback = new Feedback({
-            patient: req.body.patient,
-            overallExperience: req.body.overallExperience,
-            staffProfessionalism: req.body.staffProfessionalism,
-            treatmentSatisfaction: req.body.treatmentSatisfaction,
-            clinicCleanliness: req.body.clinicCleanliness,
-            waitingTime: req.body.waitingTime,
-            recommendations: req.body.recommendations,
-            additionalComments: req.body.additionalComments
+        const patientId = req.user.id; // Get patient ID from authenticated user
+        const result = await patientService.submitFeedback(patientId, req.body);
+        res.status(201).json({ 
+            message: 'Feedback submitted successfully',
+            feedback: result 
         });
-
-        await feedback.save();
-        res.status(201).json({ message: 'Feedback submitted successfully' });
     } catch (error) {
         console.error('Error submitting feedback:', error);
-        res.status(500).json({ message: 'Failed to submit feedback' });
+        res.status(500).json({ message: error.message || 'Failed to submit feedback' });
     }
 });
 

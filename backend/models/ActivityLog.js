@@ -30,4 +30,18 @@ const activityLogSchema = new mongoose.Schema({
     }
 });
 
+// Add some pre-save middleware for debugging
+activityLogSchema.pre('save', function(next) {
+    console.log('Saving activity log:', this);
+    next();
+});
+
+// Add error handling for validation
+activityLogSchema.post('save', function(error, doc, next) {
+    if (error) {
+        console.error('Error saving activity log:', error);
+    }
+    next();
+});
+
 module.exports = mongoose.model('ActivityLog', activityLogSchema);

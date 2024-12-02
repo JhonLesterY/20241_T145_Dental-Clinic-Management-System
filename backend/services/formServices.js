@@ -1,6 +1,8 @@
 const { getFormsService } = require('../googleAuth');
 const Feedback = require('../models/Feedback');
 const mongoose = require('mongoose');
+const FeedbackForm = require('../models/FeedbackForm');
+
 
 // Define ActiveForm schema inline since it's simple
 const ActiveFormSchema = new mongoose.Schema({
@@ -11,263 +13,205 @@ const ActiveFormSchema = new mongoose.Schema({
 // Create model if it doesn't exist
 const ActiveForm = mongoose.models.ActiveForm || mongoose.model('ActiveForm', ActiveFormSchema);
 
-// Create a new feedback form
-async function createFeedbackForm() {
+// Get the form with prefilled email
+async function getForm(patientEmail) {
     try {
-        const forms = await getFormsService();
-
-        // Step 1: Create empty form with just the title
-        const createResponse = await forms.forms.create({
-            requestBody: {
-                info: {
-                    title: 'Dental Clinic Patient Feedback Form'
-                }
-            }
-        });
-
-        if (!createResponse.data || !createResponse.data.formId) {
-            throw new Error('Failed to create form: No form ID in response');
-        }
-
-        const formId = createResponse.data.formId;
-
-        // Step 2: Add questions using batchUpdate
-        const updateResponse = await forms.forms.batchUpdate({
-            formId: formId,
-            requestBody: {
-                requests: [
-                    {
-                        createItem: {
-                            item: {
-                                title: 'How would you rate your overall experience?',
-                                questionItem: {
-                                    question: {
-                                        required: true,
-                                        choiceQuestion: {
-                                            type: 'RADIO',
-                                            options: [
-                                                { value: 'Excellent' },
-                                                { value: 'Good' },
-                                                { value: 'Fair' },
-                                                { value: 'Poor' }
-                                            ]
-                                        }
-                                    }
-                                }
-                            },
-                            location: { index: 0 }
-                        }
-                    },
-                    {
-                        createItem: {
-                            item: {
-                                title: 'How would you rate the staff\'s professionalism?',
-                                questionItem: {
-                                    question: {
-                                        required: true,
-                                        choiceQuestion: {
-                                            type: 'RADIO',
-                                            options: [
-                                                { value: 'Excellent' },
-                                                { value: 'Good' },
-                                                { value: 'Fair' },
-                                                { value: 'Poor' }
-                                            ]
-                                        }
-                                    }
-                                }
-                            },
-                            location: { index: 1 }
-                        }
-                    },
-                    {
-                        createItem: {
-                            item: {
-                                title: 'How satisfied are you with your treatment?',
-                                questionItem: {
-                                    question: {
-                                        required: true,
-                                        choiceQuestion: {
-                                            type: 'RADIO',
-                                            options: [
-                                                { value: 'Very Satisfied' },
-                                                { value: 'Satisfied' },
-                                                { value: 'Neutral' },
-                                                { value: 'Dissatisfied' }
-                                            ]
-                                        }
-                                    }
-                                }
-                            },
-                            location: { index: 2 }
-                        }
-                    },
-                    {
-                        createItem: {
-                            item: {
-                                title: 'Additional Comments or Suggestions',
-                                questionItem: {
-                                    question: {
-                                        required: true,
-                                        textQuestion: {
-                                            paragraph: true
-                                        }
-                                    }
-                                }
-                            },
-                            location: { index: 3 }
-                        }
-                    }
-                ]
-            }
-        });
-
-        // Save the form ID to database
-        await ActiveForm.create({ formId: formId });
-
-        // Get the complete form data
-        const getResponse = await forms.forms.get({
-            formId: formId
-        });
-
-        return getResponse.data;
-    } catch (error) {
-        console.error('Error creating form:', error);
-        throw error;
-    }
-}
-
-// Get the active form
-async function getForm() {
-    try {
-        // Get active form ID from database
-        const activeForm = await ActiveForm.findOne().sort({ createdAt: -1 });
+        // Your actual form ID
+        const formId = '1QMIf2EbuFc0lpQvbqVj9mBDtfJ4mSMItskEKJOLh6UY';
         
-        if (!activeForm || !activeForm.formId) {
-            console.log('No active form found in database');
-            return null;
-        }
-
-        const forms = await getFormsService();
+        // Field IDs from your form
+        const FIELD_IDS = {
+            EMAIL: '1897336823',  // Email field ID
+            OVERALL_EXPERIENCE: '1086842232',
+            STAFF_PROFESSIONALISM: '1599310959',
+            TREATMENT_SATISFACTION: '1645046579',
+            CLINIC_CLEANLINESS: '1296274858'
+        };
         
-        try {
-            const response = await forms.forms.get({
-                formId: activeForm.formId
-            });
-            
-            if (!response.data) {
-                console.error('No data in form response');
-                return null;
-            }
-
-            // Ensure we have a URL
-            if (!response.data.responderUri && !response.data.formUrl) {
-                console.error('No form URL found in response');
-                return null;
-            }
-
-            return response.data;
-        } catch (error) {
-            if (error.response?.status === 404) {
-                console.log('Form not found in Google Forms, removing from database');
-                await ActiveForm.deleteOne({ _id: activeForm._id });
-                return null;
-            }
-            throw error;
-        }
+        // Construct the public URL with prefilled patient email
+        const formUrl = `https://docs.google.com/forms/d/${formId}/viewform?usp=pp_url` +
+        `&entry.${FIELD_IDS.EMAIL}=${encodeURIComponent(patientEmail)}` +
+        `&entry.${FIELD_IDS.OVERALL_EXPERIENCE}=` +
+        `&entry.${FIELD_IDS.STAFF_PROFESSIONALISM}=` +
+        `&entry.${FIELD_IDS.TREATMENT_SATISFACTION}=` +
+        `&entry.${FIELD_IDS.CLINIC_CLEANLINESS}=`;
+        
+        console.log('Generated form URL for patient:', patientEmail);
+        return {
+            formUrl,
+            formId
+        };
     } catch (error) {
         console.error('Error getting form:', error);
         throw error;
     }
 }
 
-// Get form responses
+// Get form responses (for admin)
 async function getFormResponses() {
     try {
-        const activeForm = await ActiveForm.findOne().sort({ createdAt: -1 });
-        
-        if (!activeForm || !activeForm.formId) {
-            return [];
-        }
-
         const forms = await getFormsService();
+        const formId = '1QMIf2EbuFc0lpQvbqVj9mBDtfJ4mSMItskEKJOLh6UY';
         
-        // First get the form structure
-        const formResponse = await forms.forms.get({
-            formId: activeForm.formId
-        });
+        console.log('Fetching responses for form:', formId);
         
-        // Get all responses
         const responsesResponse = await forms.forms.responses.list({
-            formId: activeForm.formId
+            formId: formId
         });
+
+        console.log('Raw response from Google Forms:', JSON.stringify(responsesResponse.data, null, 2));
 
         if (!responsesResponse.data.responses) {
+            console.log('No responses found');
             return [];
         }
 
-        // Map question IDs to their titles
-        const questionMap = {};
-        formResponse.data.items.forEach(item => {
-            questionMap[item.questionItem.question.questionId] = item.title;
-        });
-
-        // Process responses
-        const processedResponses = responsesResponse.data.responses.map(response => {
+        return responsesResponse.data.responses.map(response => {
             const answers = {};
-            Object.entries(response.answers).forEach(([questionId, answer]) => {
-                const questionTitle = questionMap[questionId];
-                answers[questionTitle] = answer.textAnswers?.answers[0]?.value || 'Not provided';
+            Object.entries(response.answers || {}).forEach(([questionId, answer]) => {
+                // Map the question IDs to their corresponding fields based on the actual response
+                switch(questionId) {
+                    case '71170ff7': // Email field
+                        answers['Patient Email'] = answer.textAnswers?.answers[0]?.value || 'Not provided';
+                        break;
+                    case '40c7e578': // Overall Experience
+                        answers['Overall Experience'] = answer.textAnswers?.answers[0]?.value || 'Not provided';
+                        break;
+                    case '5f538c6f': // Staff Professionalism
+                        answers['Staff Professionalism'] = answer.textAnswers?.answers[0]?.value || 'Not provided';
+                        break;
+                    case '620d6b33': // Treatment Satisfaction
+                        answers['Treatment Satisfaction'] = answer.textAnswers?.answers[0]?.value || 'Not provided';
+                        break;
+                    case '4d4395aa': // Clinic Cleanliness
+                        answers['Clinic Cleanliness'] = answer.textAnswers?.answers[0]?.value || 'Not provided';
+                        break;
+                    case '5ec7554c': // Rating/Waiting Time
+                        answers['Rating'] = answer.textAnswers?.answers[0]?.value || 'Not provided';
+                        break;
+                    case '6c97fa0d': // Comments
+                        answers['Comments'] = answer.textAnswers?.answers[0]?.value || 'Not provided';
+                        break;
+                }
             });
 
             return {
                 responseId: response.responseId,
-                createTime: response.createTime,
+                submittedAt: new Date(response.createTime).toLocaleString(),
                 answers
             };
         });
-
-        return processedResponses;
     } catch (error) {
         console.error('Error getting form responses:', error);
         throw error;
     }
 }
 
-// Legacy MongoDB feedback functions
-async function createFeedback(feedbackData) {
+const storeFormResponse = async (response) => {
     try {
-        const feedback = new Feedback(feedbackData);
-        return await feedback.save();
+        const feedback = new Feedback({
+            responseId: response.responseId,
+            patient: response.answers['Patient Email'],
+            overallExperience: response.answers['Overall Experience'],
+            staffProfessionalism: response.answers['Staff Professionalism'],
+            treatmentSatisfaction: response.answers['Treatment Satisfaction'],
+            clinicCleanliness: response.answers['Clinic Cleanliness'],
+            waitingTime: response.answers['Rating'],
+            recommendations: response.answers['Rating'] || 'N/A',
+            additionalComments: response.answers['Comments'],
+            createdAt: new Date(response.submittedAt)
+        });
+        
+        // Save the feedback to database
+        await feedback.save();
+        console.log('Feedback saved to database:', feedback._id);
+        return feedback;
     } catch (error) {
-        console.error('Error creating feedback:', error);
+        console.error('Error storing form response:', error);
         throw error;
     }
-}
+};
 
-async function getFeedbackByPatient(patientId) {
+const syncFormResponses = async () => {
     try {
-        return await Feedback.find({ patientId });
+        console.log('Starting form response sync...');
+        const responses = await getFormResponses();
+        console.log('Fetched responses:', responses);
+        
+        for (const response of responses) {
+            try {
+                console.log('Processing response:', response);
+                const result = await storeFormResponse(response);
+                if (result) {
+                    console.log('Stored response in database');
+                }
+            } catch (error) {
+                console.error('Error processing response:', error);
+                // Continue with next response instead of stopping
+                continue;
+            }
+        }
+        
+        console.log('Form responses synchronized successfully');
     } catch (error) {
-        console.error('Error getting feedback by patient:', error);
-        throw error;
+        console.error('Error syncing form responses:', error);
+        // Don't throw the error, just log it
     }
-}
+};
 
-async function getAllFeedback() {
+// Add these at the end of the file
+// Run sync every 5 minutes
+setInterval(syncFormResponses, 300000);
+
+// Run initial sync when server starts
+syncFormResponses().catch(console.error);
+
+// Create a new feedback form
+async function createFeedbackForm() {
     try {
-        return await Feedback.find();
+        // The actual form ID from your Google Form
+        const formId = '1QMIf2EbuFc0lpQvbqVj9mBDtfJ4mSMItskEKJOLh6UY';
+        
+        // Check if form already exists
+        const existingForm = await FeedbackForm.findOne({ formId });
+        if (existingForm) {
+            console.log('Form already exists');
+            return existingForm;
+        }
+
+        // Field IDs from your specific form
+        const FIELD_IDS = {
+            EMAIL: '1897336823',  // Email field ID
+            OVERALL_EXPERIENCE: '1086842232',
+            STAFF_PROFESSIONALISM: '1599310959',
+            TREATMENT_SATISFACTION: '1645046579',
+            CLINIC_CLEANLINESS: '1296274858',
+            DOCTOR_RATING: '1590121804',
+            COMMENTS: '1821899277'
+        };
+
+        // Create new form record
+        const newForm = new FeedbackForm({
+            formId: formId,
+            formUrl: `https://docs.google.com/forms/d/e/${formId}/viewform`,
+            emailFieldId: FIELD_IDS.EMAIL,
+            isActive: true,
+            fieldIds: FIELD_IDS // Store all field IDs for future reference
+        });
+
+        await newForm.save();
+        console.log('New feedback form created:', newForm);
+        return newForm;
     } catch (error) {
-        console.error('Error getting all feedback:', error);
+        console.error('Error creating feedback form:', error);
         throw error;
     }
 }
 
 module.exports = {
-    createFeedbackForm,
     getForm,
     getFormResponses,
-    createFeedback,
-    getFeedbackByPatient,
-    getAllFeedback
+    storeFormResponse,
+    syncFormResponses,
+    createFeedbackForm
 };

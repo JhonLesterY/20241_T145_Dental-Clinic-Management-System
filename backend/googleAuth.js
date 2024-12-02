@@ -17,7 +17,8 @@ const SCOPES = [
     'https://www.googleapis.com/auth/drive.file',
     'https://www.googleapis.com/auth/drive.metadata',
     'https://www.googleapis.com/auth/forms.body',
-    'https://www.googleapis.com/auth/forms.responses.readonly'
+    'https://www.googleapis.com/auth/forms.responses.readonly',
+    'https://www.googleapis.com/auth/forms.body.readonly'
 ];
 
 // Set credentials immediately if refresh token exists
@@ -76,13 +77,17 @@ const getGmailService = async () => {
 const getFormsService = async () => {
     try {
         // Ensure we have a fresh access token
-        await getAccessToken();
+        const accessToken = await getAccessToken();
+        console.log('Got access token for Forms API');
         
         // Create and return the forms service
-        return google.forms({
+        const formsService = google.forms({
             version: 'v1',
             auth: oauth2Client
         });
+        
+        console.log('Forms service created successfully');
+        return formsService;
     } catch (error) {
         console.error('Error creating Forms service:', error);
         throw new Error('Failed to create Forms service: ' + error.message);

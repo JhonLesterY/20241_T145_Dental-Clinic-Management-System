@@ -4,7 +4,7 @@ const Dentist = require('../models/Dentist');
 const Appointment = require('../models/Appointment');
 const Inventory = require('../models/Inventory');
 const bcrypt = require('bcryptjs');
-const { logActivity } = require('../services/activitylogServices');
+const { logActivity, ACTIONS } = require('../services/activitylogServices');
 const { sendWelcomeEmail } = require('../emailService'); 
 
 const secretKey = process.env.JWT_SECRET_KEY; 
@@ -85,15 +85,6 @@ async function getAllDentists(req, res) {
 const getAllPatients = async (req, res) => {
     try {
         const patients = await Patient.find().select('-password');
-        
-        // Log activity
-        await logActivity(
-            req.user.id,
-            'admin',
-            'getAllPatients',
-            { count: patients.length }
-        );
-
         res.status(200).json(patients);
     } catch (error) {
         console.error('Error fetching patients:', error);
@@ -317,8 +308,11 @@ async function getAllAppointments(req, res) {
         await logActivity(
             req.user.id,
             'admin',
-            'getAllAppointments',
-            { count: appointments.length }
+            ACTIONS.APPOINTMENT_VIEW,
+            { 
+                count: appointments.length,
+                status: 'Successful'
+            }
         );
 
         console.log(`Admin fetched ${appointments.length} appointments`);
