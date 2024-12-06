@@ -1,7 +1,7 @@
 const Lock = require('../models/Lock');
 
 const deadlockPreventionMiddleware = async (req, res, next) => {
-    const userId = req.user?.id;
+    const userId = req.user?._id;
     if (!userId) return next();
 
     try {

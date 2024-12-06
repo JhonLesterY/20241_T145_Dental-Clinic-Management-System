@@ -366,38 +366,45 @@ async function getReports(req, res) {
 
 async function getInventory(req, res) {
     try {
-        const inventory = await Inventory.find({});
-
-        // Log activity
-        await logActivity({
-            userId: req.user._id,
-            userRole: 'admin',
-            action: 'getInventory',
-            details: { count: inventory.length }
-        });
-
-        return res.status(200).json(inventory);
+        const items = await Inventory.find({});
+        return res.status(200).json(items);
     } catch (error) {
-        res.status(500).json({ message: 'Failed to retrieve inventory: ' + error.message });
+        res.status(500).json({ message: 'Failed to fetch inventory items: ' + error.message });
     }
 }
 
 async function addInventoryItem(req, res) {
+    const lockKey = 'inventory-operation';
+    
     try {
+        // Try to acquire lock
+        const lockStatus = await lockService.acquireLock(lockKey, req.user._id);
+        if (lockStatus.locked) {
+            return res.status(423).json({
+                message: 'Another admin is currently modifying inventory. Please try again later.',
+                remainingTime: lockStatus.remainingTime
+            });
+        }
+
         const inventoryData = req.body;
         const newItem = new Inventory(inventoryData);
         await newItem.save();
 
-        // Log activity
+        // Log activity only for write operations
         await logActivity({
             userId: req.user._id,
             userRole: 'admin',
             action: 'addInventoryItem',
-            details: { itemId: newItem._id, itemName: newItem.name }
+            details: { itemId: newItem._id, itemName: newItem.itemName }
         });
+
+        // Release lock
+        await lockService.releaseLock(lockKey, req.user._id);
 
         return res.status(201).json(newItem);
     } catch (error) {
+        // Make sure to release lock even if there's an error
+        await lockService.releaseLock(lockKey, req.user._id);
         res.status(500).json({ message: 'Failed to add inventory item: ' + error.message });
     }
 }
@@ -405,21 +412,31 @@ async function addInventoryItem(req, res) {
 async function updateInventoryItem(req, res) {
     const { itemId } = req.params;
     const updateData = req.body;
+    const lockKey = `inventory-item-${itemId}`;
 
     try {
+        const lockStatus = await lockService.acquireLock(lockKey, req.user._id);
+        if (lockStatus.locked) {
+            return res.status(423).json({
+                message: 'Another admin is currently modifying this item. Please try again later.',
+                remainingTime: lockStatus.remainingTime
+            });
+        }
+
         const item = await Inventory.findByIdAndUpdate(itemId, updateData, { new: true });
         if (!item) throw new Error('Item not found');
 
-        // Log activity
         await logActivity({
             userId: req.user._id,
             userRole: 'admin',
             action: 'updateInventoryItem',
-            details: { itemId: itemId, itemName: item.name }
+            details: { itemId: itemId, itemName: item.itemName }
         });
 
+        await lockService.releaseLock(lockKey, req.user._id);
         return res.status(200).json(item);
     } catch (error) {
+        await lockService.releaseLock(lockKey, req.user._id);
         res.status(500).json({ message: 'Failed to update inventory item: ' + error.message });
     }
 }
@@ -431,7 +448,6 @@ async function deleteInventoryItem(req, res) {
         const item = await Inventory.findByIdAndDelete(itemId);
         if (!item) throw new Error('Item not found');
 
-        // Log activity
         await logActivity({
             userId: req.user._id,
             userRole: 'admin',
@@ -443,7 +459,7 @@ async function deleteInventoryItem(req, res) {
     } catch (error) {
         return res.status(500).json({ message: 'Failed to delete inventory item: ' + error.message });
     }
-};
+}
 
 async function getActivityLogs(req, res) {
     const { page = 1, limit = 10 } = req.query; // Accept pagination parameters from query

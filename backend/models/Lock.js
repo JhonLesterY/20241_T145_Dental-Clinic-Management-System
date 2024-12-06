@@ -7,7 +7,7 @@ const lockSchema = new mongoose.Schema({
   },
   holder: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Admin',
     required: true
   },
   expiresAt: {
@@ -19,9 +19,9 @@ const lockSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
-});
+}, { timestamps: true });
 
 // Remove the old index and create a new compound unique index
-lockSchema.index({ resource: 1, expiresAt: 1 });
+lockSchema.index({ resource: 1, holder: 1 }, { unique: true });
 
 module.exports = mongoose.model('Lock', lockSchema); 

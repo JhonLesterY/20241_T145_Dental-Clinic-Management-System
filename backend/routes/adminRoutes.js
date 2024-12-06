@@ -193,9 +193,9 @@ A_route.get('/reports', adminService.getReports);
 
 // Inventory Management
 A_route.get('/inventory', authenticateAdmin, adminService.getInventory);
-A_route.post('/inventory', adminService.addInventoryItem);
-A_route.put('/inventory/:item_id', adminService.updateInventoryItem);
-A_route.delete('/inventory/:item_id', adminService.deleteInventoryItem);
+A_route.post('/inventory', authenticateAdmin, adminService.addInventoryItem);
+A_route.put('/inventory/:item_id', authenticateAdmin, adminService.updateInventoryItem);
+A_route.delete('/inventory/:item_id', authenticateAdmin, adminService.deleteInventoryItem);
 
 A_route.get('/activity-logs', authenticateAdmin, async (req, res) => {
     try {
@@ -274,6 +274,50 @@ A_route.get('/reports/appointments', authenticateAdmin, async (req, res) => {
             error: error.message 
         });
     }
+});
+
+A_route.get('/inventory/check-lock/:itemId?', authenticateAdmin, async (req, res) => {
+    const { itemId } = req.params;
+    const lockKey = itemId ? `inventory-item-${itemId}` : 'inventory-operation';
+    const lockStatus = await lockService.checkLock(lockKey);
+    res.json({
+        ...lockStatus,
+        currentUserId: req.user._id
+    });
+});
+
+A_route.post('/inventory/acquire-lock/:itemId?', authenticateAdmin, async (req, res) => {
+    try {
+        const { itemId } = req.params;
+        const lockKey = itemId ? `inventory-item-${itemId}` : 'inventory-operation';
+        const admin = await Admin.findById(req.user._id);
+        const lockStatus = await lockService.acquireLock(lockKey, req.user._id);
+        
+        if (lockStatus.locked) {
+            return res.status(423).json({
+                locked: true,
+                message: 'Another admin is currently modifying this item',
+                currentEditor: lockStatus.currentEditor
+            });
+        }
+
+        res.json({
+            locked: false,
+            message: 'Lock acquired successfully'
+        });
+    } catch (error) {
+        console.error('Error acquiring lock:', error);
+        res.status(500).json({ message: 'Failed to acquire lock' });
+    }
+});
+
+A_route.post('/inventory/release-lock/:itemId?', authenticateAdmin, async (req, res) => {
+    const { itemId } = req.params;
+    const lockKey = itemId ? `inventory-item-${itemId}` : 'inventory-operation';
+    const released = await lockService.releaseLock(lockKey, req.user._id);
+    res.json({ 
+        message: released ? 'Lock released' : 'No lock found or not lock holder'
+    });
 });
 
 module.exports = A_route;

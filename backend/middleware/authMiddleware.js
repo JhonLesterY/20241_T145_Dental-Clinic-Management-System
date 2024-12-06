@@ -2,24 +2,32 @@
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 
-const authenticateAdmin = (req, res, next) => {
-    const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
-
-    console.log('Token received:', token); // Debugging line
-
-    if (!token) {
-        
-        return res.status(401).json({ message: 'Access Denied: No Token Provided!' });
-    }
-
+const authenticateAdmin = async (req, res, next) => {
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY); // Use JWT_SECRET from .env
-        req.user = decoded; // Attach the decoded token data (like user ID) to the request object
-        console.log('Decoded User:', req.user); 
-        next(); // Move to the next middleware or route handler
+        const authHeader = req.headers.authorization;
+        if (!authHeader?.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'No token provided' });
+        }
+
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        
+        const admin = await Admin.findById(decoded.id);
+        if (!admin) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        req.user = {
+            id: admin._id,
+            _id: admin._id,
+            email: admin.email,
+            role: 'admin'
+        };
+
+        next();
     } catch (error) {
-        console.error('Error verifying token:', error); // Debugging line
-        return res.status(401).json({ message: 'Access Denied: Invalid Token!' });
+        console.error('Auth error:', error);
+        res.status(401).json({ message: 'Not authorized' });
     }
 };
 
