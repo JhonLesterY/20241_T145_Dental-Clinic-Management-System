@@ -26,7 +26,47 @@ const AdminDashboard = () => {
     const [isLocked, setIsLocked] = useState(false);
     const [lockMessage, setLockMessage] = useState('');
 
-  const handleSearchChange = (e) => setSearchQuery(e.target.value);
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value.toLowerCase());
+  };
+
+  // Add these filter functions
+  const filterPatients = (patients) => {
+    if (!Array.isArray(patients)) return [];
+    
+    console.log('Search Query:', searchQuery); // Debug log
+    console.log('Patients:', patients); // Debug log
+    
+    return patients.filter(patient => {
+        const searchIn = searchQuery.toLowerCase();
+        const patientIdMatch = patient?.patient_id?.toString().toLowerCase().includes(searchIn);
+        const nameMatch = patient?.fullname?.toLowerCase().includes(searchIn);
+        const emailMatch = patient?.email?.toLowerCase().includes(searchIn);
+        
+        console.log('Patient:', patient.fullname, 'Matches:', { patientIdMatch, nameMatch, emailMatch }); // Debug log
+        
+        return patientIdMatch || nameMatch || emailMatch;
+    });
+  };
+
+  const filterDentists = (dentists) => {
+    if (!Array.isArray(dentists)) return [];
+    return dentists.filter(dentist => 
+        dentist?.dentist_id?.toString().toLowerCase().includes(searchQuery) ||
+        dentist?.name?.toLowerCase().includes(searchQuery) ||
+        dentist?.email?.toLowerCase().includes(searchQuery)
+    );
+  };
+
+  const filterAdmins = (admins) => {
+    if (!Array.isArray(admins)) return [];
+    return admins.filter(admin => 
+        admin?.admin_id?.toString().toLowerCase().includes(searchQuery) ||
+        admin?.fullname?.toLowerCase().includes(searchQuery) ||
+        admin?.email?.toLowerCase().includes(searchQuery)
+    );
+  };
+
   const toggleModal = () => setIsModalOpen(!isModalOpen);
 
   const handleInputChange = (e) => {
@@ -43,19 +83,22 @@ const AdminDashboard = () => {
                 'Authorization': `Bearer ${token}`
             }
         });
+        
         const data = await response.json();
         
         if (data.locked) {
-            setIsLocked(true);
-            setLockMessage(`Another admin is currently adding a user. Please wait ${data.remainingTime} seconds or until the transaction is finished.`);
+            const message = data.holder === data.currentUserId
+                ? `You already have a lock on this resource. It will expire in ${data.remainingTime} seconds.`
+                : `Another admin is currently adding a user. Please wait for ${data.remainingTime} seconds or wait for them to finish.`;
+            
+            alert(message);
             return true;
         }
         
-        setIsLocked(false);
-        setLockMessage('');
         return false;
     } catch (error) {
         console.error('Error checking lock:', error);
+        alert('Failed to check resource lock');
         return true;
     }
 };
@@ -66,7 +109,6 @@ const AdminDashboard = () => {
     // Check lock first
     const isCurrentlyLocked = await checkLock();
     if (isCurrentlyLocked) {
-        alert(lockMessage);
         return;
     }
 
@@ -206,7 +248,6 @@ const handleCreateDentist = async (e) => {
   // Check lock first
   const isCurrentlyLocked = await checkLock();
   if (isCurrentlyLocked) {
-      alert(lockMessage);
       return;
   }
 
@@ -263,101 +304,89 @@ const handleCreateDentist = async (e) => {
   }
 };
 
-const handleDeletePatient = async (patientId) => {
-  try {
-      const token = sessionStorage.getItem('token');
-      if (!token) {
-          throw new Error('No authentication token found');
-      }
+const handleDeleteDentist = async (dentistId) => {
+    if (!window.confirm('Are you sure you want to delete this dentist? This action cannot be undone.')) {
+        return;
+    }
 
-      console.log('Deleting patient with ID:', patientId);
+    try {
+        const token = sessionStorage.getItem('token');
+        const response = await fetch(`http://localhost:5000/admin/dentists/${dentistId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
 
-      const response = await fetch(`http://localhost:5000/admin/patients/${patientId}`, {
-          method: 'DELETE',
-          headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-          },
-          credentials: 'include' // Add this line
-      });
+        if (response.status === 423) {
+            const data = await response.json();
+            alert(data.message);
+            return;
+        }
 
-      if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to delete patient');
-      }
-
-      // Success
-      alert('Patient deleted successfully');
-      fetchAllPatients(); // Refresh the list
-  } catch (error) {
-      console.error('Delete error:', error);
-      alert(error.message);
-  }
+        if (response.ok) {
+            fetchDentists();
+        } else {
+            const data = await response.json();
+            throw new Error(data.message || 'Failed to delete dentist');
+        }
+    } catch (error) {
+        console.error('Error deleting dentist:', error);
+        alert(error.message);
+    }
 };
 
-
-const handleDeleteDentist = async (dentistId) => {
-  try {
-    const token = sessionStorage.getItem('token');
-    if (!token) {
-      throw new Error('No authentication token found');
+const handleDeletePatient = async (patientId) => {
+    if (!window.confirm('Are you sure you want to delete this patient? This action cannot be undone.')) {
+        return;
     }
 
-    console.log('Attempting to delete dentist with ID:', dentistId);
+    try {
+        const token = sessionStorage.getItem('token');
+        const response = await fetch(`http://localhost:5000/admin/patients/${patientId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
 
-    const response = await fetch(`http://localhost:5000/admin/dentists/${dentistId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete dentist');
+        if (response.ok) {
+            fetchAllPatients();
+        } else {
+            const data = await response.json();
+            throw new Error(data.message || 'Failed to delete patient');
+        }
+    } catch (error) {
+        console.error('Error deleting patient:', error);
+        alert(error.message);
     }
-
-    // Success - refresh the dentist list
-    await fetchDentists();
-    alert('Dentist deleted successfully');
-  } catch (error) {
-    console.error('Error deleting dentist:', error);
-    setError('Failed to delete dentist: ' + error.message);
-  }
 };
 
 const handleDeleteAdmin = async (adminId) => {
-  try {
-    const token = sessionStorage.getItem('token');
-    if (!token) {
-      throw new Error('No authentication token found');
+    if (!window.confirm('Are you sure you want to delete this admin? This action cannot be undone.')) {
+        return;
     }
 
-    const response = await fetch(`http://localhost:5000/admin/admins/${adminId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include'
-    });
+    try {
+        const token = sessionStorage.getItem('token');
+        const response = await fetch(`http://localhost:5000/admin/admins/${adminId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete admin');
+        if (response.ok) {
+            fetchAdmins();
+        } else {
+            const data = await response.json();
+            throw new Error(data.message || 'Failed to delete admin');
+        }
+    } catch (error) {
+        console.error('Error deleting admin:', error);
+        alert(error.message);
     }
-
-    // Success - refresh the admin list
-    await fetchAdmins();
-    alert('Admin deleted successfully');
-  } catch (error) {
-    console.error('Error deleting admin:', error);
-    setError('Failed to delete admin: ' + error.message);
-  }
 };
-
 
 useEffect(() => {
   fetchAllPatients();
@@ -369,10 +398,6 @@ useEffect(() => {
 useEffect(() => {
   fetchAdmins();
 }, []);
-
-
-
-
 
   return (
     <div className="flex h-screen w-screen">
@@ -472,10 +497,10 @@ useEffect(() => {
             <FontAwesomeIcon icon={faSearch} className="text-gray-500" />
             <input
               type="text"
-              placeholder="Search by name..."
+              placeholder="Search by name, ID, or email..."
               value={searchQuery}
               onChange={handleSearchChange}
-              className="border-none focus:outline-none ml-2 bg-white"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             />
           </div>
           <button className="p-2 rounded-full bg-gray-200 hover:bg-gray-300">
@@ -515,8 +540,8 @@ useEffect(() => {
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {patients && patients.length > 0 ? (
-                      patients.map((patient) => {
+                  {Array.isArray(patients) && patients.length > 0 ? (
+                      filterPatients(patients).map((patient) => {
                           // Log the patient object to see its structure
                           console.log('Current patient object:', patient);
                           
@@ -556,7 +581,7 @@ useEffect(() => {
                   ) : (
                       <tr>
                           <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
-                              {Array.isArray(patients) ? 'No patients found' : 'Loading patients...'}
+                              {filterPatients(patients).length === 0 ? 'No matching patients found' : 'Loading patients...'}
                           </td>
                       </tr>
                   )}
@@ -589,8 +614,8 @@ useEffect(() => {
                 </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-                {dentists.length > 0 ? (
-                    dentists.map((dentist) => (
+                {Array.isArray(dentists) && dentists.length > 0 ? (
+                    filterDentists(dentists).map((dentist) => (
                         <tr key={dentist._id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {dentist.dentist_id}
@@ -614,8 +639,8 @@ useEffect(() => {
                     ))
                 ) : (
                     <tr>
-                        <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
-                            No dentists found
+                        <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                            {filterDentists(dentists).length === 0 ? 'No matching dentists found' : 'Loading dentists...'}
                         </td>
                     </tr>
                 )}
@@ -648,8 +673,8 @@ useEffect(() => {
                 </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-                {admins.length > 0 ? (
-                    admins.map((admin) => (
+                {Array.isArray(admins) && admins.length > 0 ? (
+                    filterAdmins(admins).map((admin) => (
                         <tr key={admin._id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {admin.admin_id}
@@ -673,7 +698,7 @@ useEffect(() => {
                 ) : (
                     <tr>
                         <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
-                            No admins found
+                            {filterAdmins(admins).length === 0 ? 'No matching admins found' : 'Loading admins...'}
                         </td>
                     </tr>
                 )}

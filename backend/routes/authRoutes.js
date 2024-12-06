@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 const Patient = require('../models/Patient');
 const Admin = require('../models/Admin');
 const Dentist = require('../models/Dentist');
+const SuperAdmin = require('../models/SuperAdmin');
 const { sendPasswordResetEmail } = require('../emailService');
 const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
@@ -111,6 +112,10 @@ router.post('/login', async (req, res) => {
         if (!user) {
             user = await Dentist.findOne({ email });
             userType = 'dentist';
+        }
+        if (!user) {
+            user = await SuperAdmin.findOne({ email });
+            userType = 'superadmin';
         }
 
         if (!user) {

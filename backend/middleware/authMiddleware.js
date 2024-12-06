@@ -47,4 +47,21 @@ const authenticatePatient = async (req, res, next) => {
     }
 };
 
-module.exports = { authenticateAdmin, authenticatePatient };
+const checkPermission = async (req, res, next) => {
+    try {
+        const { user } = req;
+        const requiredPermission = req.permission;
+
+        if (!user.permissions || !user.permissions[requiredPermission]) {
+            return res.status(403).json({
+                message: 'You do not have permission to perform this action'
+            });
+        }
+
+        next();
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { authenticateAdmin, authenticatePatient, checkPermission };

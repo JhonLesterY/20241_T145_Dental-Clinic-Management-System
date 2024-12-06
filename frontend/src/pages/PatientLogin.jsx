@@ -59,19 +59,26 @@ const Login = () => {
             throw new Error(data.message || 'Login failed');
         }
 
-        if (data.user && data.user.role === 'admin') {
-          console.log('Storing admin data:', data.user); // Debug log
-          sessionStorage.setItem("admin_id", data.user._id); // Use _id from response
-          sessionStorage.setItem("token", data.token);
-          sessionStorage.setItem("role", "admin");
-          sessionStorage.setItem("email", data.user.email);
-          sessionStorage.setItem("name", data.user.fullname);
-          if (data.user.profilePicture) {
-              sessionStorage.setItem("profilePicture", data.user.profilePicture);
-          }
-          navigate("/admin-dashboard");
-      }
-        
+        if (data.user && data.user.role === 'superadmin') {
+            console.log('Storing superadmin data:', data.user);
+            sessionStorage.setItem("token", data.token);
+            sessionStorage.setItem("role", "superadmin");
+            sessionStorage.setItem("email", data.user.email);
+            sessionStorage.setItem("username", data.user.username);
+            navigate("/superadmin");
+        }
+        else if (data.user && data.user.role === 'admin') {
+            console.log('Storing admin data:', data.user);
+            sessionStorage.setItem("admin_id", data.user._id);
+            sessionStorage.setItem("token", data.token);
+            sessionStorage.setItem("role", "admin");
+            sessionStorage.setItem("email", data.user.email);
+            sessionStorage.setItem("name", data.user.fullname);
+            if (data.user.profilePicture) {
+                sessionStorage.setItem("profilePicture", data.user.profilePicture);
+            }
+            navigate("/admin-dashboard");
+        }
         else if (data.user.role === 'dentist') {
             sessionStorage.setItem("token", data.token);
             sessionStorage.setItem("role", "dentist");

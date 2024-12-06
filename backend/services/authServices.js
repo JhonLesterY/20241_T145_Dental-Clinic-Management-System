@@ -6,6 +6,7 @@ const Patient = require('../models/Patient');
 const Admin = require('../models/Admin');
 const Dentist = require('../models/Dentist');
 const { sendWelcomeEmail } = require('../emailService');
+const SuperAdmin = require('../models/SuperAdmin');
 
 const secretKey = process.env.JWT_SECRET_KEY;
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -183,11 +184,39 @@ async function normalLogin({ email, password, recaptchaToken }) {
         if (!isRecaptchaValid) {
             throw new Error('reCAPTCHA verification failed');
         }
+        const superadmin = await SuperAdmin.findOne({ email });
+        if (superadmin) {
+            const isMatch = await bcrypt.compare(password, superadmin.password);
+            if (!isMatch) {
+                throw new Error('Invalid credentials');
+            }
+
+            const token = jwt.sign(
+                { 
+                    id: superadmin._id, 
+                    email: superadmin.email,
+                    role: 'superadmin'
+                }, 
+                secretKey, 
+                { expiresIn: '24h' }
+            );
+
+            return {
+                token,
+                user: {
+                    _id: superadmin._id.toString(),
+                    email: superadmin.email,
+                    username: superadmin.username,
+                    role: 'superadmin'
+                }
+            };
+        }
 
         // Find user in any collection
         const admin = await Admin.findOne({ email });
         const dentist = await Dentist.findOne({ email });
         const patient = await Patient.findOne({ email });
+       
 
         // Get the user and their role
         let user = admin || dentist || patient;
@@ -213,7 +242,7 @@ async function normalLogin({ email, password, recaptchaToken }) {
         );
 
         // Return appropriate user data based on role
-        if (role === 'admin' || role === 'superadmin') {
+        if (role === 'admin') {
             return {
                 token,
                 user: {

@@ -36,6 +36,8 @@ import Dentist_Report from "./pages/Dentist_Report";
 import User_Report from "./pages/User_Report";
 import Admin_Report from "./pages/Admin_Report";
 import ActivityLogs from "./pages/ActivityLogs";
+import SuperAdminDashboard from './pages/SuperAdmin_Dashboard';
+
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
   return (
@@ -89,6 +91,10 @@ function App() {
           <Route path="/dentist-viewFeedback" element={<Dentist_ViewFeedback />} />
           <Route path="/dentist-sidebar" element={<DentistSideBar />} />
           <Route path="/reports" element={<Dentist_Report />} />
+        </Route>
+
+        <Route element={<ProtectedRoutes accountType="superadmin" />}>
+          <Route path="/superadmin" element={<SuperAdminDashboard />} />
         </Route>
       </Routes>
     </>

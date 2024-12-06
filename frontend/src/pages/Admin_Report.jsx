@@ -5,6 +5,34 @@ import AdminSideBar from "../components/AdminSideBar"; // Assuming you have an A
 
 const Admin_Report = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [reportType, setReportType] = useState('monthly');
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [report, setReport] = useState(null);
+
+  const generateReport = async () => {
+    try {
+      const token = sessionStorage.getItem('token');
+      const params = new URLSearchParams({
+        period: reportType,
+        year: year.toString(),
+        ...(reportType === 'monthly' && { month: month.toString() })
+      });
+
+      const response = await fetch(`http://localhost:5000/admin/reports/appointments?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to generate report');
+      const data = await response.json();
+      setReport(data);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      alert('Failed to generate report');
+    }
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -59,35 +87,106 @@ const Admin_Report = () => {
 
         {/* Main Report Content */}
         <div className="p-6">
-          {/* Appointment Summary Section */}
-          <h3 className="text-xl font-semibold text-[#003367] mb-6">Appointments Summary</h3>
-
-          <div className="overflow-x-auto bg-white rounded-lg shadow-md p-4">
-            <table className="w-full table-auto">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Appointment ID</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Patient Name</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Dentist Assigned</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Date</th>
-                  <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[{ id: 'A001', name: 'John Doe', dentist: 'Dr. Smith', date: '2024-11-25', status: 'Completed' },
-                  { id: 'A002', name: 'Jane Smith', dentist: 'Dr. Adams', date: '2024-11-26', status: 'Pending' },
-                  { id: 'A003', name: 'Michael Johnson', dentist: 'Dr. White', date: '2024-11-27', status: 'Completed' }].map((appointment, index) => (
-                  <tr key={appointment.id} className="border-t">
-                    <td className="py-3 px-4 text-sm text-gray-600">{appointment.id}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{appointment.name}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{appointment.dentist}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{appointment.date}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{appointment.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="mb-6 bg-white rounded-lg shadow-md p-4 ">
+            <h2 className="text-xl font-semibold mb-4 text-black">Generate Report</h2>
+            <div className="flex gap-4 mb-4 text-black">
+              <select 
+                value={reportType}
+                onChange={(e) => setReportType(e.target.value)}
+                className="border rounded p-2 bg-white"
+              >
+                <option value="monthly">Monthly</option>
+                <option value="annual">Annual</option>
+              </select>
+              <select 
+                value={year}
+                onChange={(e) => setYear(parseInt(e.target.value))}
+                className="border rounded p-2 bg-white"
+              >
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
+                  .map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))
+                }
+              </select>
+              {reportType === 'monthly' && (
+                <select 
+                  value={month}
+                  onChange={(e) => setMonth(parseInt(e.target.value))}
+                  className="border rounded p-2 bg-white"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1)
+                    .map(month => (
+                      <option key={month} value={month}>
+                        {new Date(2000, month - 1).toLocaleString('default', { month: 'long' })}
+                      </option>
+                    ))
+                  }
+                </select>
+              )}
+              <button 
+                onClick={generateReport}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Generate Report
+              </button>
+            </div>
           </div>
+
+          {report && (
+            <div className="bg-white rounded-lg shadow-md p-4">
+              <h3 className="text-lg font-semibold mb-4 text-black">Report Summary</h3>
+              <div className="grid grid-cols-2 gap-4 mb-6 text-black">
+                <div>
+                  <p>Total Appointments: {report.summary.totalAppointments}</p>
+                  <p>Completed: {report.summary.completedAppointments}</p>
+                  <p>Cancelled: {report.summary.cancelledAppointments}</p>
+                  <p>Pending: {report.summary.pendingAppointments}</p>
+                  <p>Completion Rate: {report.summary.completionRate}</p>
+                </div>
+              </div>
+
+              <h4 className="font-semibold mb-2 text-black">Appointments Detail</h4>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Patient
+                      </th>
+                      <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Dentist
+                      </th>
+                      <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.appointments.map((appointment, index) => (
+                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(appointment.date).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {appointment.patientName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {appointment.dentistName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {appointment.status}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

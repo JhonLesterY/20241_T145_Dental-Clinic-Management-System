@@ -161,7 +161,7 @@ const syncFormResponses = async () => {
 
 // Add these at the end of the file
 // Run sync every 5 minutes
-setInterval(syncFormResponses, 300000);
+setInterval(syncFormResponses, 60000);
 
 // Run initial sync when server starts
 syncFormResponses().catch(console.error);

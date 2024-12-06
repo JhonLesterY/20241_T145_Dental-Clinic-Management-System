@@ -6,6 +6,7 @@ const Inventory = require('../models/Inventory');
 const bcrypt = require('bcryptjs');
 const { logActivity, ACTIONS } = require('../services/activitylogServices');
 const { sendWelcomeEmail } = require('../emailService'); 
+const lockService = require('../services/lockService');
 
 const secretKey = process.env.JWT_SECRET_KEY; 
 
@@ -93,62 +94,40 @@ const getAllPatients = async (req, res) => {
 };
 
 async function deletePatient(req, res) {
-    const { patient_id } = req.params;
+    const lockStatus = await lockService.acquireLock('delete-patient', req.user.id);
+    if (lockStatus.locked) {
+        return res.status(423).json({
+            message: 'Another administrator is currently deleting a patient record. Please try again in a few seconds.',
+            remainingTime: lockStatus.remainingTime
+        });
+    }
 
     try {
-        // Debug logs
-        console.log('Delete request params:', req.params);
-        console.log('User from request:', req.user);
+        const { patient_id } = req.params;
+        const deletedPatient = await Patient.findOneAndDelete({ patient_id: parseInt(patient_id) });
         
-        // Validate user authentication
-        if (!req.user) {
-            return res.status(401).json({ message: 'User not authenticated' });
-        }
-
-        // Convert patient_id to number and validate
-        const numericId = Number(patient_id);
-        if (isNaN(numericId)) {
-            return res.status(400).json({ message: 'Invalid patient ID format' });
-        }
-
-        // First find and delete the patient
-        const deletedPatient = await Patient.findOneAndDelete({ patient_id: numericId });
         if (!deletedPatient) {
             return res.status(404).json({ message: 'Patient not found' });
         }
 
-        // Get all patients with ID greater than the deleted one
-        const patientsToUpdate = await Patient.find({ 
-            patient_id: { $gt: numericId }
-        }).sort({ patient_id: 1 });
-
-        // Update each patient's ID to decrement by 1
-        for (const patient of patientsToUpdate) {
-            await Patient.findByIdAndUpdate(
-                patient._id,
-                { $set: { patient_id: patient.patient_id - 1 } }
-            );
-        }
-
-        // Log activity with the decoded user data
+        // Log activity
         await logActivity(
-            req.user.id,      
-            req.user.role,    
-            'deletePatient',  
-            {                 
-                patient_id: numericId,
-                name: deletedPatient.name || deletedPatient.fullname,
-                affected_ids: patientsToUpdate.length
+            req.user.id,
+            req.user.role,
+            'deletePatient',
+            { 
+                patient_id: patient_id,
+                name: deletedPatient.name
             }
         );
 
-        res.status(200).json({ 
-            message: 'Patient deleted successfully',
-            reorderedCount: patientsToUpdate.length
-        });
+        res.status(200).json({ message: 'Patient deleted successfully' });
     } catch (error) {
-        console.error('Delete error:', error);
-        res.status(500).json({ message: 'Failed to delete patient: ' + error.message });
+        console.error('Error in deletePatient:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    } finally {
+        // Release the lock
+        await lockService.releaseLock('delete-patient', req.user.id);
     }
 }
 
@@ -193,28 +172,20 @@ async function addDentist(req, res) {
 }
 
 async function deleteDentist(req, res) {
+    const lockStatus = await lockService.acquireLock('delete-operation', req.user.id);
+    if (lockStatus.locked) {
+        return res.status(423).json({
+            message: lockStatus.message || 'Another delete operation is in progress. Please try again in a few seconds.',
+            remainingTime: lockStatus.remainingTime
+        });
+    }
+
     try {
         const { dentist_id } = req.params;
-        console.log('Attempting to delete dentist with ID:', dentist_id);
-
-        // First find and delete the dentist
         const deletedDentist = await Dentist.findOneAndDelete({ dentist_id: parseInt(dentist_id) });
         
         if (!deletedDentist) {
             return res.status(404).json({ message: 'Dentist not found' });
-        }
-
-        // Get all dentists with ID greater than the deleted one
-        const dentistsToUpdate = await Dentist.find({ 
-            dentist_id: { $gt: parseInt(dentist_id) }
-        }).sort({ dentist_id: 1 });
-
-        // Update each dentist's ID to decrement by 1
-        for (const dentist of dentistsToUpdate) {
-            await Dentist.findByIdAndUpdate(
-                dentist._id,
-                { $set: { dentist_id: dentist.dentist_id - 1 } }
-            );
         }
 
         // Log activity
@@ -223,24 +194,30 @@ async function deleteDentist(req, res) {
             req.user.role,
             'deleteDentist',
             { 
-                dentist_id: dentist_id, 
-                name: deletedDentist.name,
-                affected_ids: dentistsToUpdate.length
+                dentist_id: dentist_id,
+                name: deletedDentist.name
             }
         );
 
-        res.status(200).json({ 
-            message: 'Dentist deleted successfully',
-            reorderedCount: dentistsToUpdate.length
-        });
+        res.status(200).json({ message: 'Dentist deleted successfully' });
     } catch (error) {
-        console.error('Error deleting dentist:', error);
-        res.status(500).json({ message: 'Failed to delete dentist: ' + error.message });
+        console.error('Error in deleteDentist:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    } finally {
+        await lockService.releaseLock('delete-operation', req.user.id);
     }
 }
 
 // Add this function
 async function deleteAdmin(req, res) {
+    const lockStatus = await lockService.acquireLock('delete-operation', req.user.id);
+    if (lockStatus.locked) {
+        return res.status(423).json({
+            message: lockStatus.message || 'Another delete operation is in progress. Please try again in a few seconds.',
+            remainingTime: lockStatus.remainingTime
+        });
+    }
+
     try {
         const { admin_id } = req.params;
         console.log('Attempting to delete admin with ID:', admin_id);
@@ -288,8 +265,10 @@ async function deleteAdmin(req, res) {
             reorderedCount: adminsToUpdate.length
         });
     } catch (error) {
-        console.error('Error deleting admin:', error);
-        res.status(500).json({ message: 'Failed to delete admin: ' + error.message });
+        console.error('Error in deleteAdmin:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    } finally {
+        await lockService.releaseLock('delete-operation', req.user.id);
     }
 }
 

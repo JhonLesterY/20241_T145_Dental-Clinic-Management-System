@@ -10,6 +10,8 @@ const path = require('path');
 
 const ActivityLog = require('../models/ActivityLog');
 const lockService = require('../services/lockService');
+const deadlockPreventionMiddleware = require('../middleware/deadlockPreventionMiddleware');
+const reportService = require('../services/reportService');
 
 
 const storage = multer.diskStorage({
@@ -177,9 +179,9 @@ A_route.get('/patients', authenticateAdmin, adminService.getAllPatients);
 A_route.get('/admins', authenticateAdmin, adminService.getAllAdmins);
 A_route.get('/dentists', authenticateAdmin, adminService.getAllDentists);
 
-A_route.delete('/admins/:admin_id', authenticateAdmin, adminService.deleteAdmin);
-A_route.delete('/patients/:patient_id', authenticateAdmin, adminService.deletePatient);
-A_route.delete('/dentists/:dentist_id', authenticateAdmin, adminService.deleteDentist);    
+A_route.delete('/admins/:admin_id', authenticateAdmin, deadlockPreventionMiddleware, adminService.deleteAdmin);
+A_route.delete('/patients/:patient_id', authenticateAdmin, deadlockPreventionMiddleware, adminService.deletePatient);
+A_route.delete('/dentists/:dentist_id', authenticateAdmin, deadlockPreventionMiddleware, adminService.deleteDentist);    
 
 A_route.post('/add-dentist', authenticateAdmin, adminService.addDentist);
 A_route.post('/create', authenticateAdmin, adminService.createAdmin);
@@ -219,15 +221,59 @@ A_route.get('/activity-logs', authenticateAdmin, async (req, res) => {
     }
 });
 
-A_route.post('/check-user-lock', authenticateAdmin, (req, res) => {
-    const lockStatus = lockService.acquireLock('add-user');
-    res.json(lockStatus);
-});
+A_route.post('/check-user-lock', 
+    authenticateAdmin, 
+    deadlockPreventionMiddleware,
+    async (req, res) => {
+        const lockStatus = await lockService.acquireLock('add-user', req.user.id);
+        res.json({
+            ...lockStatus,
+            currentUserId: req.user.id
+        });
+    }
+);
 
-A_route.post('/release-user-lock', authenticateAdmin, (req, res) => {
-    lockService.releaseLock('add-user');
-    res.json({ message: 'Lock released' });
-});
+A_route.post('/release-user-lock', 
+    authenticateAdmin,
+    async (req, res) => {
+        const released = await lockService.releaseLock('add-user', req.user.id);
+        res.json({ 
+            message: released ? 'Lock released' : 'No lock found or not lock holder'
+        });
+    }
+);
 
+A_route.get('/reports/appointments', authenticateAdmin, async (req, res) => {
+    try {
+        const { period, year, month } = req.query;
+        let startDate, endDate;
+
+        console.log('Report request params:', { period, year, month });
+
+        if (period === 'monthly' && year && month) {
+            startDate = new Date(year, month - 1, 1);
+            endDate = new Date(year, month, 0);
+        } else if (period === 'annual' && year) {
+            startDate = new Date(year, 0, 1);
+            endDate = new Date(year, 11, 31);
+        } else {
+            return res.status(400).json({ 
+                message: 'Invalid period parameters',
+                received: { period, year, month }
+            });
+        }
+
+        console.log('Calculated date range:', { startDate, endDate });
+
+        const report = await reportService.generateAppointmentReport(startDate, endDate);
+        res.json(report);
+    } catch (error) {
+        console.error('Error in /reports/appointments:', error);
+        res.status(500).json({ 
+            message: 'Failed to generate report',
+            error: error.message 
+        });
+    }
+});
 
 module.exports = A_route;
