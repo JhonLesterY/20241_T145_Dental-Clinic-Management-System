@@ -13,20 +13,76 @@ import { VscOutput } from "react-icons/vsc"; // Add this import for the activity
 
 // Menu Items
 const menuItems = [
-  { icons: <IoHomeOutline size={24} />, label: "Dashboard", path: "/admin-dashboard" },
-  { icons: <FaUserCircle size={24} />, label: "User Management", path: "/user-management" },
-  { icons: <FaEye size={24} />, label: "View Appointment", path: "/admin-viewAppointment" },
-  { icons: <MdCalendarToday size={24} />, label: "Calendar", path: "/admin-calendar" },
-  { icons: <FaBoxes size={24} />, label: "Inventory", path: "/admin-inventory" },
-  { icons: <MdOutlineDashboard size={24} />, label: "View Feedback", path: "/admin-viewFeedback" },
-  { icons: <VscOutput size={24} />, label: "Activity Logs", path: "/activity-logs" },
-  { icons: <CiSettings size={24} />, label: "Settings", path: "/admin-settings" },
-  { icons: <TbReportSearch size={24} />, label: "Reports", path: "/admin-report" },
+  { 
+    icons: <IoHomeOutline size={24} />, 
+    label: "Dashboard", 
+    path: "/admin-dashboard",
+    permission: "viewReports"
+  },
+  { 
+    icons: <FaUserCircle size={24} />, 
+    label: "User Management", 
+    path: "/admin-userManagement",
+    permission: "manageUsers"
+  },
+  { 
+    icons: <FaEye size={24} />, 
+    label: "View Appointment", 
+    path: "/admin-viewAppointment",
+    permission: "manageAppointments"
+  },
+  { 
+    icons: <MdCalendarToday size={24} />, 
+    label: "Calendar", 
+    path: "/admin-calendar",
+    permission: "manageCalendar"
+  },
+  { 
+    icons: <FaBoxes size={24} />, 
+    label: "Inventory", 
+    path: "/admin-inventory",
+    permission: "manageInventory"
+  },
+  { 
+    icons: <MdOutlineDashboard size={24} />, 
+    label: "View Feedback", 
+    path: "/admin-viewFeedback",
+    permission: "viewReports"
+  },
+  { 
+    icons: <VscOutput size={24} />, 
+    label: "Activity Logs", 
+    path: "/activity-logs",
+    permission: "viewReports"
+  },
+  { 
+    icons: <CiSettings size={24} />, 
+    label: "Settings", 
+    path: "/admin-settings",
+    permission: null
+  },
+  { 
+    icons: <TbReportSearch size={24} />, 
+    label: "Reports", 
+    path: "/admin-report",
+    permission: "viewReports"
+  },
 ];
 
 export default function Sidebar({ open = true, setOpen }) {
-  const [adminData, setAdminData] = useState({ email: "Loading..." });
+  const [adminData, setAdminData] = useState({ 
+    email: "Loading...",
+    permissions: {},
+    permissionLevel: ''
+  });
   const navigate = useNavigate();
+
+  // Add permission check function
+  const hasPermission = (permission) => {
+    return permission === null || 
+           adminData.permissionLevel === 'HIGH' || 
+           adminData.permissions[permission];
+  };
 
   // Add this effect to open the sidebar on mount
   useEffect(() => {
@@ -39,15 +95,21 @@ export default function Sidebar({ open = true, setOpen }) {
   useEffect(() => {
     const fetchAdminData = async () => {
       try {
-        const response = await axios.get("/adminRoute/adminServices/getAdmin", {
+        const token = sessionStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/admin/current', {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`, // Authentication token
-          },
+            'Authorization': `Bearer ${token}`
+          }
         });
-        setAdminData(response.data); // Set admin data from response
+        const data = await response.json();
+        setAdminData(data);
       } catch (error) {
         console.error("Error fetching admin data:", error);
-        setAdminData({ email: "Error: Unable to fetch data" });
+        setAdminData({ 
+          email: "Error: Unable to fetch data",
+          permissions: {},
+          permissionLevel: ''
+        });
       }
     };
 
@@ -84,33 +146,39 @@ export default function Sidebar({ open = true, setOpen }) {
         )}
       </div>
 
-      {/* Menu Items */}
+      {/* Menu Items - Updated to use filtered items */}
       <ul className={`flex-1 px-3 mt-4 ${open ? "space-y-2" : "space-y-4"}`}>
-        {menuItems.map((item, index) => (
-          <li
-            key={index}
-            onClick={() => navigate(item.path)}
-            className="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#2a3a63] transition duration-300 cursor-pointer group"
-          >
-            <div>{item.icons}</div>
-            <p
-              className={`text-base transition-all duration-500 ${
-                !open && "opacity-0 translate-x-10"
-              }`}
+        {menuItems.map((item, index) => {
+          const isAuthorized = hasPermission(item.permission);
+          
+          return (
+            <li
+              key={index}
+              onClick={() => isAuthorized && navigate(item.path)}
+              className={`flex items-center gap-3 px-4 py-2 rounded-md 
+                ${isAuthorized 
+                  ? 'hover:bg-[#2a3a63] cursor-pointer' 
+                  : 'opacity-50 cursor-not-allowed'} 
+                transition duration-300 group`}
             >
-              {item.label}
-            </p>
-            {!open && (
-              <span
-                className="absolute left-16 bg-white text-[#003367] px-2 py-1 rounded-md shadow-lg 
-                opacity-0 group-hover:opacity-100 pointer-events-none"
+              <div className={!isAuthorized ? 'text-gray-500' : ''}>{item.icons}</div>
+              <p className={`text-base transition-all duration-500 
+                ${!open && "opacity-0 translate-x-10"}
+                ${!isAuthorized ? 'text-gray-500' : ''}`}
               >
                 {item.label}
-                {item.requiresProfile && !isProfileComplete && " (Complete profile first)"}
-              </span>
-            )}
-          </li>
-        ))}
+                {!isAuthorized && ' (No Access)'}
+              </p>
+              {!open && (
+                <span className="absolute left-16 bg-white text-[#003367] px-2 py-1 rounded-md shadow-lg 
+                  opacity-0 group-hover:opacity-100 pointer-events-none">
+                  {item.label}
+                  {!isAuthorized && ' (No Access)'}
+                </span>
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       {/* Footer */}

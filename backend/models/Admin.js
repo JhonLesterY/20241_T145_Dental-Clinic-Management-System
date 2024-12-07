@@ -49,6 +49,23 @@ const adminSchema = new Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    permissionLevel: {
+        type: String,
+        enum: ['HIGH', 'STANDARD'],
+        default: 'STANDARD'
+    },
+    canManagePermissions: {
+        type: Boolean,
+        default: false
+    },
+    permissions: {
+        manageUsers: { type: Boolean, default: false },
+        manageAppointments: { type: Boolean, default: false },
+        viewReports: { type: Boolean, default: false },
+        managePermissions: { type: Boolean, default: false },
+        manageInventory: { type: Boolean, default: false },
+        manageCalendar: { type: Boolean, default: false }
     }
 }, { timestamps: true });
 

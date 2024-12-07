@@ -59,15 +59,8 @@ const Login = () => {
             throw new Error(data.message || 'Login failed');
         }
 
-        if (data.user && data.user.role === 'superadmin') {
-            console.log('Storing superadmin data:', data.user);
-            sessionStorage.setItem("token", data.token);
-            sessionStorage.setItem("role", "superadmin");
-            sessionStorage.setItem("email", data.user.email);
-            sessionStorage.setItem("username", data.user.username);
-            navigate("/superadmin");
-        }
-        else if (data.user && data.user.role === 'admin') {
+        
+        if (data.user && data.user.role === 'admin') {
             console.log('Storing admin data:', data.user);
             sessionStorage.setItem("admin_id", data.user._id);
             sessionStorage.setItem("token", data.token);

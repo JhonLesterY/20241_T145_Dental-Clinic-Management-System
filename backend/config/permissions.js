@@ -6,7 +6,9 @@ const PERMISSIONS = {
         VIEW_APPOINTMENTS: 'view_appointments',
         MANAGE_CALENDAR: 'manage_calendar',
         VIEW_REPORTS: 'view_reports',
-        SEND_NOTIFICATIONS: 'send_notifications'
+        SEND_NOTIFICATIONS: 'send_notifications',
+        MANAGE_PERMISSIONS: 'manage_permissions',
+        MANAGE_ADMIN_ROLES: 'manage_admin_roles'
     },
     DENTIST: {
         MANAGE_APPOINTMENTS: 'manage_appointments',

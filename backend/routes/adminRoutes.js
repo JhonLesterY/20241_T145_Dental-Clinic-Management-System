@@ -7,11 +7,12 @@ const multer = require('multer');
 const bcrypt = require('bcrypt'); 
 const Admin = require('../models/Admin');
 const path = require('path');
-
 const ActivityLog = require('../models/ActivityLog');
 const lockService = require('../services/lockService');
 const deadlockPreventionMiddleware = require('../middleware/deadlockPreventionMiddleware');
 const reportService = require('../services/reportService');
+const { checkAdminLevel } = require('../middleware/adminLevelMiddleware');
+const { checkPermission } = require('../middleware/checkPermissionMiddleware');
 
 
 const storage = multer.diskStorage({
@@ -184,7 +185,7 @@ A_route.delete('/patients/:patient_id', authenticateAdmin, deadlockPreventionMid
 A_route.delete('/dentists/:dentist_id', authenticateAdmin, deadlockPreventionMiddleware, adminService.deleteDentist);    
 
 A_route.post('/add-dentist', authenticateAdmin, adminService.addDentist);
-A_route.post('/create', authenticateAdmin, adminService.createAdmin);
+A_route.post('/create', authenticateAdmin, checkPermission('manageAdmins'), adminService.createAdmin);
 
 A_route.get('/appointments', authenticateAdmin, adminService.getAllAppointments);
 A_route.post('/appointments/reminders', adminService.sendReminders);
@@ -318,6 +319,103 @@ A_route.post('/inventory/release-lock/:itemId?', authenticateAdmin, async (req, 
     res.json({ 
         message: released ? 'Lock released' : 'No lock found or not lock holder'
     });
+});
+
+A_route.put('/permissions/:roleType', authenticateAdmin, async (req, res) => {
+    try {
+        const result = await adminService.updateRolePermissions(
+            req.user.id,
+            req.params.roleType,
+            req.body.permissions
+        );
+        res.json(result);
+    } catch (error) {
+        res.status(403).json({ message: error.message });
+    }
+});
+
+A_route.post('/promote/:adminId', authenticateAdmin, async (req, res) => {
+    try {
+        const result = await adminService.promoteToHighLevelAdmin(
+            req.user.id,
+            req.params.adminId
+        );
+        res.json(result);
+    } catch (error) {
+        res.status(403).json({ message: error.message });
+    }
+});
+
+// High-level admin only routes
+A_route.post('/promote', 
+    authenticateAdmin, 
+    checkAdminLevel('HIGH'), 
+    adminService.promoteToHighLevelAdmin
+);
+
+A_route.post('/permissions', 
+    authenticateAdmin, 
+    checkAdminLevel('HIGH'), 
+    adminService.updateRolePermissions
+);
+
+A_route.put('/admin-permissions/:adminId',
+    authenticateAdmin,
+    checkPermission('managePermissions'),
+    async (req, res) => {
+        try {
+            const result = await adminService.updateAdminPermissions(
+                req.user.id,
+                req.params.adminId,
+                req.body.permissions
+            );
+            res.json(result);
+        } catch (error) {
+            res.status(403).json({ message: error.message });
+        }
+    }
+);
+
+A_route.get('/current', authenticateAdmin, async (req, res) => {
+    try {
+        const admin = await Admin.findById(req.user.id);
+        if (!admin) {
+            return res.status(404).json({ message: 'Admin not found' });
+        }
+        res.json({
+            _id: admin._id,
+            admin_id: admin.admin_id,
+            permissionLevel: admin.permissionLevel,
+            permissions: admin.permissions
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Add Admin Registration Route
+A_route.post('/register', 
+    authenticateAdmin, 
+    checkPermission('manageUsers'), 
+    async (req, res) => {
+        try {
+            await adminService.createAdmin(req, res);
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    }
+);
+
+A_route.post('/demote/:adminId', authenticateAdmin, async (req, res) => {
+    try {
+        const result = await adminService.demoteFromHighLevelAdmin(
+            req.user.id,
+            req.params.adminId
+        );
+        res.json(result);
+    } catch (error) {
+        res.status(403).json({ message: error.message });
+    }
 });
 
 module.exports = A_route;

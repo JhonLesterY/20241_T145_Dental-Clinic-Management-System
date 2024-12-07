@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AdminSideBar from '../components/AdminSideBar';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -35,6 +36,7 @@ const AdminCalendar = () => {
     const [showEventsModal, setShowEventsModal] = useState(false);
     const [editingEvent, setEditingEvent] = useState(null);
     const [showEditForm, setShowEditForm] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     useEffect(() => {
         const loadCalendarData = async () => {
@@ -105,54 +107,7 @@ const AdminCalendar = () => {
     if (isLoading) {
         return (
             <div className="flex h-screen w-screen">
-                <div className="bg-[#003367] text-white w-1/4 p-6 hidden lg:block">
-                    <div className="mb-4">
-                        <Link to="/admin-profile" className="flex items-center">
-                            {profileImage && (
-                                <img src={profileImage} alt="Profile" className="w-10 h-10 rounded-full mr-2" />
-                            )}
-                            <div className="flex flex-col">
-                                <span className="text-lg font-semibold">Admin Name</span>
-                            </div>
-                        </Link>
-                    </div>
-
-                    <div className="mb-8 bg-white p-4 rounded-lg text-center shadow-lg text-gray-900">
-                        <h1 className="text-3xl font-bold">
-                            <FontAwesomeIcon icon={faTooth} className="mr-3" /> BukSU Dental Clinic
-                        </h1>
-                    </div>
-
-                    <nav>
-                        <ul className="space-y-4">
-                            {['Dashboard', 'View Appointment', 'Calendar'].map((item, index) => (
-                                <li key={index}>
-                                    <Link
-                                        to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
-                                        className="flex items-center text-lg rounded p-2 hover:bg-blue-500"
-                                    >
-                                        <FontAwesomeIcon icon={[faThLarge, faClipboardList, faCalendarAlt][index]} className="mr-3" />
-                                        {item}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                        <ul className="space-y-4 mt-8">
-                            {['Inventory', 'View Feedback', 'Settings'].map((item, index) => (
-                                <li key={index}>
-                                    <Link
-                                        to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
-                                        className="flex items-center text-lg rounded p-2 hover:bg-blue-500"
-                                    >
-                                        <FontAwesomeIcon icon={[faClipboardList, faComments, faCog][index]} className="mr-3" />
-                                        {item}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </nav>
-                </div>
-                
+                <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
                 <div className="flex-1 flex justify-center items-center">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
@@ -391,57 +346,10 @@ const AdminCalendar = () => {
 
     return (
         <div className="flex h-screen w-screen">
-            {/* Sidebar */}
-            <div className="bg-[#003367] text-white w-1/4 p-6 hidden lg:block">
-                <div className="mb-4">
-                    <Link to="/admin-profile" className="flex items-center">
-                        {profileImage && (
-                            <img src={profileImage} alt="Profile" className="w-10 h-10 rounded-full mr-2" />
-                        )}
-                        <div className="flex flex-col">
-                            <span className="text-lg font-semibold">Admin Name</span>
-                        </div>
-                    </Link>
-                </div>
-
-                <div className="mb-8 bg-white p-4 rounded-lg text-center shadow-lg text-gray-900">
-                    <h1 className="text-3xl font-bold">
-                        <FontAwesomeIcon icon={faTooth} className="mr-3" /> BukSU Dental Clinic
-                    </h1>
-                </div>
-
-                <nav>
-                    <ul className="space-y-4">
-                        {['Dashboard', 'View Appointment', 'Calendar'].map((item, index) => (
-                            <li key={index}>
-                                <Link
-                                    to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
-                                    className="flex items-center text-lg rounded p-2 hover:bg-blue-500"
-                                >
-                                    <FontAwesomeIcon icon={[faThLarge, faClipboardList, faCalendarAlt][index]} className="mr-3" />
-                                    {item}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                    <ul className="space-y-4 mt-8">
-                        {['Inventory', 'View Feedback', 'Settings'].map((item, index) => (
-                            <li key={index}>
-                                <Link
-                                    to={`/admin-${item.toLowerCase().replace(/\s/g, '-')}`}
-                                    className="flex items-center text-lg rounded p-2 hover:bg-blue-500"
-                                >
-                                    <FontAwesomeIcon icon={[faClipboardList, faComments, faCog][index]} className="mr-3" />
-                                    {item}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                </nav>
-            </div>
-
+            <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
+            
             {/* Main Content */}
-            <div className="flex-1 bg-white p-6">
+            <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
                 {/* Error Display */}
                 {error && (
                     <div className="mb-4 p-4 bg-red-100 text-red-600 rounded-lg">

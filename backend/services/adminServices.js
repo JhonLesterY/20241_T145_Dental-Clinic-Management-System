@@ -17,7 +17,6 @@ async function createAdmin(req, res) {
             return res.status(400).json({ message: 'Admin with this email already exists.' });
         }
 
-        // Generate a random password
         const generatedPassword = Math.random().toString(36).slice(-8);
         const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
@@ -29,19 +28,26 @@ async function createAdmin(req, res) {
             fullname: req.body.fullname,
             email: req.body.email,
             password: hashedPassword,
+            permissionLevel: req.body.permissionLevel,
+            permissions: req.body.permissionLevel === 'HIGH' ? {
+                manageUsers: true,
+                manageAppointments: true,
+                viewReports: true,
+                managePermissions: true,
+                manageInventory: true,
+                manageCalendar: true
+            } : req.body.permissions,
             role: 'admin',
         });
 
         await newAdmin.save();
 
-        // Send welcome email with generated password
         await sendWelcomeEmail({
             email: req.body.email,
             name: req.body.fullname,
             temporaryPassword: generatedPassword
         });
 
-        // Log activity
         await logActivity(req.user.id, req.user.role, 'createAdmin', { adminId: newAdmin._id });
 
         res.status(201).json({ 
@@ -219,8 +225,8 @@ async function deleteAdmin(req, res) {
     }
 
     try {
-        const { admin_id } = req.params;
-        console.log('Attempting to delete admin with ID:', admin_id);
+        const adminId = req.params.admin_id; // This will be the _id
+        console.log('Attempting to delete admin with ID:', adminId);
 
         // Prevent deleting the last admin
         const adminCount = await Admin.countDocuments();
@@ -228,24 +234,11 @@ async function deleteAdmin(req, res) {
             return res.status(400).json({ message: 'Cannot delete the last admin account' });
         }
 
-        // First find and delete the admin
-        const deletedAdmin = await Admin.findOneAndDelete({ admin_id: parseInt(admin_id) });
+        // Find and delete the admin using _id
+        const deletedAdmin = await Admin.findByIdAndDelete(adminId);
         
         if (!deletedAdmin) {
             return res.status(404).json({ message: 'Admin not found' });
-        }
-
-        // Get all admins with ID greater than the deleted one
-        const adminsToUpdate = await Admin.find({ 
-            admin_id: { $gt: parseInt(admin_id) }
-        }).sort({ admin_id: 1 });
-
-        // Update each admin's ID to decrement by 1
-        for (const admin of adminsToUpdate) {
-            await Admin.findByIdAndUpdate(
-                admin._id,
-                { $set: { admin_id: admin.admin_id - 1 } }
-            );
         }
 
         // Log activity
@@ -254,15 +247,13 @@ async function deleteAdmin(req, res) {
             req.user.role,
             'deleteAdmin',
             { 
-                admin_id: admin_id, 
-                name: deletedAdmin.fullname,
-                affected_ids: adminsToUpdate.length
+                admin_id: deletedAdmin.admin_id,
+                name: deletedAdmin.fullname
             }
         );
 
         res.status(200).json({ 
-            message: 'Admin deleted successfully',
-            reorderedCount: adminsToUpdate.length
+            message: 'Admin deleted successfully'
         });
     } catch (error) {
         console.error('Error in deleteAdmin:', error);
@@ -573,6 +564,165 @@ async function changeAdminPassword(adminId, currentPassword, newPassword) {
         throw error;
     }
 }
+
+const updateRolePermissions = async (adminId, targetRole, permissions) => {
+    try {
+        const admin = await Admin.findById(adminId);
+        if (!admin || !admin.canManagePermissions) {
+            throw new Error('Unauthorized to manage permissions');
+        }
+
+        const validRole = ['ADMIN', 'DENTIST', 'PATIENT'].includes(targetRole.toUpperCase());
+        if (!validRole) {
+            throw new Error('Invalid role type');
+        }
+
+        const Model = {
+            ADMIN: Admin,
+            DENTIST: Dentist,
+            PATIENT: Patient
+        }[targetRole.toUpperCase()];
+
+        await Model.updateMany({}, { 
+            $set: { permissions: permissions }
+        });
+
+        await logActivity(
+            adminId,
+            'admin',
+            'UPDATE_PERMISSIONS',
+            { role: targetRole, permissions: permissions }
+        );
+
+        return { success: true, message: `Updated permissions for ${targetRole}` };
+    } catch (error) {
+        throw error;
+    }
+};
+
+const promoteToHighLevelAdmin = async (adminId, targetAdminId) => {
+    try {
+        const admin = await Admin.findById(adminId);
+        if (!admin || admin.permissionLevel !== 'HIGH') {
+            throw new Error('Unauthorized to promote admins');
+        }
+
+        await Admin.findByIdAndUpdate(targetAdminId, {
+            permissionLevel: 'HIGH',
+            permissions: {
+                manageUsers: true,
+                manageAppointments: true,
+                viewReports: true,
+                managePermissions: true,
+                manageInventory: true,
+                manageCalendar: true
+            }
+        });
+
+        await logActivity(
+            adminId,
+            'admin',
+            'PROMOTE_ADMIN',
+            { targetAdminId }
+        );
+
+        return { success: true };
+    } catch (error) {
+        throw error;
+    }
+};
+
+const updateAdminPermissions = async (adminId, targetAdminId, permissions) => {
+    try {
+        const admin = await Admin.findById(adminId);
+        if (!admin || admin.permissionLevel !== 'HIGH') {
+            throw new Error('Unauthorized to manage admin permissions');
+        }
+
+        const targetAdmin = await Admin.findById(targetAdminId);
+        if (!targetAdmin) {
+            throw new Error('Target admin not found');
+        }
+
+        if (targetAdmin.permissionLevel === 'HIGH' && 
+            targetAdmin._id.toString() !== adminId.toString()) {
+            throw new Error('Cannot modify permissions of another HIGH level admin');
+        }
+
+        await Admin.findByIdAndUpdate(targetAdminId, {
+            permissions: {
+                ...targetAdmin.permissions,
+                ...permissions
+            }
+        });
+
+        await logActivity(
+            adminId,
+            'admin',
+            'UPDATE_ADMIN_PERMISSIONS',
+            { 
+                targetAdminId,
+                updatedPermissions: permissions 
+            }
+        );
+
+        return { 
+            success: true, 
+            message: 'Admin permissions updated successfully' 
+        };
+    } catch (error) {
+        throw error;
+    }
+};
+
+const demoteFromHighLevelAdmin = async (adminId, targetAdminId) => {
+    try {
+        const admin = await Admin.findById(adminId);
+        if (!admin || admin.permissionLevel !== 'HIGH') {
+            throw new Error('Unauthorized to demote admins');
+        }
+
+        const targetAdmin = await Admin.findById(targetAdminId);
+        if (!targetAdmin) {
+            throw new Error('Target admin not found');
+        }
+
+        // Prevent self-demotion if they're the last HIGH admin
+        if (targetAdmin._id.toString() === adminId.toString()) {
+            const highAdminCount = await Admin.countDocuments({ permissionLevel: 'HIGH' });
+            if (highAdminCount <= 1) {
+                throw new Error('Cannot demote the last HIGH level admin');
+            }
+        }
+
+        await Admin.findByIdAndUpdate(targetAdminId, {
+            permissionLevel: 'STANDARD',
+            permissions: {
+                manageUsers: false,
+                manageAppointments: false,
+                viewReports: false,
+                managePermissions: false,
+                manageInventory: false,
+                manageCalendar: false
+            }
+        });
+
+        await logActivity(
+            adminId,
+            'admin',
+            'DEMOTE_ADMIN',
+            { targetAdminId }
+        );
+
+        return { 
+            success: true,
+            message: 'Admin demoted successfully'
+        };
+    } catch (error) {
+        throw error;
+    }
+};
+
 module.exports = {
     getAllPatients,
     deletePatient,
@@ -594,4 +744,9 @@ module.exports = {
     getAdminProfile,
     updateAdminProfile,
     changeAdminPassword,
+    updateRolePermissions,
+    promoteToHighLevelAdmin,
+    updateAdminPermissions,
+    demoteFromHighLevelAdmin,
+    
 };
