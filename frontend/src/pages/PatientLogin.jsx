@@ -138,7 +138,7 @@ const googleLogin = useGoogleLogin({
           const data = await res.json();
           console.log('Login response:', data);
 
-          // Store all user data in session storage
+          // Store the token and other necessary data
           sessionStorage.setItem('token', data.token);
           sessionStorage.setItem('patient_id', data.user.id);
           sessionStorage.setItem('role', 'patient');

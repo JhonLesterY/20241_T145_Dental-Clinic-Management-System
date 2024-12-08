@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import AdminSideBar from "../components/AdminSideBar"; // Assuming you have an AdminSideBar component
+import { generatePDF } from '../services/pdfService';
 
 const Admin_Report = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -9,29 +10,54 @@ const Admin_Report = () => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [report, setReport] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      setError('No authentication token found. Please login again.');
+    }
+  }, []);
 
   const generateReport = async () => {
     try {
-      const token = sessionStorage.getItem('token');
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found. Please login again.');
+      }
+
       const params = new URLSearchParams({
         period: reportType,
-        year: year.toString(),
-        ...(reportType === 'monthly' && { month: month.toString() })
+        year: Math.floor(year).toString(),
+        ...(reportType === 'monthly' ? { month: Math.floor(month).toString() } : {})
       });
 
-      const response = await fetch(`http://localhost:5000/admin/reports/appointments?${params}`, {
+      sessionStorage.setItem('token', token);
+      const response = await fetch(`http://localhost:5000/admin/reports/complete?${params}`, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
-      if (!response.ok) throw new Error('Failed to generate report');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to generate report');
+      }
+
       const data = await response.json();
       setReport(data);
     } catch (error) {
       console.error('Error generating report:', error);
-      alert('Failed to generate report');
+      setError(error.message);
     }
+  };
+
+  const handleDownloadPDF = () => {
+    if (!report) return;
+    const pdf = generatePDF(report);
+    pdf.download(`dental-clinic-report-${new Date().toLocaleDateString()}.pdf`);
   };
 
   return (
@@ -130,22 +156,53 @@ const Admin_Report = () => {
               >
                 Generate Report
               </button>
+              <button 
+                onClick={handleDownloadPDF}
+                disabled={!report}
+                className="ml-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                Download PDF Report
+              </button>
             </div>
           </div>
+
+          {error && (
+            <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg">
+              <p>{error}</p>
+            </div>
+          )}
 
           {report && (
             <div className="bg-white rounded-lg shadow-md p-4">
               <h3 className="text-lg font-semibold mb-4 text-black">Report Summary</h3>
-              <div className="grid grid-cols-2 gap-4 mb-6 text-black">
+              <div className="grid grid-cols-3 gap-4 mb-6 text-black">
+                {/* Appointments Summary */}
                 <div>
-                  <p>Total Appointments: {report.summary.totalAppointments}</p>
+                  <h4 className="font-semibold">Appointments</h4>
+                  <p>Total: {report.summary.totalAppointments}</p>
                   <p>Completed: {report.summary.completedAppointments}</p>
                   <p>Cancelled: {report.summary.cancelledAppointments}</p>
                   <p>Pending: {report.summary.pendingAppointments}</p>
                   <p>Completion Rate: {report.summary.completionRate}</p>
                 </div>
+                
+                {/* Patient Stats */}
+                <div>
+                  <h4 className="font-semibold">Patients</h4>
+                  <p>Total Patients: {report.patientStats?.totalPatients}</p>
+                  <p>New Patients: {report.patientStats?.newPatients}</p>
+                  <p>Growth Rate: {report.patientStats?.patientGrowthRate}</p>
+                </div>
+                
+                {/* Inventory Stats */}
+                <div>
+                  <h4 className="font-semibold">Inventory</h4>
+                  <p>Total Items: {report.inventoryStats?.totalItems}</p>
+                  <p>Low Stock Items: {report.inventoryStats?.lowStockItems}</p>
+                  <p>Total Value: ${report.inventoryStats?.totalValue}</p>
+                </div>
               </div>
-
+              
               <h4 className="font-semibold mb-2 text-black">Appointments Detail</h4>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">

@@ -418,4 +418,24 @@ A_route.post('/demote/:adminId', authenticateAdmin, async (req, res) => {
     }
 });
 
+A_route.get('/reports/complete', authenticateAdmin, async (req, res) => {
+    try {
+        const { period, year, month } = req.query;
+        
+        if (!period || !year) {
+            return res.status(400).json({ 
+                message: 'Period and year are required parameters'
+            });
+        }
+
+        const report = await reportService.generateCompleteReport(period, year, month);
+        res.json(report);
+    } catch (error) {
+        res.status(500).json({ 
+            message: 'Failed to generate complete report',
+            error: error.message 
+        });
+    }
+});
+
 module.exports = A_route;

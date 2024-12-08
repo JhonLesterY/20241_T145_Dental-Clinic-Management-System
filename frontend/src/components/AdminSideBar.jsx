@@ -118,7 +118,15 @@ export default function Sidebar({ open = true, setOpen }) {
 
   // Logout function to clear token and navigate to login page
   const handleLogout = () => {
+    // Clear all storage
     localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("admin_id");
+    sessionStorage.removeItem("role");
+    sessionStorage.removeItem("email");
+    sessionStorage.removeItem("name");
+    sessionStorage.removeItem("profilePicture");
+    
     navigate("/login");
   };
 
