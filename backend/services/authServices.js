@@ -224,7 +224,7 @@ async function normalLogin({ email, password, recaptchaToken }) {
                     fullname: admin.fullname,
                     role: admin.role || 'admin',
                     isProfileComplete: admin.isProfileComplete || false,
-                    hasChangedPassword: admin.hasChangedPassword || false,
+                    hasChangedPassword: true,
                     profilePicture: admin.profilePicture || ''
                 }
             };
@@ -250,63 +250,64 @@ async function normalLogin({ email, password, recaptchaToken }) {
 
 async function loginWithGoogle(payload, recaptchaToken) {
     try {
-        console.log('Starting Google login process with payload:', { email: payload.email });
+        console.log('Received Google login payload:', payload);
         
-        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
-        if (!isRecaptchaValid) {
-            throw new Error('reCAPTCHA verification failed');
+        if (!payload || !payload.email) {
+            throw new Error('Invalid Google authentication payload');
         }
-        
+
         const { email, name, sub: googleId, picture } = payload;
+        console.log('Attempting Google login for email:', email);
         
-        let patient = await Patient.findOne({ email });
+        // Check for admin account
+        const admin = await Admin.findOne({ email });
+        console.log('Found admin:', admin ? 'Yes' : 'No');
+        
+        if (admin) {
+            console.log('Admin details:', {
+                isVerified: admin.isVerified,
+                isGoogleUser: admin.isGoogleUser,
+                email: admin.email
+            });
 
-        if (!patient) {
-            throw new Error('User not registered. Please sign up first.');
-        }
+            // Update Google ID and ensure Google login is enabled
+            await Admin.findByIdAndUpdate(admin._id, {
+                $set: {
+                    googleId: googleId,
+                    isGoogleUser: true,
+                    isVerified: true
+                }
+            });
 
-        // Update profile picture if it has changed
-        if (patient.isGoogleUser && picture && patient.profilePicture !== picture) {
-            patient = await Patient.findOneAndUpdate(
-                { email },
+            const token = jwt.sign(
                 { 
-                    $set: { 
-                        profilePicture: picture,
-                        lastUpdated: new Date()
-                    }
+                    id: admin._id,
+                    email: admin.email,
+                    role: 'admin',
+                    permissions: admin.permissions
                 },
-                { new: true }
+                process.env.JWT_SECRET_KEY,
+                { expiresIn: '24h' }
             );
+
+            return {
+                token,
+                user: {
+                    id: admin._id,
+                    admin_id: admin.admin_id,
+                    email: admin.email,
+                    fullname: admin.fullname,
+                    role: 'admin',
+                    permissions: admin.permissions,
+                    profilePicture: picture || admin.profilePicture
+                }
+            };
         }
 
-        const token = jwt.sign(
-            { 
-                id: patient._id, 
-                email: patient.email,
-                name: patient.name,
-                role: 'patient' 
-            },
-            process.env.JWT_SECRET_KEY,
-            { expiresIn: '24h' }
-        );
-
-        console.log('Google login successful for:', email);
-        
-        return {
-            token,
-            user: {
-                id: patient._id,
-                email: patient.email,
-                name: patient.name,
-                role: 'patient',
-                profilePicture: patient.profilePicture,
-                isGoogleUser: true,
-                patient_id: patient.patient_id
-            }
-        };
+        throw new Error('No authorized account found for this email.');
     } catch (error) {
         console.error('Google login error:', error);
-        throw new Error(error.message);
+        throw error;
     }
 }
 

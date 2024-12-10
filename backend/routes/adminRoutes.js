@@ -13,6 +13,7 @@ const deadlockPreventionMiddleware = require('../middleware/deadlockPreventionMi
 const reportService = require('../services/reportService');
 const { checkAdminLevel } = require('../middleware/adminLevelMiddleware');
 const { checkPermission } = require('../middleware/checkPermissionMiddleware');
+const { logActivity } = require('../services/activitylogServices');
 
 
 const storage = multer.diskStorage({
@@ -434,6 +435,118 @@ A_route.get('/reports/complete', authenticateAdmin, async (req, res) => {
         res.status(500).json({ 
             message: 'Failed to generate complete report',
             error: error.message 
+        });
+    }
+});
+
+A_route.get('/verify/:token', async (req, res) => {
+    try {
+        const admin = await Admin.findOne({
+            verificationToken: req.params.token,
+            verificationExpiry: { $gt: Date.now() }
+        });
+
+        if (!admin) {
+            // Check if there's an already verified admin with this email
+            const verifiedAdmin = await Admin.findOne({
+                email: req.query.email,
+                isVerified: true
+            });
+
+            if (verifiedAdmin) {
+                return res.status(400).json({
+                    message: 'Account has already been verified. Please proceed to login.'
+                });
+            }
+
+            return res.status(400).json({
+                message: 'Invalid verification token'
+            });
+        }
+
+        admin.isVerified = true;
+        admin.verificationToken = undefined;
+        admin.verificationExpiry = undefined;
+        await admin.save();
+
+        await logActivity(admin._id, 'admin', 'VERIFY_ACCOUNT', { email: admin.email });
+
+        res.status(200).json({ 
+            message: 'Account verified successfully. You can now login with your Google account.',
+            redirectUrl: `${process.env.FRONTEND_URL}/login`
+        });
+    } catch (error) {
+        console.error('Verification error:', error);
+        res.status(500).json({ message: 'Verification failed: ' + error.message });
+    }
+});
+
+A_route.get('/verify-admin/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+        console.log('Received verification token:', token);
+        
+        const admin = await Admin.findOne({
+            verificationToken: token
+        });
+        
+        if (!admin) {
+            // Check if there's an already verified admin
+            const verifiedAdmin = await Admin.findOne({
+                isVerified: true,
+                verificationToken: undefined
+            });
+
+            if (verifiedAdmin) {
+                return res.status(200).json({
+                    message: 'Account has already been verified. Please proceed to login.',
+                    status: 'already_verified'
+                });
+            }
+
+            return res.status(400).json({
+                message: 'The verification link is invalid or has already been used.',
+                status: 'invalid_token'
+            });
+        }
+
+        const currentTime = new Date();
+        if (admin.verificationExpiry < currentTime) {
+            return res.status(400).json({
+                message: 'The verification link has expired. Please contact support for a new link.',
+                status: 'expired_token'
+            });
+        }
+
+        // Update admin status
+        admin.isVerified = true;
+        admin.verificationToken = undefined;
+        admin.verificationExpiry = undefined;
+        await admin.save();
+
+        try {
+            await logActivity(
+                admin._id,
+                'admin',
+                'updateAdmin',
+                { 
+                    admin_id: admin.admin_id,
+                    action: 'verify_account'
+                }
+            );
+        } catch (logError) {
+            console.error('Activity logging error:', logError);
+        }
+
+        res.status(200).json({
+            message: 'Your account has been verified successfully! You can now login.',
+            status: 'success'
+        });
+    } catch (error) {
+        console.error('Verification error:', error);
+        res.status(500).json({ 
+            message: 'An error occurred during verification. Please try again later.',
+            status: 'error'
         });
     }
 });

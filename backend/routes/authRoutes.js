@@ -176,33 +176,39 @@ router.post('/logout', (req, res) => {
 
 // Login endpoint for Google OAuth login
 router.post('/google-login', async (req, res) => {
-  try {
-    const { access_token, recaptchaToken } = req.body;
-    
-    if (!recaptchaToken) {
-      return res.status(400).json({ 
-        error: 'reCAPTCHA token is required' 
-      });
+    try {
+        const { access_token, recaptchaToken } = req.body;
+        
+        if (!access_token) {
+            return res.status(400).json({ message: 'Access token is required' });
+        }
+
+        // Get user info from Google
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${access_token}` }
+        });
+        
+        if (!userInfoResponse.ok) {
+            throw new Error('Failed to get Google user info');
+        }
+
+        const userInfo = await userInfoResponse.json();
+        console.log('Google userInfo in route:', userInfo);
+
+        const result = await loginWithGoogle(userInfo, recaptchaToken);
+        
+        // Set session
+        req.session.user = {
+            id: result.user.id,
+            email: result.user.email,
+            role: result.user.role
+        };
+
+        res.json(result);
+    } catch (error) {
+        console.error('Google login route error:', error);
+        res.status(400).json({ message: error.message });
     }
-
-    // Get user info from Google
-    const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: `Bearer ${access_token}` }
-    });
-    
-    const payload = await response.json();
-    console.log('Payload:', payload);
-
-    // Pass both payload and recaptchaToken to loginWithGoogle
-    const result = await loginWithGoogle(payload, recaptchaToken);
-    
-    res.status(200).json(result);
-  } catch (error) {
-    console.error('Google login error:', error);
-    res.status(400).json({ 
-      error: error.message || 'Failed to process login' 
-    });
-  }
 });
 
 router.post('/forgot-password', async (req, res) => {

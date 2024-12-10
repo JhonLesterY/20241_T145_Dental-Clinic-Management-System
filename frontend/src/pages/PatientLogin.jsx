@@ -99,67 +99,55 @@ const Login = () => {
 // In your Google login handler
 const googleLogin = useGoogleLogin({
   onSuccess: async (response) => {
-      try {
-          // Get user info from Google
-          const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-              headers: { Authorization: `Bearer ${response.access_token}` }
-          });
-          const userInfo = await userInfoResponse.json();
-          
-          console.log('Google user info:', userInfo); // Debug log
+    try {
+        console.log('Google response:', response);
+        
+        // Get user info from Google
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${response.access_token}` }
+        });
+        const userInfo = await userInfoResponse.json();
+        console.log('Google userInfo:', userInfo);
 
-          const recaptchaToken = recaptchaRef.current.getValue();
-          if (!recaptchaToken) {
-              setError('Please complete the reCAPTCHA verification');
-              return;
-          }
+        const recaptchaToken = recaptchaRef.current.getValue();
+        if (!recaptchaToken) {
+            setError('Please complete the reCAPTCHA verification');
+            return;
+        }
 
-          const res = await fetch('http://localhost:5000/auth/google-login', {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                  'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                  access_token: response.access_token,
-                  recaptchaToken: recaptchaToken,
-                  email: userInfo.email,
-                  name: userInfo.name,
-                  picture: userInfo.picture
-              })
-          });
+        const loginResponse = await fetch('http://localhost:5000/auth/google-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                access_token: response.access_token,
+                recaptchaToken
+            })
+        });
 
-          if (!res.ok) {
-              const errorData = await res.json();
-              console.error('Server error:', errorData);
-              throw new Error(errorData.message || 'Failed to login with Google');
-          }
+        const data = await loginResponse.json();
 
-          const data = await res.json();
-          console.log('Login response:', data);
+        if (!loginResponse.ok) {
+            throw new Error(data.message || 'Failed to login with Google');
+        }
 
-          // Store the token and other necessary data
-          sessionStorage.setItem('token', data.token);
-          sessionStorage.setItem('patient_id', data.user.id);
-          sessionStorage.setItem('role', 'patient');
-          sessionStorage.setItem('email', userInfo.email);
-          sessionStorage.setItem('name', userInfo.name);
-          if (userInfo.picture) {
-              sessionStorage.setItem('profilePicture', userInfo.picture);
-          }
-
-          // Redirect after successful login
-          navigate('/dashboard');
-      } catch (error) {
-          console.error('Google login error:', error);
-          setError(error.message || 'Failed to login with Google');
-          recaptchaRef.current?.reset();
-      }
+        // Handle successful login
+        if (data.user.role === 'admin') {
+            sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('role', 'admin');
+            sessionStorage.setItem('admin_id', data.user.admin_id);
+            sessionStorage.setItem('name', data.user.fullname);
+            navigate('/admin-dashboard');
+        }
+    } catch (error) {
+        console.error('Google login error:', error);
+        setError(error.message);
+        recaptchaRef.current?.reset();
+    }
   },
   onError: (error) => {
       console.error('Google login error:', error);
-      setError('Google login failed');
-      recaptchaRef.current?.reset();
+      setError('Failed to login with Google');
   }
 });
 

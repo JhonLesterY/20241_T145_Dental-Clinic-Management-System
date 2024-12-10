@@ -138,61 +138,51 @@ const AdminDashboard = () => {
       }
   };
 
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      
-      // If the admin is HIGH level, set all permissions to true
-      const permissions = newAdminData.permissionLevel === 'HIGH' ? {
-          manageUsers: true,
-          manageAppointments: true,
-          viewReports: true,
-          managePermissions: true,
-          manageInventory: true,
-          manageCalendar: true
-      } : newAdminData.permissions;
+    const handleCreateAdmin = async (e) => {
+        e.preventDefault();
+        
+        // Check lock first
+        const isLocked = await checkLock();
+        if (isLocked) return;
 
-      const adminData = {
-          ...newAdminData,
-          permissions
-      };
+        try {
+            const response = await fetch('http://localhost:5000/admin/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    fullname: newAdminData.fullname,
+                    email: newAdminData.email,
+                    permissionLevel: newAdminData.permissionLevel,
+                    permissions: newAdminData.permissionLevel === 'HIGH' ? {
+                        manageUsers: true,
+                        manageAppointments: true,
+                        viewReports: true,
+                        managePermissions: true,
+                        manageInventory: true,
+                        manageCalendar: true
+                    } : newAdminData.permissions,
+                    isGoogleUser: true,
+                    sendVerificationEmail: true
+                })
+            });
 
-      try {
-        const token = sessionStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/admin/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(adminData)
-        });
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message);
+            }
 
-        if (response.ok) {
             setIsModalOpen(false);
             fetchAdmins();
-            setNewAdminData({
-                fullname: '',
-                email: '',
-                permissionLevel: 'STANDARD',
-                permissions: {
-                    manageUsers: false,
-                    manageAppointments: false,
-                    viewReports: false,
-                    managePermissions: false,
-                    manageInventory: false,
-                    manageCalendar: false
-                }
-            });
-        } else {
-            const data = await response.json();
-            throw new Error(data.message || 'Failed to create admin');
+            alert('Admin created successfully! They will receive an email with verification instructions.');
+        } catch (error) {
+            console.error('Error creating admin:', error);
+            setError(error.message);
         }
-      } catch (error) {
-        console.error('Error creating admin:', error);
-        alert(error.message);
-      }
-  };
-   
+    };
+
     const handleLogout = () => {
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('role');
@@ -834,39 +824,47 @@ const AdminDashboard = () => {
       <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
         <div className="bg-white p-6 rounded shadow-lg w-96">
           <h2 className="text-2xl font-bold mb-4 text-black">Add New Admin</h2>
-          <form onSubmit={handleSubmit}>
-            <input
-              type="text"
-              name="fullname"
-              placeholder="Full Name"
-              onChange={handleInputChange}
-              value={newAdminData.fullname}
-              required
-              className="w-full p-2 mb-2 border border-gray-300 rounded bg-white"
-            />
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              onChange={handleInputChange}
-              value={newAdminData.email}
-              required
-              className="w-full p-2 mb-2 border border-gray-300 rounded bg-white"
-            />
-            
+          <form onSubmit={handleCreateAdmin}>
             <div className="mb-4">
-                <label className="block text-black mb-2">Admin Level</label>
+                <input
+                    type="text"
+                    name="fullname"
+                    placeholder="Full Name"
+                    value={newAdminData.fullname}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border rounded-md bg-white"
+                />
+            </div>
+            <div className="mb-4">
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="Email"
+                    value={newAdminData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border rounded-md bg-white"
+                />
+                <p className="text-sm text-gray-600 mt-2">
+                    Note: Admin will receive verification email to login with Google account
+                </p>
+            </div>
+
+            <div className="mb-4">
+                <label className="block text-black mb-2">Permission Level</label>
                 <select
                     name="permissionLevel"
-                    onChange={handleInputChange}
                     value={newAdminData.permissionLevel}
-                    className="w-full p-2 border border-gray-300 rounded bg-white text-black"
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border rounded-md bg-white"
                 >
-                    <option value="STANDARD">Standard Admin</option>
-                    <option value="HIGH">High Level Admin</option>
+                    <option value="STANDARD">Standard</option>
+                    <option value="HIGH">High Level</option>
                 </select>
             </div>
 
+            {/* Keep existing permission checkboxes for STANDARD level */}
             {newAdminData.permissionLevel === 'STANDARD' && (
                 <div className="mb-4">
                     <label className="block text-black mb-2">Permissions</label>
@@ -891,7 +889,11 @@ const AdminDashboard = () => {
                 <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">
                     Add Admin
                 </button>
-                <button type="button" onClick={toggleModal} className="bg-gray-300 py-2 px-4 rounded">
+                <button 
+                    type="button" 
+                    onClick={toggleModal} 
+                    className="bg-gray-300 py-2 px-4 rounded"
+                >
                     Cancel
                 </button>
             </div>

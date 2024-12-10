@@ -317,15 +317,6 @@ const handleLogout = () => {
               >
                 {userData.isProfileComplete ? 'Update Profile' : 'Complete Profile'}
               </button>
-              {!userData.isGoogleUser && (
-                <button
-                  type="button"
-                  onClick={() => setShowPasswordModal(true)}
-                  className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
-                  Change Password
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleLogout}
@@ -336,75 +327,6 @@ const handleLogout = () => {
             </div>
           </form>
         </div>
-         {/* Password Change Modal */}
-        {showPasswordModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="fixed inset-0 bg-black opacity-50"></div>
-            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20   
-             text-center sm:p-0">
-              <div className="relative bg-white rounded-lg p-8 max-w-md w-full mx-auto  
-               shadow-xl">
-                <h2 className="text-xl font-bold mb-4">
-                  {requiresPasswordChange ? 'Change Default Password' : 'Change Password'}
-                </h2>
-                <form onSubmit={handlePasswordChange} className="space-y-4">
-                  <div>
-                    <label className="block text-gray-600">Current Password</label>
-                    <input
-                      type="password"
-                      value={passwordData.currentPassword}
-                      onChange={(e) => setPasswordData({...passwordData, currentPassword:   
-                         e.target.value})}
-                      className="w-full px-4 py-2 border rounded bg-white"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-600">New Password</label>
-                    <input
-                      type="password"
-                      value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData({...passwordData, newPassword:   
-                         e.target.value})}
-                      className="w-full px-4 py-2 border rounded bg-white "
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-600">Confirm New Password</label>
-                    <input
-                      type="password"
-                      value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData({...passwordData, confirmPassword:   
-                         e.target.value})}
-                      className="w-full px-4 py-2 border rounded bg-white "
-                      required
-                    />
-                  </div>
-                  <div className="flex gap-4 mt-6">
-                    <button
-                      type="submit"
-                      className="flex-1 py-2 bg-blue-600 text-white rounded hover:bg-blue-  
-                       700"
-                    >
-                      Change Password
-                    </button>
-                    {!requiresPasswordChange && (
-                      <button
-                        type="button"
-                        onClick={() => setShowPasswordModal(false)}
-                        className="flex-1 py-2 bg-gray-300 text-gray-700 rounded hover:bg-  
-                         gray-400"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
