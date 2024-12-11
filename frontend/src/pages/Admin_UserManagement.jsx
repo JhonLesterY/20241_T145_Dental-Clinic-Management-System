@@ -49,6 +49,7 @@ const AdminDashboard = () => {
           manageCalendar: false
       });
       const [currentAdmin, setCurrentAdmin] = useState(null);
+      const [selectedTable, setSelectedTable] = useState('patients');
 
     const handleSearchChange = (e) => {
       setSearchQuery(e.target.value.toLowerCase());
@@ -548,12 +549,12 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen">
+    <div className="flex h-screen w-screen bg-gray-100">
         <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
         {/* Main Content */}
-        <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
-            <div className="flex items-center justify-between bg-white p-4 shadow-md">
+        <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'} transition-all duration-300`}>
+            <div className="flex items-center justify-between bg-white p-4 shadow-md rounded-lg">
                 <div className="flex items-center">
                     <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
                     <span className="ml-2 text-2xl font-bold text-gray-800">User Management</span>
@@ -574,14 +575,14 @@ const AdminDashboard = () => {
                     {/* Add Admin and Dentist Buttons */}
                     <button
                         onClick={toggleModal}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition duration-200"
                     >
                         <FontAwesomeIcon icon={faUserPlus} className="mr-2" />
                         Add Admin
                     </button>
                     <button
                         onClick={() => setShowDentistModal(true)}
-                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center"
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition duration-200"
                     >
                         <FontAwesomeIcon icon={faUserMd} className="mr-2" />
                         Add Dentist
@@ -593,231 +594,251 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {/* Add this new section for patients list */}
-            <div className="p-6">
-        {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                {error}
+            {/* Add buttons to select table */}
+            <div className="flex space-x-4 mb-4 mt-4">
+                <button onClick={() => setSelectedTable('patients')} className="bg-blue-600 text-white px-4 py-2 rounded transition duration-200">
+                    Patients
+                </button>
+                <button onClick={() => setSelectedTable('dentists')} className="bg-green-600 text-white px-4 py-2 rounded transition duration-200">
+                    Dentists
+                </button>
+                <button onClick={() => setSelectedTable('admins')} className="bg-purple-600 text-white px-4 py-2 rounded transition duration-200">
+                    Admins
+                </button>
             </div>
-        )}
-        
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-4 border-b">
-                <h3 className="text-2xl font-bold">Patient List</h3>
-            </div>
-            
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Patient ID
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Email
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {Array.isArray(patients) && patients.length > 0 ? (
-                          filterPatients(patients).map((patient) => {
-                              // Log the patient object to see its structure
-                              console.log('Current patient object:', patient);
-                              
-                              // Safely get the patient ID
-                              const patientId = patient?.patient_id || patient?._id;
-                              
-                              if (!patientId) {
-                                  console.error('Patient without ID:', patient);
-                                  return null; // Skip rendering this row
-                              }
 
-                              return (
-                                  <tr key={patientId} className="hover:bg-gray-50">
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
-                                          {patientId}
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
-                                          {patient?.fullname || patient?.name || 'No Name'}
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
-                                          {patient?.email || 'No Email'}
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium bg-white">
-                                          <button
-                                              onClick={() => {
-                                                  console.log('Delete clicked for patient:', patientId);
-                                                  handleDeletePatient(patientId);
-                                              }}
-                                              className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
-                                          >
-                                              Delete
-                                          </button>
-                                      </td>
-                                  </tr>
-                              );
-                          })
-                      ) : (
-                          <tr>
-                              <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
-                                  {filterPatients(patients).length === 0 ? 'No matching patients found' : 'Loading patients...'}
-                              </td>
-                          </tr>
-                      )}
-                  </tbody>
-                </table>
-            </div>
-            {/* Dentist List Section */}
-    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6">
-        <div className="p-4 border-b">
-            <h3 className="text-2xl font-bold">Dentist List</h3>
-        </div>
-        
-        <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Dentist ID
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Email
-                        </th>
+            {/* Conditional rendering of tables based on selected option */}
+            <div className="p-6 bg-white rounded-lg shadow-md">
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        {error}
+                    </div>
+                )}
+                
+                {selectedTable === 'patients' && (
+                    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                        <div className="p-4 border-b">
+                            <h3 className="text-2xl font-bold">Patient List</h3>
+                        </div>
                         
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                    {Array.isArray(dentists) && dentists.length > 0 ? (
-                        filterDentists(dentists).map((dentist) => (
-                            <tr key={dentist._id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {dentist.dentist_id}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {dentist.name}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {dentist.email}
-                                </td>
-                                
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button
-                                        onClick={() => handleDeleteDentist(dentist.dentist_id)}
-                                        className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
-                                    >
-                                        Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
-                                {filterDentists(dentists).length === 0 ? 'No matching dentists found' : 'Loading dentists...'}
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    </div>  
-    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6">
-        <div className="p-4 border-b">
-            <h3 className="text-2xl font-bold">Admin List</h3>
-        </div>
-        
-        <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Admin ID
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Email
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                    {Array.isArray(admins) && admins.length > 0 ? (
-                        filterAdmins(admins).map((admin) => (
-                            <tr key={admin._id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {admin.admin_id}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {admin.fullname}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {admin.email}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                    {hasPermission('managePermissions') && (
-                                        <>
-                                            <button
-                                                onClick={() => openPermissionModal(admin)}
-                                                className="bg-blue-100 text-blue-600 hover:text-blue-900 px-4 py-2 rounded mr-2"
-                                            >
-                                                Manage Permissions
-                                            </button>
-                                            {admin.permissionLevel !== 'HIGH' && (
-                                                <button
-                                                    onClick={() => handlePromoteAdmin(admin._id)}
-                                                    className="bg-purple-100 text-purple-600 hover:text-purple-900 px-4 py-2 rounded mr-2"
-                                                >
-                                                    Promote to HIGH
-                                                </button>
-                                            )}
-                                            {admin.permissionLevel === 'HIGH' && currentAdmin?.permissionLevel === 'HIGH' && (
-                                                <button
-                                                    onClick={() => handleDemoteAdmin(admin._id)}
-                                                    className="bg-yellow-100 text-yellow-600 hover:text-yellow-900 px-4 py-2 rounded mr-2"
-                                                >
-                                                    Demote from HIGH
-                                                </button>
-                                            )}
-                                        </>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Patient ID
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Name
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Email
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                  {Array.isArray(patients) && patients.length > 0 ? (
+                                      filterPatients(patients).map((patient) => {
+                                          // Log the patient object to see its structure
+                                          console.log('Current patient object:', patient);
+                                          
+                                          // Safely get the patient ID
+                                          const patientId = patient?.patient_id || patient?._id;
+                                          
+                                          if (!patientId) {
+                                              console.error('Patient without ID:', patient);
+                                              return null; // Skip rendering this row
+                                          }
+
+                                          return (
+                                              <tr key={patientId} className="hover:bg-gray-50">
+                                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
+                                                      {patientId}
+                                                  </td>
+                                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
+                                                      {patient?.fullname || patient?.name || 'No Name'}
+                                                  </td>
+                                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
+                                                      {patient?.email || 'No Email'}
+                                                  </td>
+                                                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium bg-white">
+                                                      <button
+                                                          onClick={() => {
+                                                              console.log('Delete clicked for patient:', patientId);
+                                                              handleDeletePatient(patientId);
+                                                          }}
+                                                          className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
+                                                      >
+                                                          Delete
+                                                      </button>
+                                                  </td>
+                                              </tr>
+                                          );
+                                      })
+                                  ) : (
+                                      <tr>
+                                          <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                                              {filterPatients(patients).length === 0 ? 'No matching patients found' : 'Loading patients...'}
+                                          </td>
+                                      </tr>
+                                  )}
+                              </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {selectedTable === 'dentists' && (
+                    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6">
+                        <div className="p-4 border-b">
+                            <h3 className="text-2xl font-bold">Dentist List</h3>
+                        </div>
+                        
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Dentist ID
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Name
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Email
+                                        </th>
+                                        
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {Array.isArray(dentists) && dentists.length > 0 ? (
+                                        filterDentists(dentists).map((dentist) => (
+                                            <tr key={dentist._id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {dentist.dentist_id}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {dentist.name}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {dentist.email}
+                                                </td>
+                                                
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <button
+                                                        onClick={() => handleDeleteDentist(dentist.dentist_id)}
+                                                        className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                                                {filterDentists(dentists).length === 0 ? 'No matching dentists found' : 'Loading dentists...'}
+                                            </td>
+                                        </tr>
                                     )}
-                                    <button
-                                        onClick={() => handleDeleteAdmin(admin._id)}
-                                        className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
-                                    >
-                                        Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
-                                {filterAdmins(admins).length === 0 ? 'No matching admins found' : 'Loading admins...'}
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    </div>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {selectedTable === 'admins' && (
+                    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6">
+                        <div className="p-4 border-b">
+                            <h3 className="text-2xl font-bold">Admin List</h3>
+                        </div>
+                        
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Admin ID
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Name
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Email
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {Array.isArray(admins) && admins.length > 0 ? (
+                                        filterAdmins(admins).map((admin) => (
+                                            <tr key={admin._id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {admin.admin_id}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {admin.fullname}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {admin.email}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                                    {hasPermission('managePermissions') && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => openPermissionModal(admin)}
+                                                                className="bg-blue-100 text-blue-600 hover:text-blue-900 px-4 py-2 rounded mr-2"
+                                                            >
+                                                                Manage Permissions
+                                                            </button>
+                                                            {admin.permissionLevel !== 'HIGH' && (
+                                                                <button
+                                                                    onClick={() => handlePromoteAdmin(admin._id)}
+                                                                    className="bg-purple-100 text-purple-600 hover:text-purple-900 px-4 py-2 rounded mr-2"
+                                                                >
+                                                                    Promote to HIGH
+                                                                </button>
+                                                            )}
+                                                            {admin.permissionLevel === 'HIGH' && currentAdmin?.permissionLevel === 'HIGH' && (
+                                                                <button
+                                                                    onClick={() => handleDemoteAdmin(admin._id)}
+                                                                    className="bg-yellow-100 text-yellow-600 hover:text-yellow-900 px-4 py-2 rounded mr-2"
+                                                                >
+                                                                    Demote from HIGH
+                                                                </button>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleDeleteAdmin(admin._id)}
+                                                        className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                                                {filterAdmins(admins).length === 0 ? 'No matching admins found' : 'Loading admins...'}
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Add Admin Modal */}
            {isModalOpen && (
@@ -886,13 +907,13 @@ const AdminDashboard = () => {
             )}
 
             <div className="flex justify-end space-x-2">
-                <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">
+                <button type="submit" className="bg-blue-600 text-white py-2 px-4 rounded transition duration-200">
                     Add Admin
                 </button>
                 <button 
                     type="button" 
                     onClick={toggleModal} 
-                    className="bg-gray-300 py-2 px-4 rounded"
+                    className="bg-gray-300 py-2 px-4 rounded transition duration-200"
                 >
                     Cancel
                 </button>
@@ -974,13 +995,13 @@ const AdminDashboard = () => {
                     <button
                       type="button"
                       onClick={() => setShowDentistModal(false)}
-                      className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-md"
+                      className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-md transition duration-200"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200"
                     >
                       Create
                     </button>
