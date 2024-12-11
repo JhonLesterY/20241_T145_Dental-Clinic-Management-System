@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import AdminSideBar from '../components/AdminSideBar';
 import { format } from 'date-fns';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBell } from '@fortawesome/free-solid-svg-icons';
 
 const ActivityLogs = () => {
     const [logs, setLogs] = useState([]);
@@ -12,6 +14,7 @@ const ActivityLogs = () => {
         start: '',
         end: ''
     });
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     useEffect(() => {
         fetchLogs();
@@ -128,69 +131,79 @@ const ActivityLogs = () => {
     if (error) return <div className="text-red-500">Error: {error}</div>;
 
     return (
-        <div className="flex">
-            <AdminSideBar />
-            <div className="flex-1 p-8 ml-64">
-                <h1 className="text-2xl font-bold mb-6">Activity Logs</h1>
+        <div className="flex h-screen w-screen bg-gray-50">
+            <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
-                {/* Filters and Search */}
-                <div className="mb-6 flex gap-4 flex-wrap">
-                    <select 
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                        className="p-2 border rounded"
-                    >
-                        <option value="all">All Roles</option>
-                        <option value="admin">Admin</option>
-                        <option value="dentist">Dentist</option>
-                        <option value="patient">Patient</option>
-                    </select>
+            {/* Main Content */}
+            <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'} transition-all duration-300`}>
+                {/* Header Section */}
+                <div className="flex items-center justify-between bg-white p-4 shadow-lg rounded-lg mb-6">
+                    <div className="flex items-center">
+                        <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+                        <span className="ml-2 text-2xl font-bold text-gray-800">Activity Logs</span>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <select 
+                            value={filter}
+                            onChange={(e) => setFilter(e.target.value)}
+                            className="p-2 border rounded-lg bg-blue-50 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        >
+                            <option value="all">All Roles</option>
+                            <option value="admin">Admin</option>
+                            <option value="dentist">Dentist</option>
+                            <option value="patient">Patient</option>
+                        </select>
 
-                    <input
-                        type="text"
-                        placeholder="Search logs..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="p-2 border rounded"
-                    />
+                        <input
+                            type="text"
+                            placeholder="Search logs..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="p-2 border rounded-lg bg-blue-50 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        />
 
-                    <input
-                        type="date"
-                        value={dateRange.start}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                        className="p-2 border rounded"
-                    />
+                        <input
+                            type="date"
+                            value={dateRange.start}
+                            onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                            className="p-2 border rounded-lg bg-blue-50 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        />
 
-                    <input
-                        type="date"
-                        value={dateRange.end}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                        className="p-2 border rounded"
-                    />
+                        <input
+                            type="date"
+                            value={dateRange.end}
+                            onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                            className="p-2 border rounded-lg bg-blue-50 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        />
+                    </div>
                 </div>
 
+                {/* Loading and Error Handling */}
+                {loading && <div className="flex justify-center items-center h-full">Loading...</div>}
+                {error && <div className="text-red-500 font-semibold">Error: {error}</div>}
+
                 {/* Logs Table */}
-                <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
                     <table className="min-w-full">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-blue-200">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                                     Timestamp
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                                     User Role
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                                     Action
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                                     Details
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredLogs.map((log, index) => (
-                                <tr key={index} className="hover:bg-gray-50">
+                                <tr key={index} className="hover:bg-blue-50 transition duration-200">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm:ss')}
                                     </td>
