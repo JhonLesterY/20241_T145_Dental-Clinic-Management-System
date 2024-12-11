@@ -15,8 +15,7 @@ const menuItems = [
   { icons: <MdDashboard size={24} />, label: "Dashboard", path: "/dashboard" },
   { icons: <BsCalendarCheck size={24} />, label: "Appointment", path: "/appointment" },
   { icons: <MdFeedback size={24} />, label: "Feedback", path: "/feedback" },
-  { icons: <MdUploadFile size={24} />, label: "Upload Requirements", path: "/upload-requirements" },
-  { icons: <FaUsers size={24} />, label: "User Management", path: "/user-management" },
+  { icons: <MdUploadFile size={24} />, label: "Upload Requirements", path: "/upload-requirements" },  
   { icons: <CiSettings size={24} />, label: "Settings", path: "/settings" },
   { icons: <TbReportSearch size={24} />, label: "Reports", path: "/user-reports" },
 ];

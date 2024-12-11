@@ -51,6 +51,7 @@ const AdminDashboard = () => {
           manageCalendar: false
       });
       const [currentAdmin, setCurrentAdmin] = useState(null);
+      const [selectedTable, setSelectedTable] = useState('patients');
 
     const handleSearchChange = (e) => {
       setSearchQuery(e.target.value.toLowerCase());
@@ -624,7 +625,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Conditional rendering of tables based on selected option */}
-            <div className="p-6 bg-white rounded-lg shadow-md">
+            <div className={`p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-lg shadow-md`}>
                 {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                         {error}
@@ -632,120 +633,111 @@ const AdminDashboard = () => {
                 )}
                 
                 {selectedTable === 'patients' && (
-                    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                        <div className="p-4 border-b">
-                            <h3 className="text-2xl font-bold">Patient List</h3>
+                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
+                        <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Patient List</h3>
                         </div>
                         
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                            <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                             Patient ID
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                             Name
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                             Email
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                  {Array.isArray(patients) && patients.length > 0 ? (
-                                      filterPatients(patients).map((patient) => {
-                                          // Log the patient object to see its structure
-                                          console.log('Current patient object:', patient);
-                                          
-                                          // Safely get the patient ID
-                                          const patientId = patient?.patient_id || patient?._id;
-                                          
-                                          if (!patientId) {
-                                              console.error('Patient without ID:', patient);
-                                              return null; // Skip rendering this row
-                                          }
+                                <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                                    {Array.isArray(patients) && patients.length > 0 ? (
+                                        filterPatients(patients).map((patient) => {
+                                            const patientId = patient?.patient_id || patient?._id;
+                                            
+                                            if (!patientId) {
+                                                console.error('Patient without ID:', patient);
+                                                return null;
+                                            }
 
-                                          return (
-                                              <tr key={patientId} className="hover:bg-gray-50">
-                                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
-                                                      {patientId}
-                                                  </td>
-                                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
-                                                      {patient?.fullname || patient?.name || 'No Name'}
-                                                  </td>
-                                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
-                                                      {patient?.email || 'No Email'}
-                                                  </td>
-                                                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium bg-white">
-                                                      <button
-                                                          onClick={() => {
-                                                              console.log('Delete clicked for patient:', patientId);
-                                                              handleDeletePatient(patientId);
-                                                          }}
-                                                          className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
-                                                      >
-                                                          Delete
-                                                      </button>
-                                                  </td>
-                                              </tr>
-                                          );
-                                      })
-                                  ) : (
-                                      <tr>
-                                          <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
-                                              {filterPatients(patients).length === 0 ? 'No matching patients found' : 'Loading patients...'}
-                                          </td>
-                                      </tr>
-                                  )}
-                              </tbody>
+                                            return (
+                                                <tr key={patientId} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                                                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                                                        {patientId}
+                                                    </td>
+                                                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                                                        {patient?.fullname || patient?.name || 'No Name'}
+                                                    </td>
+                                                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                                                        {patient?.email || 'No Email'}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                        <button
+                                                            onClick={() => handleDeletePatient(patientId)}
+                                                            className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className={`px-6 py-4 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                {filterPatients(patients).length === 0 ? 'No matching patients found' : 'Loading patients...'}
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
                             </table>
                         </div>
                     </div>
                 )}
 
                 {selectedTable === 'dentists' && (
-                    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6">
-                        <div className="p-4 border-b">
-                            <h3 className="text-2xl font-bold">Dentist List</h3>
+                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden mt-6`}>
+                        <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Dentist List</h3>
                         </div>
                         
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                            <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                             Dentist ID
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                             Name
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                             Email
                                         </th>
-                                        
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
                                     {Array.isArray(dentists) && dentists.length > 0 ? (
                                         filterDentists(dentists).map((dentist) => (
-                                            <tr key={dentist._id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            <tr key={dentist._id} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                                                <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                                                     {dentist.dentist_id}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                                                     {dentist.name}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                                                     {dentist.email}
                                                 </td>
-                                                
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <button
                                                         onClick={() => handleDeleteDentist(dentist.dentist_id)}
@@ -758,7 +750,7 @@ const AdminDashboard = () => {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                                            <td colSpan="4" className={`px-6 py-4 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                                 {filterDentists(dentists).length === 0 ? 'No matching dentists found' : 'Loading dentists...'}
                                             </td>
                                         </tr>
@@ -770,40 +762,40 @@ const AdminDashboard = () => {
                 )}
 
                 {selectedTable === 'admins' && (
-                    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6">
-                        <div className="p-4 border-b">
-                            <h3 className="text-2xl font-bold">Admin List</h3>
+                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden mt-6`}>
+                        <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Admin List</h3>
                         </div>
                         
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                            <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                             Admin ID
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                             Name
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                             Email
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                                             Actions
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
                                     {Array.isArray(admins) && admins.length > 0 ? (
                                         filterAdmins(admins).map((admin) => (
-                                            <tr key={admin._id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            <tr key={admin._id} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                                                <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                                                     {admin.admin_id}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                                                     {admin.fullname}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                                                     {admin.email}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
@@ -844,7 +836,7 @@ const AdminDashboard = () => {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                                            <td colSpan="4" className={`px-6 py-4 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                                 {filterAdmins(admins).length === 0 ? 'No matching admins found' : 'Loading admins...'}
                                             </td>
                                         </tr>

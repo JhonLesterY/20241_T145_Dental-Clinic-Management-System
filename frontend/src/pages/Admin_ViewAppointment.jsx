@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import AdminSideBar from '../components/AdminSideBar';
 import Logo from "/src/images/Dental_logo.png";
 import { FaCheck, FaTimes, FaEye, FaFileAlt } from 'react-icons/fa'; // For confirm/decline icons
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../context/ThemeContext';
 
 const Admin_ViewAppointment = () => {
@@ -12,6 +14,7 @@ const Admin_ViewAppointment = () => {
   const [updateStatus, setUpdateStatus] = useState({ loading: false, error: null });
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchAppointments();
@@ -278,78 +281,88 @@ const Admin_ViewAppointment = () => {
     );
   };
 
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+  };
+
   return (
-    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`flex h-screen w-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
       
-      <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
-        {/* Header */}
-        <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center space-x-4">
-              <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
-              <h1 className={`text-2xl font-semibold ${isDarkMode ? 'text-white' : 'text-[#003367]'}`}>
-                View Appointments
-              </h1>
+      {/* Main Content */}
+      <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'} transition-all duration-300`}>
+        <div className="flex items-center justify-between bg-white p-4 shadow-md rounded-lg">
+          <div className="flex items-center">
+            <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+            <span className="ml-2 text-2xl font-bold text-gray-800">View Appointments</span>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center border border-gray-300 rounded-lg px-3 py-1">
+              <FontAwesomeIcon icon={faSearch} className="text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search by name, ID, or email..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              />
             </div>
           </div>
-        </header>
-
-        {/* Main Content */}
-        <div className="p-6">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-            </div>
-          ) : (
-            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                  <tr>
-                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                      Appointment ID
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                      Patient Name
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                      Date
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                      Time
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                      Status
-                    </th>
-                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isDarkMode ? 'bg-gray-800 divide-gray-700 text-gray-300' : 'bg-white divide-gray-200'}`}>
-  {appointments.map((appointment) => (
-    <tr key={appointment.appointmentId} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
-      <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
-        {appointment.appointmentId}
-      </td>
-      <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-        {appointment.patientName}
-      </td>
-      <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-        {new Date(appointment.appointmentDate).toLocaleDateString()}
-      </td>
-      <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-        {appointment.appointmentTime}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-          ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
-            appointment.status === 'declined' ? 'bg-red-100 text-red-800' : 
-            'bg-yellow-100 text-yellow-800'}`}>
-          {appointment.status}
-        </span>
-      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+        </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Appointment ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Patient Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Time
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {appointments.map((appointment) => (
+                  <tr key={appointment.appointmentId} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {appointment.appointmentId}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {appointment.patientName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(appointment.appointmentDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {appointment.appointmentTime}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                          appointment.status === 'declined' ? 'bg-red-100 text-red-800' : 
+                          'bg-yellow-100 text-yellow-800'}`}>
+                        {appointment.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {appointment.status === 'pending' && (
                         <div className="flex space-x-2">
                           <button
@@ -384,20 +397,19 @@ const Admin_ViewAppointment = () => {
                           {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                         </span>
                       )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-              {appointments.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  No appointments found
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {appointments.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No appointments found
+              </div>
+            )}
+          </div>
+        )}
       </div>
       {showDocumentModal && (
         <DocumentModal

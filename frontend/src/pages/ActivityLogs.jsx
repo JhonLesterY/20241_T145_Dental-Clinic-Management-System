@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import AdminSideBar from '../components/AdminSideBar';
 import { format } from 'date-fns';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBell } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../context/ThemeContext';
 
 const ActivityLogs = () => {
     const { isDarkMode } = useTheme();
-    const [sidebarOpen, setSidebarOpen] = useState(true);
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -15,6 +16,7 @@ const ActivityLogs = () => {
         start: '',
         end: ''
     });
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     useEffect(() => {
         fetchLogs();
@@ -131,75 +133,80 @@ const ActivityLogs = () => {
     if (error) return <div className="text-red-500">Error: {error}</div>;
 
     return (
-        <div className={`flex h-screen w-screen overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-[#f0f4f8]'}`}>
-            <AdminSideBar isOpen={sidebarOpen} />
-            
-            <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'} transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
-                <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <div className="flex items-center justify-between px-6 py-4">
-                        <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Activity Logs</h1>
+        <div className={`fixed inset-0 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+            <div className="flex h-full">
+                <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
+
+                {/* Main Content */}
+                <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'} transition-all duration-300 overflow-auto`}>
+                    {/* Header Section */}
+                    <div className={`flex items-center justify-between ${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-4 shadow-lg rounded-lg mb-6`}>
+                        <div className="flex items-center">
+                            <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+                            <span className={`ml-2 text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Activity Logs</span>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                            <select 
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                                className={`p-2 border rounded-lg ${isDarkMode ? 'bg-gray-700 text-gray-200 border-gray-600' : 'bg-blue-50 text-gray-800'} focus:outline-none focus:ring-2 focus:ring-blue-300`}
+                            >
+                                <option value="all">All Roles</option>
+                                <option value="admin">Admin</option>
+                                <option value="dentist">Dentist</option>
+                                <option value="patient">Patient</option>
+                            </select>
+
+                            <input
+                                type="text"
+                                placeholder="Search logs..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className={`p-2 border rounded-lg ${isDarkMode ? 'bg-gray-700 text-gray-200 border-gray-600' : 'bg-blue-50 text-gray-800'} focus:outline-none focus:ring-2 focus:ring-blue-300`}
+                            />
+
+                            <input
+                                type="date"
+                                value={dateRange.start}
+                                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                                className={`p-2 border rounded-lg ${isDarkMode ? 'bg-gray-700 text-gray-200 border-gray-600' : 'bg-blue-50 text-gray-800'} focus:outline-none focus:ring-2 focus:ring-blue-300`}
+                            />
+
+                            <input
+                                type="date"
+                                value={dateRange.end}
+                                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                                className={`p-2 border rounded-lg ${isDarkMode ? 'bg-gray-700 text-gray-200 border-gray-600' : 'bg-blue-50 text-gray-800'} focus:outline-none focus:ring-2 focus:ring-blue-300`}
+                            />
+                        </div>
                     </div>
-                </header>
 
-                <main className="flex-1 p-6 overflow-y-auto">
-                    {/* Filters and Search */}
-                    <div className={`mb-6 flex gap-4 flex-wrap ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                        <select 
-                            value={filter}
-                            onChange={(e) => setFilter(e.target.value)}
-                            className="p-2 border rounded bg-white text-gray-800"
-                        >
-                            <option value="all">All Roles</option>
-                            <option value="admin">Admin</option>
-                            <option value="dentist">Dentist</option>
-                            <option value="patient">Patient</option>
-                        </select>
-
-                        <input
-                            type="text"
-                            placeholder="Search logs..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="p-2 border rounded bg-white"
-                        />
-
-                        <input
-                            type="date"
-                            value={dateRange.start}
-                            onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                            className="p-2 border rounded bg-white"
-                        />
-
-                        <input
-                            type="date"
-                            value={dateRange.end}
-                            onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                            className="p-2 border rounded bg-white"
-                        />
-                    </div>
+                    {/* Loading and Error Handling */}
+                    {loading && <div className="flex justify-center items-center h-full">Loading...</div>}
+                    {error && <div className="text-red-500 font-semibold">Error: {error}</div>}
 
                     {/* Logs Table */}
-                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
+                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg-md overflow-hidden`}>
                         <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                            <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                            <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-blue-200'}`}>
                                 <tr>
-                                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} uppercase tracking-wider`}>
                                         Timestamp
                                     </th>
-                                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} uppercase tracking-wider`}>
                                         User Role
                                     </th>
-                                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} uppercase tracking-wider`}>
                                         Action
                                     </th>
-                                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} uppercase tracking-wider`}>
                                         Details
                                     </th>
                                 </tr>
                             </thead>
                             <tbody className={`${isDarkMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
                                 {filteredLogs.map((log, index) => (
-                                    <tr key={index} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                                    <tr key={index} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-blue-50 transition duration-200'}`}>
                                         <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                                             {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm:ss')}
                                         </td>
@@ -222,7 +229,7 @@ const ActivityLogs = () => {
                             </tbody>
                         </table>
                     </div>
-                </main>
+                </div>
             </div>
         </div>
     );
