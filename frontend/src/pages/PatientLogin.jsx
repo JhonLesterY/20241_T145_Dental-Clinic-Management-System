@@ -138,6 +138,19 @@ const googleLogin = useGoogleLogin({
             sessionStorage.setItem('admin_id', data.user.admin_id);
             sessionStorage.setItem('name', data.user.fullname);
             navigate('/admin-dashboard');
+        } else if (data.user.role === 'patient') {
+            sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('role', 'patient');
+            sessionStorage.setItem('patient_id', data.user.id);
+            sessionStorage.setItem('name', data.user.name);
+            navigate('/dashboard');
+        }
+        else if (data.user.role === 'dentist') {
+            sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('role', 'dentist');
+            sessionStorage.setItem('dentist_id', data.user.id);
+            sessionStorage.setItem('name', data.user.name);
+            navigate('/dentist-dashboard');
         }
     } catch (error) {
         console.error('Google login error:', error);

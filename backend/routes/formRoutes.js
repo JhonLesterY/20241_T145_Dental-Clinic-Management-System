@@ -6,13 +6,13 @@ const { authenticateAdmin, authenticatePatient } = require('../middleware/authMi
 // Get active form URL for patients
 router.get('/active-form-url', authenticatePatient, async (req, res) => {
     try {
-        const patientEmail = req.user.email;
+        const patientId = req.user.id;
         
-        if (!patientEmail) {
-            return res.status(400).json({ error: 'Patient email not found' });
+        if (!patientId) {
+            return res.status(400).json({ error: 'Patient ID not found' });
         }
 
-        const form = await formServices.getForm(patientEmail);
+        const form = await formServices.getForm(patientId);
         res.json({ formUrl: form.formUrl });
     } catch (error) {
         console.error('Error getting form URL:', error);

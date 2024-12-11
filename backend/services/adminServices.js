@@ -323,27 +323,6 @@ async function sendReminders(req, res) {
     }
 }
 
-async function updateCalendar(req, res) {
-    try {
-        const calendarData = req.body;
-        // Assuming there is a Calendar model
-        const calendar = new Calendar(calendarData);
-        await calendar.save();
-
-        // Log activity
-        await logActivity({
-            userId: req.user._id,
-            userRole: 'admin',
-            action: 'updateCalendar',
-            details: { calendarData }
-        });
-
-        return res.status(200).json(calendar);
-    } catch (error) {
-        res.status(500).json({ message: 'Failed to update calendar: ' + error.message });
-    }
-}
-
 async function getReports(req, res) {
     try {
         const reports = {}; // Example: Generate reports here
@@ -735,7 +714,6 @@ module.exports = {
     deleteDentist,
     getAllAppointments,
     sendReminders,
-    updateCalendar,
     getReports,
     getInventory,
     addInventoryItem,

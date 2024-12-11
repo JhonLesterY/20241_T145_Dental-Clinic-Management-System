@@ -30,7 +30,7 @@ const User_Dashboard = () => {
         return;
       }
   
-      const response = await fetch(`http://localhost:5000/patients/${patientId}/profile`, {
+      const response = await fetch(`http://localhost:5000/patients/numeric/${patientId}/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -50,7 +50,11 @@ const User_Dashboard = () => {
       const data = await response.json();
       console.log('Profile data:', data);
       
-      if (!data.isProfileComplete) {
+      const isProfileIncomplete = data.isGoogleUser ? 
+        !data.firstName || !data.lastName || !data.phoneNumber || !data.sex || !data.birthday :
+        !data.isProfileComplete || !data.hasChangedPassword;
+
+      if (isProfileIncomplete) {
         navigate('/profile', { 
           state: { message: 'Please complete your profile to access the dashboard' }
         });

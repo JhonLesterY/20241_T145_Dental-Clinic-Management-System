@@ -14,6 +14,8 @@ const reportService = require('../services/reportService');
 const { checkAdminLevel } = require('../middleware/adminLevelMiddleware');
 const { checkPermission } = require('../middleware/checkPermissionMiddleware');
 const { logActivity } = require('../services/activitylogServices');
+const calendarService = require('../services/calendarServices');
+const BlockedDate = require('../models/BlockedDate');
 
 
 const storage = multer.diskStorage({
@@ -190,7 +192,6 @@ A_route.post('/create', authenticateAdmin, checkPermission('manageAdmins'), admi
 
 A_route.get('/appointments', authenticateAdmin, adminService.getAllAppointments);
 A_route.post('/appointments/reminders', adminService.sendReminders);
-A_route.post('/calendar', adminService.updateCalendar);
 A_route.get('/reports', adminService.getReports);
 
 // Inventory Management
@@ -548,6 +549,89 @@ A_route.get('/verify-admin/:token', async (req, res) => {
             message: 'An error occurred during verification. Please try again later.',
             status: 'error'
         });
+    }
+});
+
+A_route.post('/calendar/events', authenticateAdmin, async (req, res) => {
+    try {
+        const result = await calendarService.addEvent(req.body);
+        res.json(result);
+    } catch (error) {
+        console.error('Error adding calendar event:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+A_route.get('/calendar/events', authenticateAdmin, async (req, res) => {
+    try {
+        const events = await calendarService.getEvents();
+        res.json({ items: events });
+    } catch (error) {
+        console.error('Error fetching calendar events:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+A_route.delete('/calendar/events/:eventId', authenticateAdmin, async (req, res) => {
+    try {
+        await calendarService.deleteEvent(req.params.eventId);
+        res.json({ message: 'Event deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting calendar event:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+A_route.put('/calendar/events/:eventId', authenticateAdmin, async (req, res) => {
+    try {
+        const result = await calendarService.updateEvent(req.params.eventId, req.body);
+        res.json(result);
+    } catch (error) {
+        console.error('Error updating calendar event:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Get all blocked dates
+A_route.get('/calendar/blocked-dates', authenticateAdmin, async (req, res) => {
+    try {
+        const blockedDates = await calendarService.getBlockedDates();
+        res.json(blockedDates);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Block a date
+A_route.post('/calendar/blocked-dates', authenticateAdmin, async (req, res) => {
+    try {
+        const blockedDate = await calendarService.blockDate(req.body.date);
+        res.json(blockedDate);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Unblock a date
+A_route.delete('/calendar/blocked-dates', authenticateAdmin, async (req, res) => {
+    try {
+        await calendarService.unblockDate(req.body.date);
+        res.json({ message: 'Date unblocked successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Get blocked status for specific date
+A_route.get('/calendar/blocked-dates/:date', async (req, res) => {
+    try {
+        const date = req.params.date;
+        const blockedDate = await BlockedDate.findOne({ 
+            date: new Date(date) 
+        });
+        res.json({ isBlocked: !!blockedDate });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 });
 

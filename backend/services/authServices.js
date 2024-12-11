@@ -259,17 +259,11 @@ async function loginWithGoogle(payload, recaptchaToken) {
         const { email, name, sub: googleId, picture } = payload;
         console.log('Attempting Google login for email:', email);
         
-        // Check for admin account
+        // Check for admin account first
         const admin = await Admin.findOne({ email });
         console.log('Found admin:', admin ? 'Yes' : 'No');
         
         if (admin) {
-            console.log('Admin details:', {
-                isVerified: admin.isVerified,
-                isGoogleUser: admin.isGoogleUser,
-                email: admin.email
-            });
-
             // Update Google ID and ensure Google login is enabled
             await Admin.findByIdAndUpdate(admin._id, {
                 $set: {
@@ -300,6 +294,68 @@ async function loginWithGoogle(payload, recaptchaToken) {
                     role: 'admin',
                     permissions: admin.permissions,
                     profilePicture: picture || admin.profilePicture
+                }
+            };
+        }
+
+        // Check for dentist account
+        const dentist = await Dentist.findOne({ email });
+        if (dentist && dentist.isGoogleUser) {
+            const token = jwt.sign(
+                { 
+                    id: dentist._id,
+                    email: dentist.email,
+                    role: 'dentist'
+                },
+                process.env.JWT_SECRET_KEY,
+                { expiresIn: '24h' }
+            );
+
+            return {
+                token,
+                user: {
+                    id: dentist._id,
+                    dentist_id: dentist.dentist_id,
+                    email: dentist.email,
+                    name: dentist.name,
+                    role: 'dentist',
+                    profilePicture: picture || dentist.profilePicture,
+                    isGoogleUser: true
+                }
+            };
+        }
+
+        // Check for patient account
+        const patient = await Patient.findOne({ email });
+        if (patient) {
+            // Update Google ID and ensure Google login is enabled
+            await Patient.findByIdAndUpdate(patient._id, {
+                $set: {
+                    googleId: googleId,
+                    isGoogleUser: true,
+                    profilePicture: picture || patient.profilePicture
+                }
+            });
+
+            const token = jwt.sign(
+                { 
+                    id: patient._id,
+                    email: patient.email,
+                    role: 'patient'
+                },
+                process.env.JWT_SECRET_KEY,
+                { expiresIn: '24h' }
+            );
+
+            return {
+                token,
+                user: {
+                    id: patient.patient_id,
+                    email: patient.email,
+                    name: patient.name,
+                    role: 'patient',
+                    profilePicture: picture || patient.profilePicture,
+                    isGoogleUser: true
                 }
             };
         }

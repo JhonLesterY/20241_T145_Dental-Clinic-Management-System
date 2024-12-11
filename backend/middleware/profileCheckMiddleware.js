@@ -4,26 +4,39 @@ const mongoose = require('mongoose');
 
 const checkProfileCompletion = async (req, res, next) => {
     try {
-        const patient = await Patient.findOne({ patient_id: req.params.patient_id });
+        const numericPatientId = parseInt(req.params.patient_id);
+        const patient = await Patient.findOne({ patient_id: numericPatientId });
         
         if (!patient) {
             return res.status(404).json({ message: 'Patient not found' });
         }
 
-         // Allow access to profile and password change routes even if profile is incomplete
-         if (req.path.includes('/profile') || req.path.includes('/change-password')) {
+        // Allow access to profile and password change routes even if profile is incomplete
+        if (req.path.includes('/profile') || req.path.includes('/change-password')) {
             return next();
         }
 
-        const needsPasswordChange = !patient.isGoogleUser && 
-         !patient.hasChangedPassword;
+        // Only check password change for non-Google users
+        const needsPasswordChange = !patient.isGoogleUser && !patient.hasChangedPassword;
 
-         if (!patient.isProfileComplete || needsPasswordChange) {
-            return res.status(403).json({ 
-                message: 'Please complete your profile and change your password',
-                requiresProfileCompletion: !patient.isProfileComplete,
-                requiresPasswordChange: needsPasswordChange
-            });
+        // For Google users, only check profile completion
+        if (patient.isGoogleUser) {
+            if (!patient.isProfileComplete) {
+                return res.status(403).json({ 
+                    message: 'Please complete your profile',
+                    requiresProfileCompletion: true,
+                    requiresPasswordChange: false
+                });
+            }
+        } else {
+            // For non-Google users, check both profile and password
+            if (!patient.isProfileComplete || needsPasswordChange) {
+                return res.status(403).json({ 
+                    message: 'Please complete your profile and change your password',
+                    requiresProfileCompletion: !patient.isProfileComplete,
+                    requiresPasswordChange: needsPasswordChange
+                });
+            }
         }
 
         next();

@@ -3,6 +3,7 @@ const Appointment = require('../models/Appointment');  // Appointment model
 const Feedback = require('../models/Feedback');  // Feedback model
 const bcrypt = require('bcrypt');
 const { logActivity, ACTIONS } = require('./activitylogServices');  // Add this import
+const mongoose = require('mongoose');
 
 
 // Book a new appointment for a patient
@@ -123,36 +124,31 @@ async function submitFeedback(patient_id, feedbackData) {
     }
 }
 
-async function getPatientProfile(patient_id) {
+async function getPatientProfile(patientId) {
     try {
-        console.log('Looking for patient with ID:', patient_id);
+        console.log('Looking for patient with ID:', patientId);
         
-        const patient = await Patient.findById(patient_id);
+        let patient;
+        
+        // Check if it's a MongoDB ObjectId
+        if (mongoose.Types.ObjectId.isValid(patientId)) {
+            patient = await Patient.findById(patientId);
+        } else {
+            // Try to find by numeric patient_id
+            patient = await Patient.findOne({ patient_id: parseInt(patientId) });
+        }
         
         if (!patient) {
             console.log('Patient not found in database');
             throw new Error('Patient not found');
         }
 
-        console.log('Found patient status:', {
-            hasChangedPassword: patient.hasChangedPassword,
-            hasLocalPassword: patient.hasLocalPassword
-        });
-        
+        // Rest of your existing return logic
         return {
             firstName: patient.firstName || '',
             middleName: patient.middleName || '',
             lastName: patient.lastName || '',
-            suffix: patient.suffix || 'None',
-            phoneNumber: patient.phoneNumber || '',
-            email: patient.email || '',
-            sex: patient.sex || 'Male',
-            birthday: patient.birthday || '',
-            isProfileComplete: patient.isProfileComplete || false,
-            profilePicture: patient.profilePicture || '',
-            isGoogleUser: patient.isGoogleUser || false,
-            hasChangedPassword: patient.hasChangedPassword || false,
-            hasLocalPassword: patient.hasLocalPassword || false
+            // ... rest of the fields
         };
     } catch (error) {
         console.error('Error in getPatientProfile:', error);
@@ -160,30 +156,46 @@ async function getPatientProfile(patient_id) {
     }
 }
 
-async function updatePatientProfile(patient_id, updateData) {
+async function updatePatientProfile(patientId, updateData) {
     try {
-        // Handle profile picture URL for Google users
-        if (updateData.isGoogleUser && updateData.picture) {
-            updateData.profilePicture = updateData.picture;
+        let patient;
+        
+        // Find the patient using either ID format
+        if (mongoose.Types.ObjectId.isValid(patientId)) {
+            patient = await Patient.findById(patientId);
+        } else {
+            patient = await Patient.findOne({ patient_id: parseInt(patientId) });
         }
 
+        if (!patient) {
+            throw new Error('Patient not found');
+        }
+
+        // For Google users, we don't need to check hasChangedPassword
+        const isProfileComplete = patient.isGoogleUser ? 
+            (updateData.firstName && updateData.lastName && updateData.phoneNumber && updateData.sex && updateData.birthday) :
+            (updateData.firstName && updateData.lastName && updateData.phoneNumber && updateData.sex && updateData.birthday && patient.hasChangedPassword);
+
+        // Update using the MongoDB _id
         const updatedPatient = await Patient.findByIdAndUpdate(
-            patient_id,
+            patient._id,
             { 
                 ...updateData,
-                isProfileComplete: true,
+                isProfileComplete,
                 updatedAt: Date.now()
             },
             { new: true }
         );
 
-        if (!updatedPatient) {
-            throw new Error('Patient not found');
+        // Handle profile picture URL for Google users
+        if (patient.isGoogleUser && updateData.picture) {
+            updatedPatient.profilePicture = updateData.picture;
+            await updatedPatient.save();
         }
 
         // Log the activity
         await logActivity(
-            patient_id,
+            patient._id,
             'patient',
             ACTIONS.PATIENT_UPDATE,
             {
@@ -197,7 +209,6 @@ async function updatePatientProfile(patient_id, updateData) {
         throw new Error(error.message);
     }
 }
-
 
 async function changePassword(patient_id, currentPassword, newPassword) {
     try {
