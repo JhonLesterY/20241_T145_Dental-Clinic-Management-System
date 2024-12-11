@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import Dashboard from "../components/Dashboard";
 import User_Profile from "/src/images/user.png";
 import AdminSideBar from "../components/AdminSideBar";
+import { useTheme } from '../context/ThemeContext';
 
 const AdminProfile = () => {
   const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
   const [userData, setUserData] = useState({
     fullname: "",
       username: "",
@@ -217,16 +219,16 @@ const handleLogout = () => {
   }
 
   return (
-        <div className="flex h-screen w-screen bg-gray-50 overflow-hidden">
+        <div className={`flex h-screen w-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} overflow-hidden`}>
         <AdminSideBar />
-        <div className="flex-1 flex flex-col items-center justify-center bg-gray-100 text-white p-8">
+        <div className={`flex-1 flex flex-col items-center justify-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} p-8`}>
           {!userData.isProfileComplete && (
             <div className="w-full max-w-2xl mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-lg">
               ⚠️ Please complete your profile to access all features
             </div>
           )}
 
-          <div className="w-full max-w-2xl p-8 bg-white text-gray-800 rounded-lg shadow-lg">
+          <div className={`w-full max-w-2xl p-8 ${isDarkMode ? 'bg-gray-700' : 'bg-white'} ${isDarkMode ? 'text-white' : 'text-gray-800'} rounded-lg shadow-lg`}>
             <div className="flex flex-col items-center mb-6">
               <div className="relative group">
                   <img
@@ -255,24 +257,24 @@ const handleLogout = () => {
               {/* Display fullname under profile picture */}
               <div className="text-center mt-4">
                   <h2 className="text-2xl font-semibold text-blue-900">{userData.fullname}</h2>
-                  <p className="text-gray-500">{userData.email}</p>
+                  <p className={`block ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>{userData.email}</p>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5 mt-8">
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="block text-gray-600">Username*</label>
+                  <label className={`block ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Username*</label>
                   <input
                     type="text"
                     value={userData.username}
                     onChange={(e) => setUserData({ ...userData, username: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-4 py-3 ${isDarkMode ? 'bg-gray-600' : 'bg-white'} ${isDarkMode ? 'text-white' : 'text-gray-800'} border ${isDarkMode ? 'border-gray-600' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     required
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-gray-600">Contact Number*</label>
+                  <label className={`block ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Contact Number*</label>
                   <input
                     type="text"
                     value={userData.phoneNumber}
@@ -285,11 +287,11 @@ const handleLogout = () => {
 
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="block text-gray-600">Sex at Birth*</label>
+                  <label className={`block ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Sex at Birth*</label>
                   <select 
                     value={userData.sex}
                     onChange={(e) => setUserData({ ...userData, sex: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     required
                   >
                     <option value="">Select Sex</option>
@@ -298,7 +300,7 @@ const handleLogout = () => {
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="block text-gray-600">Birthday*</label>
+                  <label className={`block ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Birthday*</label>
                   <input
                     type="date"
                     value={userData.birthday}

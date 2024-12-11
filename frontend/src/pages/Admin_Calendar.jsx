@@ -15,6 +15,7 @@ import {
     faChevronRight
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const AdminCalendar = () => {
     const { accessToken, googleLogin } = useAuth();
@@ -37,6 +38,7 @@ const AdminCalendar = () => {
     const [editingEvent, setEditingEvent] = useState(null);
     const [showEditForm, setShowEditForm] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const { isDarkMode } = useTheme();
 
     useEffect(() => {
         const loadCalendarData = async () => {
@@ -106,7 +108,7 @@ const AdminCalendar = () => {
 
     if (isLoading) {
         return (
-            <div className="flex h-screen w-screen">
+            <div className="flex h-screen w-screen bg-white">
                 <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
                 <div className="flex-1 flex justify-center items-center">
                     <div className="text-center">
@@ -345,11 +347,11 @@ const AdminCalendar = () => {
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     return (
-        <div className="flex h-screen w-screen">
+        <div className={`flex h-screen w-screen ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
             <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
             
             {/* Main Content */}
-            <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
+            <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'} ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
                 {/* Error Display */}
                 {error && (
                     <div className="mb-4 p-4 bg-red-100 text-red-600 rounded-lg">
@@ -367,39 +369,39 @@ const AdminCalendar = () => {
                 )}
 
                 {/* Header */}
-                <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-md text-gray-900">
+                <div className={`flex items-center justify-between ${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-4 rounded-lg shadow-md`}>
                     <div className="flex items-center">
-                        <img 
-                            src="/src/assets/unicare.png" 
-                            alt="UniCare Logo" 
-                            className="h-10"
-                            onError={(e) => {
-                                console.error('Error loading logo:', e);
-                                e.target.style.display = 'none';
-                            }}
-                        />
-                        <span className="ml-2 text-2xl font-bold">Calendar</span>
+                        <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+                        <span className={`ml-2 text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            Calendar
+                        </span>
                     </div>
-                    <div className="flex items-center border border-gray-300 rounded-lg px-3 py-1 bg-white">
-                        <FontAwesomeIcon icon={faSearch} className="text-gray-500" />
+                    <div className={`flex items-center border ${isDarkMode ? 'border-gray-600' : 'border-gray-300'} rounded-lg px-3 py-1`}>
+                        <FontAwesomeIcon icon={faSearch} className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                         <input
                             type="text"
                             placeholder="Search..."
-                            className="bg-white border-none focus:outline-none ml-2 text-gray-700"
+                            className={`border-none focus:outline-none ml-2 ${
+                                isDarkMode 
+                                ? 'bg-gray-700 text-gray-200 placeholder-gray-400' 
+                                : 'bg-white text-gray-700 placeholder-gray-500'
+                            }`}
                         />
                     </div>
-                    <button className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600">
+                    <button className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>
                         <FontAwesomeIcon icon={faBell} className="text-xl" />
                     </button>
                 </div>
 
                 {/* Calendar Navigation */}
                 <div className="mt-8 flex items-center justify-center">
-                    <button onClick={previousMonth} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300">
+                    <button onClick={previousMonth} className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}>
                         <FontAwesomeIcon icon={faChevronLeft} />
                     </button>
-                    <h2 className="text-3xl font-bold mx-4 text-blue-700">{monthNames[currentMonth]} {currentYear}</h2>
-                    <button onClick={nextMonth} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300">
+                    <h2 className={`text-3xl font-bold mx-4 ${isDarkMode ? 'text-gray-200' : 'text-blue-700'}`}>
+                        {monthNames[currentMonth]} {currentYear}
+                    </h2>
+                    <button onClick={nextMonth} className={`p-2 rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}>
                         <FontAwesomeIcon icon={faChevronRight} />
                     </button>
                 </div>
@@ -408,15 +410,17 @@ const AdminCalendar = () => {
                 <div className="mt-4 grid grid-cols-7 gap-4">
                     {/* Day Labels */}
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                        <div key={day} className="text-xl font-semibold text-center text-blue-700">{day}</div>
+                        <div key={day} className={`text-xl font-semibold text-center ${isDarkMode ? 'text-gray-300' : 'text-blue-700'}`}>
+                            {day}
+                        </div>
                     ))}
 
-            {/* Empty boxes for alignment */}
-                {Array.from({ length: startDay }).map((_, index) => (
-                    <div key={`empty-${index}`} className="bg-gray-50 border border-gray-200 p-4 rounded-lg"></div>
-                ))}
+                    {/* Empty boxes for alignment */}
+                    {Array.from({ length: startDay }).map((_, index) => (
+                        <div key={`empty-${index}`} className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} border p-4 rounded-lg`}></div>
+                    ))}
 
-                {/* Days of the month */}
+                    {/* Days of the month */}
                     {Array.from({ length: daysInMonth }).map((_, index) => {
                         const currentDate = new Date(currentYear, currentMonth, index + 1);
                         const isToday = currentDate.toDateString() === new Date().toDateString();
@@ -428,19 +432,42 @@ const AdminCalendar = () => {
                         return (
                             <div
                                 key={index}
-                                className={`p-4 rounded-lg cursor-pointer ${isToday ? 'bg-blue-200' : 'bg-gray-50'} 
-                                ${hasEvent ? 'border-2 border-blue-500' : 'border border-gray-200'} text-center 
-                                hover:bg-gray-100 transition-colors duration-200`}
+                                className={`p-4 rounded-lg cursor-pointer 
+                                    ${isToday 
+                                        ? isDarkMode 
+                                            ? 'bg-blue-900 text-blue-200' 
+                                            : 'bg-blue-200'
+                                        : isDarkMode 
+                                            ? 'bg-gray-800 hover:bg-gray-700' 
+                                            : 'bg-gray-50 hover:bg-gray-100'
+                                    }
+                                    ${hasEvent 
+                                        ? isDarkMode 
+                                            ? 'border-2 border-blue-400' 
+                                            : 'border-2 border-blue-500'
+                                        : isDarkMode 
+                                            ? 'border border-gray-700' 
+                                            : 'border border-gray-200'
+                                    }
+                                    transition-colors duration-200`}
                                 onClick={() => {
                                     const selectedDate = new Date(currentYear, currentMonth, index + 1);
-                                    handleViewEvents(selectedDate);  // This will show existing events or an empty list
+                                    handleViewEvents(selectedDate);
                                     setNewEvent(prev => ({
                                         ...prev,
                                         date: selectedDate.toISOString().split('T')[0]
                                     }));
                                 }}
                             >
-                                <span className={`font-semibold ${isToday ? 'text-blue-900' : 'text-gray-700'}`}>
+                                <span className={`font-semibold ${
+                                    isToday 
+                                        ? isDarkMode 
+                                            ? 'text-blue-200' 
+                                            : 'text-blue-900'
+                                        : isDarkMode 
+                                            ? 'text-gray-200' 
+                                            : 'text-gray-700'
+                                }`}>
                                     {index + 1}
                                 </span>
                             </div>

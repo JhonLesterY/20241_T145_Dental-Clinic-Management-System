@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import AdminSideBar from '../components/AdminSideBar';
 import Logo from "/src/images/Dental_logo.png";
 import { FaCheck, FaTimes, FaEye, FaFileAlt } from 'react-icons/fa'; // For confirm/decline icons
+import { useTheme } from '../context/ThemeContext';
 
 const Admin_ViewAppointment = () => {
+  const { isDarkMode } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -277,16 +279,16 @@ const Admin_ViewAppointment = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
       
       <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
         {/* Header */}
-        <header className="bg-white shadow-md">
+        <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center space-x-4">
               <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
-              <h1 className="text-2xl font-semibold text-[#003367]">
+              <h1 className={`text-2xl font-semibold ${isDarkMode ? 'text-white' : 'text-[#003367]'}`}>
                 View Appointments
               </h1>
             </div>
@@ -300,53 +302,53 @@ const Admin_ViewAppointment = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Appointment ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Patient Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Time
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {appointments.map((appointment) => (
-                    <tr key={appointment.appointmentId} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {appointment.appointmentId}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {appointment.patientName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(appointment.appointmentDate).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {appointment.appointmentTime}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
-                            appointment.status === 'declined' ? 'bg-red-100 text-red-800' : 
-                            'bg-yellow-100 text-yellow-800'}`}>
-                          {appointment.status}
-                        </span>
-                      </td>
+                <tbody className={`divide-y ${isDarkMode ? 'bg-gray-800 divide-gray-700 text-gray-300' : 'bg-white divide-gray-200'}`}>
+  {appointments.map((appointment) => (
+    <tr key={appointment.appointmentId} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+      <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+        {appointment.appointmentId}
+      </td>
+      <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+        {appointment.patientName}
+      </td>
+      <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+        {new Date(appointment.appointmentDate).toLocaleDateString()}
+      </td>
+      <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+        {appointment.appointmentTime}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+          ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+            appointment.status === 'declined' ? 'bg-red-100 text-red-800' : 
+            'bg-yellow-100 text-yellow-800'}`}>
+          {appointment.status}
+        </span>
+      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {appointment.status === 'pending' && (
                         <div className="flex space-x-2">

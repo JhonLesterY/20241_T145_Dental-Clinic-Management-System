@@ -4,10 +4,12 @@ import AdminSideBar from '../components/AdminSideBar';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faThLarge, faFileAlt, faCalendarAlt, faClipboardList, faComments, faCog, faBell, faTooth, faSearch, faUsers, faUserPlus, faUserMd } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const { isDarkMode } = useTheme();
     
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -558,26 +560,31 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen">
+    <div className={`flex h-screen w-screen ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
         <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
-        {/* Main Content */}
-        <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
-            <div className="flex items-center justify-between bg-white p-4 shadow-md">
+        <div className={`flex-1 flex flex-col transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
+            <div className={`w-full flex items-center justify-between ${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-4 shadow-md`}>
                 <div className="flex items-center">
                     <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
-                    <span className="ml-2 text-2xl font-bold text-gray-800">User Management</span>
+                    <span className={`ml-2 text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                        User Management
+                    </span>
                 </div>
                 
                 <div className="flex items-center space-x-4">
-                    <div className="flex items-center border border-gray-300 rounded-lg px-3 py-1">
-                        <FontAwesomeIcon icon={faSearch} className="text-gray-500" />
+                    <div className={`flex items-center border ${isDarkMode ? 'border-gray-600' : 'border-gray-300'} rounded-lg px-3 py-1 ${isDarkMode ? 'bg-gray-700' : 'bg-white'}`}>
+                        <FontAwesomeIcon icon={faSearch} className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                         <input
                             type="text"
                             placeholder="Search by name, ID, or email..."
                             value={searchQuery}
                             onChange={handleSearchChange}
-                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            className={`w-full px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                ? 'bg-gray-700 text-gray-200 placeholder-gray-400' 
+                                : 'bg-white text-gray-900 placeholder-gray-500'
+                            }`}
                         />
                     </div>
                     
@@ -603,430 +610,237 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {/* Add this new section for patients list */}
-            <div className="p-6">
-        {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                {error}
-            </div>
-        )}
-        
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-4 border-b">
-                <h3 className="text-2xl font-bold">Patient List</h3>
-            </div>
-            
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Patient ID
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Email
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {Array.isArray(patients) && patients.length > 0 ? (
-                          filterPatients(patients).map((patient) => {
-                              // Log the patient object to see its structure
-                              console.log('Current patient object:', patient);
-                              
-                              // Safely get the patient ID
-                              const patientId = patient?.patient_id || patient?._id;
-                              
-                              if (!patientId) {
-                                  console.error('Patient without ID:', patient);
-                                  return null; // Skip rendering this row
-                              }
-
-                              return (
-                                  <tr key={patientId} className="hover:bg-gray-50">
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
-                                          {patientId}
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
-                                          {patient?.fullname || patient?.name || 'No Name'}
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-white">
-                                          {patient?.email || 'No Email'}
-                                      </td>
-                                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium bg-white">
-                                          <button
-                                              onClick={() => {
-                                                  console.log('Delete clicked for patient:', patientId);
-                                                  handleDeletePatient(patientId);
-                                              }}
-                                              className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
-                                          >
-                                              Delete
-                                          </button>
-                                      </td>
-                                  </tr>
-                              );
-                          })
-                      ) : (
-                          <tr>
-                              <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
-                                  {filterPatients(patients).length === 0 ? 'No matching patients found' : 'Loading patients...'}
-                              </td>
-                          </tr>
-                      )}
-                  </tbody>
-                </table>
-            </div>
-            {/* Dentist List Section */}
-    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6">
-        <div className="p-4 border-b">
-            <h3 className="text-2xl font-bold">Dentist List</h3>
-        </div>
-        
-        <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Dentist ID
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Email
-                        </th>
+            {/* Main content */}
+            <div className={`flex-1 w-full p-6 overflow-y-auto ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                <div className="space-y-6">
+                    {/* Patient List */}
+                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
+                        <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                                Patient List
+                            </h3>
+                        </div>
                         
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                    {Array.isArray(dentists) && dentists.length > 0 ? (
-                        filterDentists(dentists).map((dentist) => (
-                            <tr key={dentist._id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {dentist.dentist_id}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {dentist.name}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {dentist.email}
-                                </td>
-                                
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button
-                                        onClick={() => handleDeleteDentist(dentist.dentist_id)}
-                                        className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
-                                    >
-                                        Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
-                                {filterDentists(dentists).length === 0 ? 'No matching dentists found' : 'Loading dentists...'}
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    </div>  
-    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6">
-        <div className="p-4 border-b">
-            <h3 className="text-2xl font-bold">Admin List</h3>
-        </div>
-        
-        <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Admin ID
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Email
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                    {Array.isArray(admins) && admins.length > 0 ? (
-                        filterAdmins(admins).map((admin) => (
-                            <tr key={admin._id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {admin.admin_id}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {admin.fullname}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {admin.email}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                    {hasPermission('managePermissions') && (
-                                        <>
-                                            <button
-                                                onClick={() => openPermissionModal(admin)}
-                                                className="bg-blue-100 text-blue-600 hover:text-blue-900 px-4 py-2 rounded mr-2"
-                                            >
-                                                Manage Permissions
-                                            </button>
-                                            {admin.permissionLevel !== 'HIGH' && (
-                                                <button
-                                                    onClick={() => handlePromoteAdmin(admin._id)}
-                                                    className="bg-purple-100 text-purple-600 hover:text-purple-900 px-4 py-2 rounded mr-2"
-                                                >
-                                                    Promote to HIGH
-                                                </button>
-                                            )}
-                                            {admin.permissionLevel === 'HIGH' && currentAdmin?.permissionLevel === 'HIGH' && (
-                                                <button
-                                                    onClick={() => handleDemoteAdmin(admin._id)}
-                                                    className="bg-yellow-100 text-yellow-600 hover:text-yellow-900 px-4 py-2 rounded mr-2"
-                                                >
-                                                    Demote from HIGH
-                                                </button>
-                                            )}
-                                        </>
+                        <div className="overflow-x-auto">
+                            <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                    <tr>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                            Patient ID
+                                        </th>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                            Name
+                                        </th>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                            Email
+                                        </th>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className={`${isDarkMode ? 'bg-gray-800 divide-y divide-gray-700' : 'bg-white divide-y divide-gray-200'}`}>
+                                  {Array.isArray(patients) && patients.length > 0 ? (
+                                      filterPatients(patients).map((patient) => {
+                                          // Log the patient object to see its structure
+                                          console.log('Current patient object:', patient);
+                                          
+                                          // Safely get the patient ID
+                                          const patientId = patient?.patient_id || patient?._id;
+                                          
+                                          if (!patientId) {
+                                              console.error('Patient without ID:', patient);
+                                              return null; // Skip rendering this row
+                                          }
+
+                                          return (
+                                              <tr key={patientId} className={`${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'}`}>
+                                                  <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                                                      {patientId}
+                                                  </td>
+                                                  <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                                                      {patient?.fullname || patient?.name || 'No Name'}
+                                                  </td>
+                                                  <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                                                      {patient?.email || 'No Email'}
+                                                  </td>
+                                                  <td className={`px-6 py-4 whitespace-nowrap text-right text-sm font-medium ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                                                      <button
+                                                          onClick={() => {
+                                                              console.log('Delete clicked for patient:', patientId);
+                                                              handleDeletePatient(patientId);
+                                                          }}
+                                                          className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded hover:bg-red-200"
+                                                      >
+                                                          Delete
+                                                      </button>
+                                                  </td>
+                                              </tr>
+                                          );
+                                      })
+                                  ) : (
+                                      <tr>
+                                          <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                                              {filterPatients(patients).length === 0 ? 'No matching patients found' : 'Loading patients...'}
+                                          </td>
+                                      </tr>
+                                  )}
+                              </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {/* Dentist List */}
+                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
+                        <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                                Dentist List
+                            </h3>
+                        </div>
+                        
+                        <div className="overflow-x-auto">
+                            <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                    <tr>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                            Dentist ID
+                                        </th>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                            Name
+                                        </th>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                            Email
+                                        </th>
+                                        
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className={`${isDarkMode ? 'bg-gray-800 divide-y divide-gray-700' : 'bg-white divide-y divide-gray-200'}`}>
+                                    {Array.isArray(dentists) && dentists.length > 0 ? (
+                                        filterDentists(dentists).map((dentist) => (
+                                            <tr key={dentist._id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {dentist.dentist_id}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {dentist.name}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {dentist.email}
+                                                </td>
+                                                
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <button
+                                                        onClick={() => handleDeleteDentist(dentist.dentist_id)}
+                                                        className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                                                {filterDentists(dentists).length === 0 ? 'No matching dentists found' : 'Loading dentists...'}
+                                            </td>
+                                        </tr>
                                     )}
-                                    <button
-                                        onClick={() => handleDeleteAdmin(admin._id)}
-                                        className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
-                                    >
-                                        Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
-                                {filterAdmins(admins).length === 0 ? 'No matching admins found' : 'Loading admins...'}
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    </div>
-
-            {/* Add Admin Modal */}
-           {isModalOpen && (
-      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-        <div className="bg-white p-6 rounded shadow-lg w-96">
-          <h2 className="text-2xl font-bold mb-4 text-black">Add New Admin</h2>
-          <form onSubmit={handleSubmit}>
-            <input
-              type="text"
-              name="fullname"
-              placeholder="Full Name"
-              onChange={handleInputChange}
-              value={newAdminData.fullname}
-              required
-              className="w-full p-2 mb-2 border border-gray-300 rounded bg-white"
-            />
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              onChange={handleInputChange}
-              value={newAdminData.email}
-              required
-              className="w-full p-2 mb-2 border border-gray-300 rounded bg-white"
-            />
-            
-            <div className="mb-4">
-                <label className="block text-black mb-2">Admin Level</label>
-                <select
-                    name="permissionLevel"
-                    onChange={handleInputChange}
-                    value={newAdminData.permissionLevel}
-                    className="w-full p-2 border border-gray-300 rounded bg-white text-black"
-                >
-                    <option value="STANDARD">Standard Admin</option>
-                    <option value="HIGH">High Level Admin</option>
-                </select>
-            </div>
-
-            {newAdminData.permissionLevel === 'STANDARD' && (
-                <div className="mb-4">
-                    <label className="block text-black mb-2">Permissions</label>
-                    {Object.keys(newAdminData.permissions).map(permission => (
-                        <div key={permission} className="flex items-center mb-2">
-                            <input
-                                type="checkbox"
-                                name={permission}
-                                checked={newAdminData.permissions[permission]}
-                                onChange={handlePermissionCheckbox}
-                                className="mr-2"
-                            />
-                            <label className="text-black capitalize">
-                                {permission.replace(/([A-Z])/g, ' $1').trim()}
-                            </label>
+                                </tbody>
+                            </table>
                         </div>
-                    ))}
-                </div>
-            )}
-
-            <div className="flex justify-end space-x-2">
-                <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">
-                    Add Admin
-                </button>
-                <button type="button" onClick={toggleModal} className="bg-gray-300 py-2 px-4 rounded">
-                    Cancel
-                </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    )}
-             {/* Create Dentist Modal */}
-        {showDentistModal && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Add Dentist</h3>
-                {lockMessage && (
-                    <div className="mb-4 text-red-500 text-sm">
-                        {lockMessage}
                     </div>
-                )}
-                <form onSubmit={handleCreateDentist}>
-                  <div className="mb-4">
-                    <input
-                      type="text"
-                      placeholder="Full Name"
-                      className="w-full px-3 py-2 border rounded-md bg-white"
-                      value={dentistFormData.name}
-                      onChange={(e) => setDentistFormData({
-                        ...dentistFormData,
-                        name: e.target.value
-                      })}
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <input
-                      type="email"
-                      placeholder="Email"
-                      className="w-full px-3 py-2 border rounded-md bg-white"
-                      value={dentistFormData.email}
-                      onChange={(e) => setDentistFormData({
-                        ...dentistFormData,
-                        email: e.target.value
-                      })}
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <input
-                      type="password"
-                      placeholder="Password"
-                      className="w-full px-3 py-2 border rounded-md bg-white"
-                      value={dentistFormData.password}
-                      onChange={(e) => setDentistFormData({
-                        ...dentistFormData,
-                        password: e.target.value
-                      })}
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <input
-                      type="tel"
-                      placeholder="Phone Number"
-                      className="w-full px-3 py-2 border rounded-md bg-white"
-                      value={dentistFormData.phoneNumber}
-                      onChange={(e) => setDentistFormData({
-                        ...dentistFormData,
-                        phoneNumber: e.target.value
-                      })}
-                      required
-                    />
-                  </div>
-                  {error && (
-                    <div className="mb-4 text-red-500 text-sm">
-                      {error}
-                    </div>
-                  )}
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowDentistModal(false)}
-                      className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-md"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-                    >
-                      Create
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-        {isPermissionModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white p-6 rounded shadow-lg w-96">
-                <h2 className="text-2xl font-bold mb-4 text-black">
-                    Manage Permissions for {selectedAdmin?.fullname}
-                </h2>
-                <div className="space-y-3">
-                    {Object.entries(permissions).map(([key, value]) => (
-                        <div key={key} className="flex items-center text-black">
-                            <input
-                                type="checkbox"
-                                checked={value}
-                                onChange={() => handlePermissionChange(key)}
-                                className="mr-2"
-                            />
-                            <label className="capitalize">
-                                {key.replace(/([A-Z])/g, ' $1').trim()}
-                            </label>
+                    
+                    {/* Admin List */}
+                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
+                        <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                                Admin List
+                            </h3>
                         </div>
-                    ))}
-                    <div className="flex justify-end space-x-2 mt-4">
-                        <button
-                            onClick={() => setIsPermissionModalOpen(false)}
-                            className="bg-gray-300 text-black py-2 px-4 rounded"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleUpdatePermissions}
-                            className="bg-blue-500 text-white py-2 px-4 rounded"
-                        >
-                            Update Permissions
-                        </button>
+                        
+                        <div className="overflow-x-auto">
+                            <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                    <tr>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                            Admin ID
+                                        </th>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                            Name
+                                        </th>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                            Email
+                                        </th>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className={`${isDarkMode ? 'bg-gray-800 divide-y divide-gray-700' : 'bg-white divide-y divide-gray-200'}`}>
+                                    {Array.isArray(admins) && admins.length > 0 ? (
+                                        filterAdmins(admins).map((admin) => (
+                                            <tr key={admin._id} className={`${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'}`}>
+                                                <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                                                    {admin.admin_id}
+                                                </td>
+                                                <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                                                    {admin.fullname}
+                                                </td>
+                                                <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                                                    {admin.email}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                                    {hasPermission('managePermissions') && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => openPermissionModal(admin)}
+                                                                className="bg-blue-100 text-blue-600 hover:text-blue-900 px-4 py-2 rounded mr-2"
+                                                            >
+                                                                Manage Permissions
+                                                            </button>
+                                                            {admin.permissionLevel !== 'HIGH' && (
+                                                                <button
+                                                                    onClick={() => handlePromoteAdmin(admin._id)}
+                                                                    className="bg-purple-100 text-purple-600 hover:text-purple-900 px-4 py-2 rounded mr-2"
+                                                                >
+                                                                    Promote to HIGH
+                                                                </button>
+                                                            )}
+                                                            {admin.permissionLevel === 'HIGH' && currentAdmin?.permissionLevel === 'HIGH' && (
+                                                                <button
+                                                                    onClick={() => handleDemoteAdmin(admin._id)}
+                                                                    className="bg-yellow-100 text-yellow-600 hover:text-yellow-900 px-4 py-2 rounded mr-2"
+                                                                >
+                                                                    Demote from HIGH
+                                                                </button>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleDeleteAdmin(admin._id)}
+                                                        className="bg-red-100 text-red-600 hover:text-red-900 px-4 py-2 rounded"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                                                {filterAdmins(admins).length === 0 ? 'No matching admins found' : 'Loading admins...'}
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    )}
-
         </div>
     </div>
   );

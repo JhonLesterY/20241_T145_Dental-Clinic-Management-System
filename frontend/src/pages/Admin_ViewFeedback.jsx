@@ -3,8 +3,10 @@ import Logo from '/src/images/Dental_logo.png';
 import bell from '/src/images/bell.png';
 import AdminSideBar from '../components/AdminSideBar';
 import FormCreator from '../components/FormCreator';
+import { useTheme } from '../context/ThemeContext';
 
 const Admin_ViewFeedback = () => {
+  const { isDarkMode } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -245,180 +247,132 @@ const Admin_ViewFeedback = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className={`flex h-screen w-screen overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-[#f0f4f8]'}`}>
       <AdminSideBar isOpen={sidebarOpen} />
       
-      <div className="flex-1 overflow-y-auto">
-        <header className="bg-white shadow-sm">
-          <div className="flex items-center justify-between px-4 py-4">
+      <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'} transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
+        <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center space-x-4">
+              <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+              <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent'}`}>
+                Feedback Management
+              </h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search feedback..."
+                  className="pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
               <button
                 onClick={() => setShowResponses(!showResponses)}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-all duration-300 flex items-center gap-2"
               >
-                {showResponses ? 'Show Dashboard' : 'View Responses'}
+                {showResponses ? (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                    <span>Dashboard</span>
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                    </svg>
+                    <span>View Responses</span>
+                  </>
+                )}
               </button>
-              <button
-                onClick={() => window.open('https://docs.google.com/forms/d/1QMIf2EbuFc0lpQvbqVj9mBDtfJ4mSMItskEKJOLh6UY/edit#responses', '_blank')}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                Open in Google Forms
-              </button>
-              <img src={bell} alt="Notifications" className="h-6" />
+              <div className="relative">
+                <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                  <img src={bell} alt="Notifications" className="h-6 w-6" />
+                  <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">3</span>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         </header>
 
-        {showResponses ? (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4 text-black">Feedback Responses</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white border border-gray-300">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-2 border text-black">Date</th>
-                    <th className="px-4 py-2 border text-black">Patient Email</th>
-                    <th className="px-4 py-2 border text-black">Overall Experience</th>
-                    <th className="px-4 py-2 border text-black">Staff Professionalism</th>
-                    <th className="px-4 py-2 border text-black">Treatment Satisfaction</th>
-                    <th className="px-4 py-2 border text-black">Clinic Cleanliness</th>
-                    <th className="px-4 py-2 border text-black">Rating</th>
-                    <th className="px-4 py-2 border text-black">Comments</th>
-                  </tr>
-                </thead>
-                <tbody>
-                {feedbackData.map((response, index) => (
-                  <tr key={response.responseId || `response-${index}`}>
-                    <td className="px-4 py-2 border text-black">
-                      {response.submittedAt}
-                    </td>
-                    <td className="px-4 py-2 border text-black">
-                      {response.answers['Patient Email']}
-                    </td>
-                    <td className="px-4 py-2 border text-black">
-                      {response.answers['Overall Experience']}
-                    </td>
-                    <td className="px-4 py-2 border text-black">
-                      {response.answers['Staff Professionalism']}
-                    </td>
-                    <td className="px-4 py-2 border text-black">
-                      {response.answers['Treatment Satisfaction']}
-                    </td>
-                    <td className="px-4 py-2 border text-black">
-                      {response.answers['Clinic Cleanliness']}
-                    </td>
-                    <td className="px-4 py-2 border text-black">
-                      {response.answers['Rating']}
-                    </td>
-                    <td className="px-4 py-2 border text-black">
-                      {response.answers['Comments']}
-                    </td>
-                  </tr>
-                ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Responses</h3>
-                <p className="text-3xl font-bold text-blue-600">{stats.totalResponses}</p>
+        <main className="flex-1 p-6 overflow-y-auto">
+          {showResponses ? (
+            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-100'} h-full`}>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Feedback Responses</h2>
+                <button onClick={() => window.open('https://docs.google.com/forms/d/1QMIf2EbuFc0lpQvbqVj9mBDtfJ4mSMItskEKJOLh6UY/edit#responses', '_blank')}
+                  className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                    <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                  </svg>
+                  Open in Google Forms
+                </button>
               </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">Average Rating</h3>
-                <p className="text-3xl font-bold text-green-600">{stats.averageRating}/4.0</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">Satisfaction Rate</h3>
-                <p className="text-3xl font-bold text-purple-600">{stats.satisfactionRate}%</p>
-              </div>
-            </div>
-            
-            {/* Feedback List */}
-            <div className="p-6">
-              <div className="bg-white rounded-lg shadow-md">
-                <div className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">Recent Feedback</h2>
-                  <div className="space-y-4">
-                    {filteredFeedback.map((feedback, index) => (
-                      <div key={feedback.responseId || `feedback-${index}`}>
-                        <div className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                          <div className="flex justify-between items-start">
-                            <div className="space-y-2">
-                              <div className="flex space-x-4">
-                                <span className="text-sm text-gray-600">{feedback.date}</span>
-                                {feedback.reviewed && (
-                                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                                    Reviewed
-                                  </span>
-                                )}
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-700">Overall Experience</p>
-                                  <p className={`text-gray-800 ${
-                                    feedback.overallExperience === 'Excellent' ? 'text-green-600' :
-                                    feedback.overallExperience === 'Good' ? 'text-blue-600' :
-                                    feedback.overallExperience === 'Fair' ? 'text-yellow-600' :
-                                    feedback.overallExperience === 'Poor' ? 'text-red-600' : ''
-                                  }`}>{feedback.overallExperience}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-700">Staff Professionalism</p>
-                                  <p className={`text-gray-800 ${
-                                    feedback.staffProfessionalism === 'Excellent' ? 'text-green-600' :
-                                    feedback.staffProfessionalism === 'Good' ? 'text-blue-600' :
-                                    feedback.staffProfessionalism === 'Fair' ? 'text-yellow-600' :
-                                    feedback.staffProfessionalism === 'Poor' ? 'text-red-600' : ''
-                                  }`}>{feedback.staffProfessionalism}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-700">Treatment Satisfaction</p>
-                                  <p className={`text-gray-800 ${
-                                    feedback.treatmentSatisfaction === 'Very Satisfied' ? 'text-green-600' :
-                                    feedback.treatmentSatisfaction === 'Satisfied' ? 'text-blue-600' :
-                                    feedback.treatmentSatisfaction === 'Neutral' ? 'text-yellow-600' :
-                                    feedback.treatmentSatisfaction === 'Dissatisfied' ? 'text-red-600' : ''
-                                  }`}>{feedback.treatmentSatisfaction}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-700">Clinic Cleanliness</p>
-                                  <p className={`text-gray-800 ${
-                                    feedback.clinicCleanliness === 'Excellent' ? 'text-green-600' :
-                                    feedback.clinicCleanliness === 'Good' ? 'text-blue-600' :
-                                    feedback.clinicCleanliness === 'Fair' ? 'text-yellow-600' :
-                                    feedback.clinicCleanliness === 'Poor' ? 'text-red-600' : ''
-                                  }`}>{feedback.clinicCleanliness}</p>
-                                </div>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-700">Additional Comments</p>
-                                <p className="text-gray-800 mt-1">{feedback.comments}</p>
-                              </div>
-                            </div>
-                            <div className="flex space-x-2">
-                              {!feedback.reviewed && (
-                                <button
-                                  onClick={() => handleMarkReviewed(feedback.id)}
-                                  className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600"
-                                >
-                                  Mark Reviewed
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} border-b ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                      {["Date", "Patient Email", "Overall Experience", "Staff Professionalism", 
+                        "Treatment Satisfaction", "Clinic Cleanliness", "Rating", "Comments"].map((header) => (
+                        <th key={header} className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                    {filteredFeedback.map((response, index) => (
+                      <tr key={response.responseId || `response-${index}`}
+                          className={`${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-blue-50/50'} transition-colors`}>
+                        {Object.values(response.answers).map((value, i) => (
+                          <td key={i} className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-nowrap`}>
+                            {value}
+                          </td>
+                        ))}
+                      </tr>
                     ))}
-                  </div>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6 h-full">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white relative overflow-hidden group hover:shadow-lg transition-shadow">
+                  <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                  <h3 className="text-lg font-semibold">Total Responses</h3>
+                  <p className="text-4xl font-bold mt-2">{stats.totalResponses}</p>
+                  <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-blue-400/20 rounded-full"></div>
+                </div>
+                <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white relative overflow-hidden group hover:shadow-lg transition-shadow">
+                  <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                  <h3 className="text-lg font-semibold">Average Rating</h3>
+                  <p className="text-4xl font-bold mt-2">{stats.averageRating}/4.0</p>
+                  <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-emerald-400/20 rounded-full"></div>
+                </div>
+                <div className="bg-gradient-to-br from-violet-500 to-violet-600 rounded-2xl p-6 text-white relative overflow-hidden group hover:shadow-lg transition-shadow">
+                  <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                  <h3 className="text-lg font-semibold">Satisfaction Rate</h3>
+                  <p className="text-4xl font-bold mt-2">{stats.satisfactionRate}%</p>
+                  <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-violet-400/20 rounded-full"></div>
                 </div>
               </div>
             </div>
-          </>
-        )}
+          )}
+        </main>
       </div>
     </div>
   );

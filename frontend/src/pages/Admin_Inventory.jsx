@@ -4,8 +4,10 @@ import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import AdminSideBar from "../components/AdminSideBar";
 import { FaEdit } from 'react-icons/fa';
+import { useTheme } from '../context/ThemeContext';
 
 const Admin_Inventory = () => {
+    const { isDarkMode } = useTheme();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [currentEditor, setCurrentEditor] = useState(null);
@@ -366,26 +368,28 @@ const Admin_Inventory = () => {
     };
 
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
             <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
             <div className={`flex-1 flex flex-col transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
                 {/* Header */}
-                <header className="bg-white shadow-md">
+                <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
                     <div className="flex items-center justify-between px-6 py-4">
                         <div className="flex items-center space-x-4">
                             <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
-                            <h1 className="text-2xl font-semibold text-[#003367]">Inventory</h1>
+                            <h1 className={`text-2xl font-semibold ${isDarkMode ? 'text-white' : 'text-[#003367]'}`}>
+                                Inventory
+                            </h1>
                         </div>
 
                         <div className="flex items-center space-x-4">
-                        <button
+                            <button
                                 onClick={handleAddButtonClick}
                                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                             >
                                 Add New Item
                             </button>
-                            <button className="p-2 rounded-full hover:bg-gray-100 transition">
+                            <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition`}>
                                 <img className="w-6 h-6" src={bell} alt="Notifications" />
                             </button>
                         </div>
@@ -397,17 +401,19 @@ const Admin_Inventory = () => {
                     {/* Inventory Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                         {inventoryItems.map((item) => (
-                            <div key={item._id} className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+                            <div key={item._id} className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow`}>
                                 <div className="flex justify-between items-start mb-2">
-                                    <h3 className="text-lg font-semibold text-gray-800">{item.itemName}</h3>
+                                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                        {item.itemName}
+                                    </h3>
                                     <button
                                         onClick={() => handleEditButtonClick(item)}
-                                        className="text-blue-500 hover:text-blue-700 bg-green-100 p-2 rounded-md"
+                                        className={`${isDarkMode ? 'bg-gray-700 text-blue-400' : 'text-blue-500 bg-green-100'} hover:text-blue-700 p-2 rounded-md`}
                                     >
                                         <FaEdit />
                                     </button>
                                 </div>
-                                <div className="space-y-2 text-sm text-gray-600">
+                                <div className={`space-y-2 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                                     <p>Quantity: {item.quantity} {item.unit}</p>
                                     <p>Price: ₱{item.price.toFixed(2)}</p>
                                     {item.expiryDate && (

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import AdminSideBar from '../components/AdminSideBar';
 import { format } from 'date-fns';
+import { useTheme } from '../context/ThemeContext';
 
 const ActivityLogs = () => {
+    const { isDarkMode } = useTheme();
+    const [sidebarOpen, setSidebarOpen] = useState(true);
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -128,91 +131,98 @@ const ActivityLogs = () => {
     if (error) return <div className="text-red-500">Error: {error}</div>;
 
     return (
-        <div className="flex">
-            <AdminSideBar />
-            <div className="flex-1 p-8 ml-64">
-                <h1 className="text-2xl font-bold mb-6">Activity Logs</h1>
+        <div className={`flex h-screen w-screen overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-[#f0f4f8]'}`}>
+            <AdminSideBar isOpen={sidebarOpen} />
+            
+            <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'} transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
+                <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                    <div className="flex items-center justify-between px-6 py-4">
+                        <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Activity Logs</h1>
+                    </div>
+                </header>
 
-                {/* Filters and Search */}
-                <div className="mb-6 flex gap-4 flex-wrap">
-                    <select 
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                        className="p-2 border rounded"
-                    >
-                        <option value="all">All Roles</option>
-                        <option value="admin">Admin</option>
-                        <option value="dentist">Dentist</option>
-                        <option value="patient">Patient</option>
-                    </select>
+                <main className="flex-1 p-6 overflow-y-auto">
+                    {/* Filters and Search */}
+                    <div className={`mb-6 flex gap-4 flex-wrap ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                        <select 
+                            value={filter}
+                            onChange={(e) => setFilter(e.target.value)}
+                            className="p-2 border rounded bg-white text-gray-800"
+                        >
+                            <option value="all">All Roles</option>
+                            <option value="admin">Admin</option>
+                            <option value="dentist">Dentist</option>
+                            <option value="patient">Patient</option>
+                        </select>
 
-                    <input
-                        type="text"
-                        placeholder="Search logs..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="p-2 border rounded"
-                    />
+                        <input
+                            type="text"
+                            placeholder="Search logs..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="p-2 border rounded bg-white"
+                        />
 
-                    <input
-                        type="date"
-                        value={dateRange.start}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                        className="p-2 border rounded"
-                    />
+                        <input
+                            type="date"
+                            value={dateRange.start}
+                            onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                            className="p-2 border rounded bg-white"
+                        />
 
-                    <input
-                        type="date"
-                        value={dateRange.end}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                        className="p-2 border rounded"
-                    />
-                </div>
+                        <input
+                            type="date"
+                            value={dateRange.end}
+                            onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                            className="p-2 border rounded bg-white"
+                        />
+                    </div>
 
-                {/* Logs Table */}
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <table className="min-w-full">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Timestamp
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    User Role
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Action
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Details
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredLogs.map((log, index) => (
-                                <tr key={index} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm:ss')}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                            ${log.userRole === 'admin' ? 'bg-purple-100 text-purple-800' : 
-                                              log.userRole === 'dentist' ? 'bg-blue-100 text-blue-800' : 
-                                              'bg-green-100 text-green-800'}`}>
-                                            {log.userRole}
-                                        </span>
-                                    </td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${getActionColor(log.action)}`}>
-                                        {getActionDisplay(log.action)}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                        {formatDetails(log.details)}
-                                    </td>
+                    {/* Logs Table */}
+                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
+                        <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                            <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                <tr>
+                                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                        Timestamp
+                                    </th>
+                                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                        User Role
+                                    </th>
+                                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                        Action
+                                    </th>
+                                    <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                                        Details
+                                    </th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className={`${isDarkMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
+                                {filteredLogs.map((log, index) => (
+                                    <tr key={index} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                                            {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm:ss')}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                ${log.userRole === 'admin' ? 'bg-purple-100 text-purple-800' : 
+                                                  log.userRole === 'dentist' ? 'bg-blue-100 text-blue-800' : 
+                                                  'bg-green-100 text-green-800'}`}>
+                                                {log.userRole}
+                                            </span>
+                                        </td>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${getActionColor(log.action)}`}>
+                                            {getActionDisplay(log.action)}
+                                        </td>
+                                        <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                                            {formatDetails(log.details)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </main>
             </div>
         </div>
     );

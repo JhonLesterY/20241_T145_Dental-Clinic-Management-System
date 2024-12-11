@@ -2,8 +2,10 @@ import { useState } from "react";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import AdminSideBar from "../components/AdminSideBar"; // Assuming you have an AdminSideBar component
+import { useTheme } from '../context/ThemeContext';
 
 const Admin_Report = () => {
+  const { isDarkMode } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [reportType, setReportType] = useState('monthly');
   const [year, setYear] = useState(new Date().getFullYear());
@@ -35,18 +37,17 @@ const Admin_Report = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
+    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
+      <div className={`flex-1 flex flex-col transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
         {/* Header */}
-        <header className="bg-white shadow-md">
+        <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center space-x-4">
               <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
-              <h1 className="text-2xl font-semibold text-[#003367]">Reports</h1>
+              <h1 className={`text-2xl font-semibold ${isDarkMode ? 'text-white' : 'text-[#003367]'}`}>Reports</h1>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -55,11 +56,10 @@ const Admin_Report = () => {
                 <input
                   type="text"
                   placeholder="Search"
-                  className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`pl-10 pr-4 py-2 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300 text-gray-900'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 />
-                {/* Search Icon (Magnifying Glass) */}
                 <svg
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500"
+                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -75,7 +75,7 @@ const Admin_Report = () => {
               </div>
 
               <div className="flex items-center space-x-4">
-                <button className="p-2 rounded-full hover:bg-gray-100 transition">
+                <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition`}>
                   <img className="w-6 h-6" src={bell} alt="Notifications" />
                 </button>
               </div>
@@ -87,13 +87,13 @@ const Admin_Report = () => {
 
         {/* Main Report Content */}
         <div className="p-6">
-          <div className="mb-6 bg-white rounded-lg shadow-md p-4 ">
-            <h2 className="text-xl font-semibold mb-4 text-black">Generate Report</h2>
-            <div className="flex gap-4 mb-4 text-black">
+          <div className={`mb-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-4`}>
+            <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>Generate Report</h2>
+            <div className={`flex gap-4 mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>
               <select 
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value)}
-                className="border rounded p-2 bg-white"
+                className={`border rounded p-2 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-black'}`}
               >
                 <option value="monthly">Monthly</option>
                 <option value="annual">Annual</option>
@@ -101,7 +101,7 @@ const Admin_Report = () => {
               <select 
                 value={year}
                 onChange={(e) => setYear(parseInt(e.target.value))}
-                className="border rounded p-2 bg-white"
+                className={`border rounded p-2 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-black'}`}
               >
                 {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
                   .map(year => (
@@ -113,7 +113,7 @@ const Admin_Report = () => {
                 <select 
                   value={month}
                   onChange={(e) => setMonth(parseInt(e.target.value))}
-                  className="border rounded p-2 bg-white"
+                  className={`border rounded p-2 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-black'}`}
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1)
                     .map(month => (
@@ -134,50 +134,41 @@ const Admin_Report = () => {
           </div>
 
           {report && (
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <h3 className="text-lg font-semibold mb-4 text-black">Report Summary</h3>
-              <div className="grid grid-cols-2 gap-4 mb-6 text-black">
-                <div>
-                  <p>Total Appointments: {report.summary.totalAppointments}</p>
-                  <p>Completed: {report.summary.completedAppointments}</p>
-                  <p>Cancelled: {report.summary.cancelledAppointments}</p>
-                  <p>Pending: {report.summary.pendingAppointments}</p>
-                  <p>Completion Rate: {report.summary.completionRate}</p>
-                </div>
-              </div>
-
-              <h4 className="font-semibold mb-2 text-black">Appointments Detail</h4>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead>
+            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
+              <div className="p-4">
+                <h3 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Report Summary
+                </h3>
+                <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                  <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                     <tr>
-                      <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                         Date
                       </th>
-                      <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                         Patient
                       </th>
-                      <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                         Dentist
                       </th>
-                      <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                         Status
                       </th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className={`${isDarkMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'}`}>
                     {report.appointments.map((appointment, index) => (
-                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <tr key={index} className={`${isDarkMode ? index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-700' : index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                           {new Date(appointment.date).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                           {appointment.patientName}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                           {appointment.dentistName}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                           {appointment.status}
                         </td>
                       </tr>

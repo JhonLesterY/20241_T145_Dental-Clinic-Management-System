@@ -36,33 +36,35 @@ import Dentist_Report from "./pages/Dentist_Report";
 import User_Report from "./pages/User_Report";
 import Admin_Report from "./pages/Admin_Report";
 import ActivityLogs from "./pages/ActivityLogs";
+import { ThemeProvider } from './context/ThemeContext';
 
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-    <>  
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Landing_Page />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/about-us" element={<About_us />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
-        
-        {/* Protected Routes for Users */}
-        <Route element={<ProtectedRoutes accountType="patient" />}>
-          <Route path="/dashboard" element={<User_Dashboard />} />
-          <Route path="/appointment" element={<User_Appointment />} />
-          <Route path="/feedback" element={<Feedback />} />
-          <Route path="/upload-requirements" element={<User_Upload_Requirements />} />
-          <Route path="/appointment-confirmation" element={<Appointment_Confirmation />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/user-sidebar" element={<UserSideBar />} />
-          <Route path="/user-reports" element={<User_Report />} />
-        </Route>
+    <ThemeProvider>
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+        <>  
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Landing_Page />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/about-us" element={<About_us />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
+            
+            {/* Protected Routes for Users */}
+            <Route element={<ProtectedRoutes accountType="patient" />}>
+              <Route path="/dashboard" element={<User_Dashboard />} />
+              <Route path="/appointment" element={<User_Appointment />} />
+              <Route path="/feedback" element={<Feedback />} />
+              <Route path="/upload-requirements" element={<User_Upload_Requirements />} />
+              <Route path="/appointment-confirmation" element={<Appointment_Confirmation />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/user-sidebar" element={<UserSideBar />} />
+              <Route path="/user-reports" element={<User_Report />} />
+            </Route>
 
         {/* Protected Routes for Admins */}
         <Route element={<ProtectedRoutes accountType="admin" />}>
@@ -91,9 +93,12 @@ function App() {
           <Route path="/dentist-sidebar" element={<DentistSideBar />} />
           <Route path="/reports" element={<Dentist_Report />} />
         </Route>
+
+       
       </Routes>
     </>
     </GoogleOAuthProvider>
+    </ThemeProvider>
   );
 }
 export default App;
