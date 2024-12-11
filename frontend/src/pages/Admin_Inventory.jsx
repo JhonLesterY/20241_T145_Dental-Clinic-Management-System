@@ -308,20 +308,8 @@ const Admin_Inventory = () => {
         try {
             const token = sessionStorage.getItem('token');
             
-            // Acquire the lock first
-            const lockResponse = await fetch('http://localhost:5000/admin/inventory/acquire-lock', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            const lockStatus = await lockResponse.json();
-            
-            if (lockStatus.locked) {
-                alert('Another admin is currently modifying inventory. Please try again later.');
-                return;
-            }
+            // Log the item being updated
+            console.log('Updating item:', editingItem);
 
             const itemData = {
                 ...editingItem,
@@ -345,28 +333,17 @@ const Admin_Inventory = () => {
                 fetchInventory();
             } else {
                 const errorData = await response.json();
+                console.error('Update error:', errorData);
                 throw new Error(errorData.message || 'Failed to update item');
             }
         } catch (error) {
             console.error('Error updating item:', error);
             alert(error.message);
-        } finally {
-            try {
-                const token = sessionStorage.getItem('token');
-                await fetch('http://localhost:5000/admin/inventory/release-lock', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-            } catch (error) {
-                console.error('Error releasing lock:', error);
-            }
         }
     };
 
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className="flex h-screen w-screen bg-gray-100">
             <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
             <div className={`flex-1 flex flex-col transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
