@@ -5,8 +5,9 @@ const Appointment = require('../models/Appointment');
 const Inventory = require('../models/Inventory');
 const bcrypt = require('bcryptjs');
 const { logActivity, ACTIONS } = require('../services/activitylogServices');
-const { sendWelcomeEmail } = require('../emailService'); 
+const { sendWelcomeEmail, sendAdminVerificationEmail } = require('../emailService'); 
 const lockService = require('../services/lockService');
+const crypto = require('crypto');
 
 const secretKey = process.env.JWT_SECRET_KEY; 
 
@@ -17,8 +18,8 @@ async function createAdmin(req, res) {
             return res.status(400).json({ message: 'Admin with this email already exists.' });
         }
 
-        const generatedPassword = Math.random().toString(36).slice(-8);
-        const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        console.log('Generated verification token:', verificationToken);
 
         const lastAdmin = await Admin.findOne().sort({ admin_id: -1 });
         const newAdminId = lastAdmin ? lastAdmin.admin_id + 1 : 1;
@@ -27,35 +28,40 @@ async function createAdmin(req, res) {
             admin_id: newAdminId,
             fullname: req.body.fullname,
             email: req.body.email,
-            password: hashedPassword,
+            isGoogleUser: req.body.isGoogleUser || true,
+            verificationToken: verificationToken,
+            verificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
             permissionLevel: req.body.permissionLevel,
-            permissions: req.body.permissionLevel === 'HIGH' ? {
-                manageUsers: true,
-                manageAppointments: true,
-                viewReports: true,
-                managePermissions: true,
-                manageInventory: true,
-                manageCalendar: true
-            } : req.body.permissions,
-            role: 'admin',
+            permissions: req.body.permissions,
+            isVerified: false
         });
 
-        await newAdmin.save();
-
-        await sendWelcomeEmail({
-            email: req.body.email,
-            name: req.body.fullname,
-            temporaryPassword: generatedPassword
+        const savedAdmin = await newAdmin.save();
+        console.log('Saved admin:', {
+            id: savedAdmin._id,
+            email: savedAdmin.email,
+            verificationToken: savedAdmin.verificationToken
         });
 
-        await logActivity(req.user.id, req.user.role, 'createAdmin', { adminId: newAdmin._id });
+        if (req.body.sendVerificationEmail) {
+            await sendAdminVerificationEmail({
+                email: savedAdmin.email,
+                name: savedAdmin.fullname,
+                token: verificationToken,
+                role: 'admin'
+            });
+        }
 
         res.status(201).json({ 
-            message: 'Admin created successfully. Login credentials have been sent to their email.',
-            admin: { ...newAdmin.toObject(), password: undefined }
+            message: 'Admin created successfully. Verification email sent.',
+            admin: {
+                admin_id: newAdmin.admin_id,
+                email: newAdmin.email,
+                fullname: newAdmin.fullname
+            }
         });
     } catch (error) {
-        console.error('Failed to create admin:', error);
+        console.error('Error creating admin:', error);
         res.status(500).json({ message: 'Failed to create admin: ' + error.message });
     }
 }
@@ -314,27 +320,6 @@ async function sendReminders(req, res) {
         return res.status(200).json({ message: 'Reminders sent successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Failed to send reminders: ' + error.message });
-    }
-}
-
-async function updateCalendar(req, res) {
-    try {
-        const calendarData = req.body;
-        // Assuming there is a Calendar model
-        const calendar = new Calendar(calendarData);
-        await calendar.save();
-
-        // Log activity
-        await logActivity({
-            userId: req.user._id,
-            userRole: 'admin',
-            action: 'updateCalendar',
-            details: { calendarData }
-        });
-
-        return res.status(200).json(calendar);
-    } catch (error) {
-        res.status(500).json({ message: 'Failed to update calendar: ' + error.message });
     }
 }
 
@@ -729,7 +714,6 @@ module.exports = {
     deleteDentist,
     getAllAppointments,
     sendReminders,
-    updateCalendar,
     getReports,
     getInventory,
     addInventoryItem,

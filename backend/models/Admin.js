@@ -17,9 +17,18 @@ const adminSchema = new Schema({
         required: true,
         unique: true
     },
-    password: {
+    googleId: {
         type: String,
-        required: true
+    },
+    isGoogleUser: {
+        type: Boolean,
+        default: true
+    },
+    verificationToken: String,
+    verificationExpiry: Date,
+    isVerified: {
+        type: Boolean,
+        default: false
     },
     phoneNumber: {
         type: String
@@ -40,7 +49,7 @@ const adminSchema = new Schema({
     },
     hasChangedPassword: {
         type: Boolean,
-        default: false
+        default: true
     },
     hasLocalPassword: {
         type: Boolean,
@@ -52,7 +61,7 @@ const adminSchema = new Schema({
     },
     permissionLevel: {
         type: String,
-        enum: ['HIGH', 'STANDARD'],
+        enum: ['STANDARD', 'HIGH'],
         default: 'STANDARD'
     },
     canManagePermissions: {
@@ -66,7 +75,8 @@ const adminSchema = new Schema({
         managePermissions: { type: Boolean, default: false },
         manageInventory: { type: Boolean, default: false },
         manageCalendar: { type: Boolean, default: false }
-    }
+    },
+    role: { type: String, default: 'admin' }
 }, { timestamps: true });
 
 // Middleware to set the `admin_id` before saving a new admin

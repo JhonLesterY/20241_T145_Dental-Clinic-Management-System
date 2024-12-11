@@ -27,6 +27,51 @@ const formatDate = (date) => {
   }).format(date);
 };
 
+const UnavailableModal = ({ setShowUnavailableModal, navigate }) => (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-lg p-6 max-w-sm mx-auto">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Clinic Unavailable</h3>
+      <p className="text-gray-600 mb-6">
+        We apologize, but the clinic is currently unavailable for appointments. Please check again another time.
+      </p>
+      <div className="flex justify-end">
+        <button
+          onClick={() => {
+            setShowUnavailableModal(false);
+            navigate('/dashboard');
+          }}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Return to Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+const BlockedDateModal = ({ showBlockedModal, setShowBlockedModal, blockedDate, setCurrentDate }) => (
+  <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${showBlockedModal ? '' : 'hidden'}`}>
+    <div className="bg-white rounded-lg p-6 max-w-sm mx-auto">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Clinic Unavailable</h3>
+      <p className="text-gray-600 mb-6">
+        We apologize, but the clinic will be unavailable on {blockedDate ? new Date(blockedDate).toLocaleDateString() : ''}. 
+        Please select a different date for your appointment.
+      </p>
+      <div className="flex justify-end">
+        <button
+          onClick={() => {
+            setShowBlockedModal(false);
+            setCurrentDate(new Date());
+          }}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 const User_Appointment = () => {
   const navigate = useNavigate();
   const [isProfileComplete, setIsProfileComplete] = useState(false);
@@ -36,10 +81,50 @@ const User_Appointment = () => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDateBlocked, setIsDateBlocked] = useState(false);
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
 
   useEffect(() => {
-    checkProfileCompletion();
-  }, []); 
+    const checkCurrentDate = async () => {
+      try {
+        setIsLoading(true);
+        const currentDate = new Date();
+        const formattedDate = currentDate.toISOString().split('T')[0];
+
+        const response = await fetch(`http://localhost:5000/admin/calendar/blocked-dates/${formattedDate}`, {
+          headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to check date availability');
+        }
+
+        const { isBlocked } = await response.json();
+        
+        // Reset the state based on current check
+        setIsDateBlocked(isBlocked);
+        if (isBlocked) {
+          setShowUnavailableModal(true);
+          return;
+        } else {
+          setShowUnavailableModal(false);
+        }
+        
+        // If not blocked, check profile completion
+        if (!isBlocked) {
+          await checkProfileCompletion();
+        }
+      } catch (error) {
+        console.error('Error checking date:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkCurrentDate();
+  }, []); // Empty dependency array means this runs once when component mounts
 
   useEffect(() => {
     fetchAvailableSlots(currentDate);
@@ -103,43 +188,54 @@ const User_Appointment = () => {
   const fetchAvailableSlots = async (date) => {
     try {
       const formattedDate = date.toISOString().split('T')[0];
-      console.log('Fetching slots for date:', formattedDate);
       
-      const response = await fetch(`http://localhost:5000/appointments/available?date=${formattedDate}`, {
+      const blockedResponse = await fetch(`http://localhost:5000/admin/calendar/blocked-dates/${formattedDate}`, {
         headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         }
       });
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch slots: ${response.status}`);
+      const { isBlocked } = await blockedResponse.json();
+      
+      // Reset the state based on current check
+      setIsDateBlocked(isBlocked);
+      if (isBlocked) {
+        setShowUnavailableModal(true);
+        return;
+      } else {
+        setShowUnavailableModal(false);
       }
-  
-      const data = await response.json();
-      console.log('Received slots:', data);
       
-      // Transform the data to include remaining slots
-      const slotsWithAvailability = TIME_SLOTS.map(slot => {
-        const slotData = data.find(s => s.id === slot.id) || {};
-        const bookedCount = slotData.bookedCount || 0;
-        const remainingSlots = slot.maxSlots - bookedCount;
-        return {
-          ...slot,
-          available: remainingSlots > 0,
-          remainingSlots: remainingSlots
-        };
-      });
-      
-      setAvailableSlots(slotsWithAvailability);
+      // Only fetch slots if date is not blocked
+      if (!isBlocked) {
+        const response = await fetch(`http://localhost:5000/appointments/available?date=${formattedDate}`, {
+          headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch slots: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const slotsWithAvailability = TIME_SLOTS.map(slot => {
+          const slotData = data.find(s => s.id === slot.id) || {};
+          const bookedCount = slotData.bookedCount || 0;
+          const remainingSlots = slot.maxSlots - bookedCount;
+          return {
+            ...slot,
+            available: remainingSlots > 0,
+            remainingSlots: remainingSlots
+          };
+        });
+        
+        setAvailableSlots(slotsWithAvailability);
+      }
     } catch (error) {
       console.error('Error fetching slots:', error);
-      // Fallback to default slots with max availability
-      setAvailableSlots(TIME_SLOTS.map(slot => ({
-        ...slot,
-        available: true,
-        remainingSlots: slot.maxSlots
-      })));
+      setAvailableSlots([]);
     }
   };
   
@@ -206,6 +302,20 @@ const User_Appointment = () => {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <div className="text-blue-600 text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (isDateBlocked || showUnavailableModal) {
+    return (
+      <div className="flex h-screen bg-gray-100">
+        <UserSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
+        <div className="flex-1 flex items-center justify-center">
+          <UnavailableModal 
+            setShowUnavailableModal={setShowUnavailableModal} 
+            navigate={navigate} 
+          />
+        </div>
       </div>
     );
   }

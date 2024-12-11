@@ -18,7 +18,6 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 const AdminCalendar = () => {
-    const { accessToken, googleLogin } = useAuth();
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
     const [profileImage, setProfileImage] = useState(null);
@@ -38,73 +37,69 @@ const AdminCalendar = () => {
     const [editingEvent, setEditingEvent] = useState(null);
     const [showEditForm, setShowEditForm] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [notification, setNotification] = useState({ show: false, message: '', type: 'error' });
+    const [blockedDates, setBlockedDates] = useState([]);
+    const [isDateBlocked, setIsDateBlocked] = useState(false);
+
+    const showNotification = (message, type = 'error') => {
+        setNotification({ show: true, message, type });
+        setTimeout(() => setNotification({ show: false, message: '', type: 'error' }), 5000);
+    };
     const { isDarkMode } = useTheme();
 
     useEffect(() => {
         const loadCalendarData = async () => {
-            if (!accessToken) {
-                setIsLoading(false);
-                return;
-            }
-
             try {
                 setIsLoading(true);
                 setError(null);
 
-                const timeMin = new Date().toISOString();
-                const response = await fetch(
-                    `https://www.googleapis.com/calendar/v3/calendars/primary/events`,
-                    {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${accessToken}`,
-                            'Content-Type': 'application/json',
-                        },
-                        params: {
-                            timeMin: timeMin,
-                            maxResults: 10,
-                            singleEvents: true,
-                            orderBy: 'startTime'
-                        }
+                const response = await fetch('http://localhost:5000/admin/calendar/events', {
+                    headers: {
+                        'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+                        'Content-Type': 'application/json',
                     }
-                );
+                });
 
                 if (!response.ok) {
-                    if (response.status === 401) {
-                        // Token expired, trigger new login
-                        console.log('Token expired, triggering new login');
-                        localStorage.removeItem('googleToken');
-                        googleLogin();
-                        return;
-                    }
-                    throw new Error('Failed to fetch calendar events');
+                    const errorData = await response.json();
+                    throw new Error(`Error loading calendar events: ${errorData.message}`);
                 }
 
                 const data = await response.json();
-                console.log('Calendar data received:', data);
-
-                if (data.items) {
-                    setEvents(data.items);
-                }
+                setEvents(data.items || []);
 
             } catch (error) {
                 console.error('Error loading events:', error);
                 setError(error.message);
-                if (error.message.includes('authentication')) {
-                    localStorage.removeItem('googleToken');
-                    googleLogin();
-                }
             } finally {
                 setIsLoading(false);
             }
         };
 
-        if (accessToken) {
-            loadCalendarData();
-        } else {
-            googleLogin();
-        }
-    }, [accessToken, googleLogin]);
+        loadCalendarData();
+    }, []);
+
+    useEffect(() => {
+        const fetchBlockedDates = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/admin/calendar/blocked-dates', {
+                    headers: {
+                        'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to fetch blocked dates');
+                const dates = await response.json();
+                // Ensure we're working with an array of date strings
+                const formattedDates = dates.map(date => new Date(date).toISOString().split('T')[0]);
+                setBlockedDates(formattedDates || []);
+            } catch (error) {
+                console.error('Error fetching blocked dates:', error);
+                showNotification('Error fetching blocked dates: ' + error.message);
+                setBlockedDates([]); // Ensure we always have an array
+            }
+        };
+        fetchBlockedDates();
+    }, []);
 
     if (isLoading) {
         return (
@@ -134,45 +129,27 @@ const AdminCalendar = () => {
         );
     }
 
-    const fetchEvents = async () => {
-        try {
-            const response = await fetch('http://localhost:5000/api/calendar/events', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to fetch events');
-            }
-            
-            const data = await response.json();
-            setEvents(data);
-        } catch (error) {
-            console.error('Error fetching events:', error);
-            setError('Failed to load calendar events');
-        }
-    };
-    
     const handleViewEvents = async (date) => {
         try {
-          // Format the date for comparison
-          const formattedDate = date.toISOString().split('T')[0];
-          
-          // Filter events for the selected date
-          const dateEvents = events.filter(event => {
-            const eventDate = new Date(event.start.dateTime || event.start.date)
-              .toISOString().split('T')[0];
-            return eventDate === formattedDate;
-          });
-      
-          setSelectedDateEvents(dateEvents);
-          setShowEventsModal(true);
+            // Create a new date object without timezone adjustment
+            const localDate = new Date(date);
+            localDate.setMinutes(localDate.getMinutes() + localDate.getTimezoneOffset());
+            localDate.setHours(0, 0, 0, 0);
+            
+            const dateEvents = events.filter(event => {
+                const eventDate = new Date(event.start.dateTime || event.start.date);
+                const localEventDate = new Date(eventDate);
+                localEventDate.setHours(0, 0, 0, 0);
+                return localEventDate.getTime() === localDate.getTime();
+            });
+        
+            setSelectedDateEvents(dateEvents);
+            setShowEventsModal(true);
         } catch (error) {
-          console.error('Error fetching events:', error);
-          setError('Failed to fetch events for this date');
+            console.error('Error fetching events:', error);
+            showNotification(`Error fetching calendar events: ${error.message}`);
         }
-      };
+    };
 
     const handleShowEventForm = () => setShowEventForm(true);
 
@@ -181,78 +158,63 @@ const AdminCalendar = () => {
         setNewEvent((prevEvent) => ({ ...prevEvent, [name]: value }));
     };
 
-    const handleAddEvent = async () => {
-        if (!accessToken) {
-            setError('Not logged in to Google Calendar. Please log in first.');
-            googleLogin();
-            return;
-        }
-    
-        const { summary, description, date, startTime, endTime } = newEvent;
-        const startDateTime = new Date(`${date}T${startTime}`);
-        const endDateTime = new Date(`${date}T${endTime}`);
-    
+    const handleAddEvent = async (e) => {
+        e.preventDefault();
         try {
-            const response = await fetch(
-                'https://www.googleapis.com/calendar/v3/calendars/primary/events',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        summary,
-                        description,
-                        start: {
-                            dateTime: startDateTime.toISOString(),
-                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                        },
-                        end: {
-                            dateTime: endDateTime.toISOString(),
-                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                        }
-                    })
-                }
-            );
-    
+            const { summary, description, date, startTime, endTime } = newEvent;
+            const startDateTime = new Date(`${date}T${startTime}`);
+            const endDateTime = new Date(`${date}T${endTime}`);
+
+            const response = await fetch('http://localhost:5000/admin/calendar/events', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    summary,
+                    description,
+                    start: startDateTime.toISOString(),
+                    end: endDateTime.toISOString()
+                })
+            });
+
             if (!response.ok) {
-                throw new Error('Failed to add event to calendar');
+                const errorData = await response.json();
+                throw new Error(errorData.message);
             }
-    
+
             const addedEvent = await response.json();
             setEvents(prevEvents => [...prevEvents, addedEvent]);
             setShowEventForm(false);
-            setError(null);
+            setNewEvent({
+                summary: '',
+                description: '',
+                date: '',
+                startTime: '',
+                endTime: '',
+            });
         } catch (error) {
             console.error('Error adding event:', error);
-            setError('Failed to add event: ' + error.message);
-            if (error.message.includes('authentication')) {
-                googleLogin();
-            }
+            showNotification('Failed to add event: ' + error.message);
         }
     };
 
     const handleDeleteEvent = async (eventId) => {
-        if (!accessToken) {
-            setError('Not logged in to Google Calendar. Please log in first.');
-            googleLogin();
-            return;
-        }
-
         try {
             const response = await fetch(
-                `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
+                `http://localhost:5000/admin/calendar/events/${eventId}`,
                 {
                     method: 'DELETE',
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                    },
+                        'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+                    }
                 }
             );
 
             if (!response.ok) {
-                throw new Error('Failed to delete event');
+                const errorData = await response.json();
+                throw new Error(errorData.message);
             }
 
             setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
@@ -260,16 +222,13 @@ const AdminCalendar = () => {
             setError(null);
         } catch (error) {
             console.error('Error deleting event:', error);
-            setError('Failed to delete event: ' + error.message);
-            if (error.message.includes('authentication')) {
-                googleLogin();
-            }
+            showNotification('Failed to delete event: ' + error.message);
         }
     };
 
     const handleEditEvent = async (event) => {
         setEditingEvent({
-            id: event.id,
+            id: event.googleEventId || event.id,
             summary: event.summary,
             description: event.description,
             date: new Date(event.start.dateTime).toISOString().split('T')[0],
@@ -281,8 +240,8 @@ const AdminCalendar = () => {
     };
 
     const handleUpdateEvent = async () => {
-        if (!accessToken || !editingEvent) {
-            setError('Not logged in to Google Calendar or no event selected.');
+        if (!editingEvent) {
+            setError('No event selected for update.');
             return;
         }
 
@@ -291,30 +250,25 @@ const AdminCalendar = () => {
 
         try {
             const response = await fetch(
-                `https://www.googleapis.com/calendar/v3/calendars/primary/events/${editingEvent.id}`,
+                `http://localhost:5000/admin/calendar/events/${editingEvent.id}`,
                 {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
+                        'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         summary: editingEvent.summary,
                         description: editingEvent.description,
-                        start: {
-                            dateTime: startDateTime.toISOString(),
-                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                        },
-                        end: {
-                            dateTime: endDateTime.toISOString(),
-                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                        }
+                        start: startDateTime.toISOString(),
+                        end: endDateTime.toISOString()
                     })
                 }
             );
 
             if (!response.ok) {
-                throw new Error('Failed to update event');
+                const errorData = await response.json();
+                throw new Error(errorData.message);
             }
 
             const updatedEvent = await response.json();
@@ -326,10 +280,7 @@ const AdminCalendar = () => {
             setError(null);
         } catch (error) {
             console.error('Error updating event:', error);
-            setError('Failed to update event: ' + error.message);
-            if (error.message.includes('authentication')) {
-                googleLogin();
-            }
+            showNotification('Failed to update event: ' + error.message);
         }
     };
     const nextMonth = () => {
@@ -346,18 +297,53 @@ const AdminCalendar = () => {
     const startDay = new Date(currentYear, currentMonth, 1).getDay();
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
+    const handleBlockDate = async (date) => {
+        try {
+            const localDate = new Date(date);
+            localDate.setHours(12, 0, 0, 0);
+            const adjustedDate = localDate.toISOString().split('T')[0];
+
+            const response = await fetch(`http://localhost:5000/admin/calendar/blocked-dates`, {
+                method: isDateBlocked ? 'DELETE' : 'POST',
+                headers: {
+                    'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ date: adjustedDate })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message);
+            }
+
+            const updatedBlockedDates = await response.json();
+            // Ensure we're working with an array
+            const formattedDates = Array.isArray(updatedBlockedDates) 
+                ? updatedBlockedDates.map(date => new Date(date).toISOString().split('T')[0])
+                : [];
+                
+            setBlockedDates(formattedDates);
+            setIsDateBlocked(!isDateBlocked);
+            setShowEventsModal(false);
+            showNotification(`Date successfully ${isDateBlocked ? 'unblocked' : 'blocked'}`, 'success');
+        } catch (error) {
+            console.error('Error updating blocked date:', error);
+            if (error.message.includes('duplicate key error')) {
+                showNotification('This date is already blocked');
+            } else {
+                showNotification(`Error updating blocked date: ${error.message}`);
+            }
+        }
+    };
+
     return (
         <div className={`flex h-screen w-screen ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
             <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
             
             {/* Main Content */}
             <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'} ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
-                {/* Error Display */}
-                {error && (
-                    <div className="mb-4 p-4 bg-red-100 text-red-600 rounded-lg">
-                        {error}
-                    </div>
-                )}
+               
 
                 {/* Loading Indicator */}
                 {isLoading && (
@@ -423,6 +409,7 @@ const AdminCalendar = () => {
                     {/* Days of the month */}
                     {Array.from({ length: daysInMonth }).map((_, index) => {
                         const currentDate = new Date(currentYear, currentMonth, index + 1);
+                        const formattedDate = currentDate.toISOString().split('T')[0];
                         const isToday = currentDate.toDateString() === new Date().toDateString();
                         const hasEvent = events.some((event) => {
                             const eventStartDate = new Date(event.start.dateTime || event.start.date);
@@ -432,31 +419,22 @@ const AdminCalendar = () => {
                         return (
                             <div
                                 key={index}
-                                className={`p-4 rounded-lg cursor-pointer 
-                                    ${isToday 
-                                        ? isDarkMode 
-                                            ? 'bg-blue-900 text-blue-200' 
-                                            : 'bg-blue-200'
-                                        : isDarkMode 
-                                            ? 'bg-gray-800 hover:bg-gray-700' 
-                                            : 'bg-gray-50 hover:bg-gray-100'
-                                    }
-                                    ${hasEvent 
-                                        ? isDarkMode 
-                                            ? 'border-2 border-blue-400' 
-                                            : 'border-2 border-blue-500'
-                                        : isDarkMode 
-                                            ? 'border border-gray-700' 
-                                            : 'border border-gray-200'
-                                    }
-                                    transition-colors duration-200`}
+                                className={`p-2 border cursor-pointer hover:bg-gray-100 relative
+                                    ${isToday ? 'bg-blue-50' : ''}
+                                    ${Array.isArray(blockedDates) && blockedDates.includes(formattedDate) ? 'bg-red-100' : ''}`}
                                 onClick={() => {
                                     const selectedDate = new Date(currentYear, currentMonth, index + 1);
+                                    selectedDate.setHours(12, 0, 0, 0);
+                                    const formattedDate = selectedDate.toISOString().split('T')[0];
+                                    
+                                    setIsDateBlocked(Array.isArray(blockedDates) && blockedDates.includes(formattedDate));
+                                    
                                     handleViewEvents(selectedDate);
                                     setNewEvent(prev => ({
                                         ...prev,
-                                        date: selectedDate.toISOString().split('T')[0]
+                                        date: formattedDate
                                     }));
+                                    setShowEventsModal(true);
                                 }}
                             >
                                 <span className={`font-semibold ${
@@ -470,6 +448,9 @@ const AdminCalendar = () => {
                                 }`}>
                                     {index + 1}
                                 </span>
+                                {hasEvent && (
+                                    <div className="absolute bottom-1 right-1 w-2 h-2 bg-blue-500 rounded-full"></div>
+                                )}
                             </div>
                         );
                     })}
@@ -480,11 +461,36 @@ const AdminCalendar = () => {
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
     <div className="bg-white rounded-lg p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-semibold">
-          Events on {selectedDateEvents[0]?.start.dateTime ? 
-            new Date(selectedDateEvents[0].start.dateTime).toLocaleDateString() : 
-            new Date(newEvent.date).toLocaleDateString()}
-        </h3>
+        <div>
+          <h3 className="text-xl font-semibold text-black">
+            Events on {(() => {
+              if (selectedDateEvents[0]?.start.dateTime) {
+                  const date = new Date(selectedDateEvents[0].start.dateTime);
+                  return date.toLocaleDateString('en-PH', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      timeZone: 'Asia/Manila'
+                  });
+              } else {
+                  const [year, month, day] = newEvent.date.split('-');
+                  const selectedDate = new Date(year, month - 1, day);
+                  selectedDate.setHours(12, 0, 0, 0);
+                  return selectedDate.toLocaleDateString('en-PH', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      timeZone: 'Asia/Manila'
+                  });
+              }
+            })()}
+          </h3>
+          {isDateBlocked && (
+            <span className="text-red-600 text-sm font-medium">
+              This date is currently blocked
+            </span>
+          )}
+        </div>
         <button
           onClick={() => setShowEventsModal(false)}
           className="text-gray-500 hover:text-gray-700"
@@ -493,102 +499,119 @@ const AdminCalendar = () => {
         </button>
       </div>
 
-      {/* Existing Events List */}
-      <div className="max-h-96 overflow-y-auto mb-4">
-        {selectedDateEvents.length > 0 ? (
-          selectedDateEvents.map((event, index) => (
-            <div key={index} className="border-b border-gray-200 py-4 last:border-0">
-              <h4 className="font-semibold text-lg">{event.summary}</h4>
-              {event.description && (
-                <p className="text-gray-600 mt-1">{event.description}</p>
-              )}
-              <div className="text-sm text-gray-500 mt-2">
-                {new Date(event.start.dateTime).toLocaleTimeString()} - 
-                {new Date(event.end.dateTime).toLocaleTimeString()}
-              </div>
-              <div className="mt-2 flex space-x-2">
-                <button
-                  onClick={() => handleEditEvent(event)}
-                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteEvent(event.id)}
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-500 text-center py-4">No events scheduled for this date</p>
-        )}
+      {/* Block/Unblock Date Button */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => handleBlockDate(newEvent.date)}
+          className={`px-4 py-2 text-sm font-medium text-white rounded-md ${
+            isDateBlocked 
+              ? 'bg-green-600 hover:bg-green-700' 
+              : 'bg-red-600 hover:bg-red-700'
+          }`}
+        >
+          {isDateBlocked ? 'Unblock Date' : 'Block Date'}
+        </button>
       </div>
 
-      {/* Add New Event Form */}
-      <form onSubmit={handleAddEvent} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Event Title</label>
-          <input
-            type="text"
-            value={newEvent.summary}
-            onChange={(e) => setNewEvent({...newEvent, summary: e.target.value})}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
-            required
-          />
+      {/* Show form and events only if date is not blocked */}
+      <div className={isDateBlocked ? 'opacity-50 pointer-events-none' : ''}>
+        {/* Existing Events List */}
+        <div className="max-h-96 overflow-y-auto mb-4">
+          {selectedDateEvents.length > 0 ? (
+            selectedDateEvents.map((event, index) => (
+              <div key={index} className="border-b border-gray-200 py-4 last:border-0">
+                <h4 className="font-semibold text-lg">{event.summary}</h4>
+                {event.description && (
+                  <p className="text-gray-600 mt-1">{event.description}</p>
+                )}
+                <div className="text-sm text-gray-500 mt-2">
+                  {new Date(event.start.dateTime).toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila' })} - 
+                  {new Date(event.end.dateTime).toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila' })}
+                </div>
+                <div className="mt-2 flex space-x-2">
+                  <button
+                    onClick={() => handleEditEvent(event)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteEvent(event.id)}
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500 text-center py-4">No events scheduled for this date</p>
+          )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 ">Description</label>
-          <textarea
-            value={newEvent.description}
-            onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
-            rows="3"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
+        {/* Add New Event Form */}
+        <form onSubmit={handleAddEvent} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Start Time</label>
+            <label className="block text-sm font-medium text-gray-700">Event Title</label>
             <input
-              type="time"
-              value={newEvent.startTime}
-              onChange={(e) => setNewEvent({...newEvent, startTime: e.target.value})}
+              type="text"
+              value={newEvent.summary}
+              onChange={(e) => setNewEvent({...newEvent, summary: e.target.value})}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
               required
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700">End Time</label>
-            <input
-              type="time"
-              value={newEvent.endTime}
-              onChange={(e) => setNewEvent({...newEvent, endTime: e.target.value})}
+            <label className="block text-sm font-medium text-gray-700 ">Description</label>
+            <textarea
+              value={newEvent.description}
+              onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
-              required
+              rows="3"
             />
           </div>
-        </div>
 
-        <div className="flex justify-end space-x-3">
-          <button
-            type="button"
-            onClick={() => setShowEventsModal(false)}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-          >
-            Add Event
-          </button>
-        </div>
-      </form>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Start Time</label>
+              <input
+                type="time"
+                value={newEvent.startTime}
+                onChange={(e) => setNewEvent({...newEvent, startTime: e.target.value})}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">End Time</label>
+              <input
+                type="time"
+                value={newEvent.endTime}
+                onChange={(e) => setNewEvent({...newEvent, endTime: e.target.value})}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={() => setShowEventsModal(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            >
+              Add Event
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 )}
@@ -597,21 +620,21 @@ const AdminCalendar = () => {
             {showEditForm && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                         <div className="bg-white rounded-lg p-6 w-full max-w-lg">
-                            <h3 className="text-xl font-semibold mb-4">Edit Event</h3>
+                            <h3 className="text-xl font-semibold mb-4 text-black">Edit Event</h3>
                             <div className="space-y-4">
                                 <input
                                     type="text"
                                     name="summary"
                                     value={editingEvent.summary}
                                     onChange={(e) => setEditingEvent({...editingEvent, summary: e.target.value})}
-                                    className="w-full p-2 border rounded"
+                                    className="w-full p-2 border rounded bg-white"
                                     placeholder="Event Title"
                                 />
                                 <textarea
                                     name="description"
                                     value={editingEvent.description}
                                     onChange={(e) => setEditingEvent({...editingEvent, description: e.target.value})}
-                                    className="w-full p-2 border rounded"
+                                    className="w-full p-2 border rounded bg-white text-black"
                                     placeholder="Description"
                                 />
                                 <input
@@ -619,7 +642,7 @@ const AdminCalendar = () => {
                                     name="date"
                                     value={editingEvent.date}
                                     onChange={(e) => setEditingEvent({...editingEvent, date: e.target.value})}
-                                    className="w-full p-2 border rounded"
+                                    className="w-full p-2 border rounded bg-white"
                                 />
                                 <div className="flex space-x-4">
                                     <input
@@ -627,14 +650,14 @@ const AdminCalendar = () => {
                                         name="startTime"
                                         value={editingEvent.startTime}
                                         onChange={(e) => setEditingEvent({...editingEvent, startTime: e.target.value})}
-                                        className="w-1/2 p-2 border rounded"
+                                        className="w-1/2 p-2 border rounded bg-white"
                                     />
                                     <input
                                         type="time"
                                         name="endTime"
                                         value={editingEvent.endTime}
                                         onChange={(e) => setEditingEvent({...editingEvent, endTime: e.target.value})}
-                                        className="w-1/2 p-2 border rounded"
+                                        className="w-1/2 p-2 border rounded bg-white"
                                     />
                                 </div>
                             </div>
@@ -653,6 +676,32 @@ const AdminCalendar = () => {
                                     className="flex-1 bg-gray-200 text-gray-800 p-3 rounded-lg hover:bg-gray-300"
                                 >
                                     Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {/* Notification Component */}
+                {notification.show && (
+                    <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 border-l-4 border-red-500 animate-slide-up z-50">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <p className="text-sm text-gray-800">{notification.message}</p>
+                            </div>
+                            <div className="ml-4">
+                                <button
+                                    onClick={() => setNotification({ show: false, message: '', type: 'error' })}
+                                    className="text-gray-400 hover:text-gray-500"
+                                >
+                                    <span className="sr-only">Close</span>
+                                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>

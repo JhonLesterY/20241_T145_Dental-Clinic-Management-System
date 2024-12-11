@@ -92,7 +92,44 @@ const sendWelcomeEmail = async ({ email, name, temporaryPassword }) => {
     }
 };
 
+const sendAdminVerificationEmail = async ({ email, name, token, role }) => {
+    try {
+        const transporter = await createTransporter();
+        
+        const verificationLink = `${process.env.FRONTEND_URL}/verify-admin/${token}`;
+        
+        const mailOptions = {
+            from: {
+                name: 'UniCare Dental',
+                address: process.env.EMAIL_FROM
+            },
+            to: email,
+            subject: 'Verify Your Admin Account - UniCare Dental Clinic',
+            html: `
+                <h1>Welcome to UniCare Dental Clinic</h1>
+                <p>Hello ${name},</p>
+                <p>You have been registered as an administrator. Please verify your account by clicking the link below:</p>
+                <a href="${verificationLink}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">
+                    Verify Account
+                </a>
+                <p>After verification, you can log in using your Google account.</p>
+                <p>This link will expire in 24 hours.</p>
+                <p>If you did not request this registration, please ignore this email.</p>
+            `
+        };
+
+        const result = await transporter.sendMail(mailOptions);
+        console.log('Verification email sent successfully to:', email);
+        return result;
+    } catch (error) {
+        console.error('Error sending verification email:', error);
+        throw error;
+    }
+};
+
 module.exports = {
+    createTransporter,
     sendWelcomeEmail,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    sendAdminVerificationEmail
 };

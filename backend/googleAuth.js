@@ -18,13 +18,20 @@ const SCOPES = [
     'https://www.googleapis.com/auth/drive.metadata',
     'https://www.googleapis.com/auth/forms.body',
     'https://www.googleapis.com/auth/forms.responses.readonly',
-    'https://www.googleapis.com/auth/forms.body.readonly'
+    'https://www.googleapis.com/auth/forms.body.readonly',
+    'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/calendar.events',
+    'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/calendar.events.owned',
+    'https://www.googleapis.com/auth/calendar.events.owned.readonly',
+    'https://www.googleapis.com/auth/calendar.settings.readonly'
 ];
 
 // Set credentials immediately if refresh token exists
 if (process.env.GOOGLE_REFRESH_TOKEN) {
     oauth2Client.setCredentials({
-        refresh_token: process.env.GOOGLE_REFRESH_TOKEN
+        refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+        scope: SCOPES.join(' ')  // Add this line
     });
 }
 
@@ -34,7 +41,8 @@ const getAccessToken = async () => {
         const { token } = await oauth2Client.getAccessToken();
         oauth2Client.setCredentials({
             access_token: token,
-            refresh_token: process.env.GOOGLE_REFRESH_TOKEN
+            refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+            scope: SCOPES.join(' ')
         });
         return token;
     } catch (error) {

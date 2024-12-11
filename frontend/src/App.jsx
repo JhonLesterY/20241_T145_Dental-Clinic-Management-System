@@ -37,6 +37,7 @@ import User_Report from "./pages/User_Report";
 import Admin_Report from "./pages/Admin_Report";
 import ActivityLogs from "./pages/ActivityLogs";
 import { ThemeProvider } from './context/ThemeContext';
+import AdminVerification from "./pages/AdminVerification";
 
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
@@ -93,6 +94,8 @@ function App() {
           <Route path="/dentist-sidebar" element={<DentistSideBar />} />
           <Route path="/reports" element={<Dentist_Report />} />
         </Route>
+
+        <Route path="/verify-admin/:token" element={<AdminVerification />} />
 
        
       </Routes>

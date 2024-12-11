@@ -15,35 +15,20 @@ const User_Feedback = () => {
                 setLoading(true);
                 const token = sessionStorage.getItem('token');
                 const role = sessionStorage.getItem('role');
-                const email = sessionStorage.getItem('email');
+                const patient_id = sessionStorage.getItem('patient_id');
                 
-                if (!token || !role) {
-                    console.log('No token or role found in session');
+                if (!token || !role || !patient_id) {
+                    console.log('Missing authentication credentials');
                     setError('Please log in to access the feedback form');
                     navigate('/login');
                     return;
                 }
 
-                if (!email) {
-                    console.log('No email found in session');
-                    setError('Session invalid. Please log in again.');
-                    navigate('/login');
-                    return;
-                }
-
-                console.log('Requesting form with credentials:', {
-                    token: token ? 'present' : 'missing',
-                    role,
-                    email
-                });
-
                 const response = await fetch('http://localhost:5000/form/active-form-url', {
                     method: 'GET',
-                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                        'X-User-Email': email
+                        'Authorization': `Bearer ${token}`
                     }
                 });
 

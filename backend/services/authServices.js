@@ -224,7 +224,7 @@ async function normalLogin({ email, password, recaptchaToken }) {
                     fullname: admin.fullname,
                     role: admin.role || 'admin',
                     isProfileComplete: admin.isProfileComplete || false,
-                    hasChangedPassword: admin.hasChangedPassword || false,
+                    hasChangedPassword: true,
                     profilePicture: admin.profilePicture || ''
                 }
             };
@@ -250,63 +250,120 @@ async function normalLogin({ email, password, recaptchaToken }) {
 
 async function loginWithGoogle(payload, recaptchaToken) {
     try {
-        console.log('Starting Google login process with payload:', { email: payload.email });
+        console.log('Received Google login payload:', payload);
         
-        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
-        if (!isRecaptchaValid) {
-            throw new Error('reCAPTCHA verification failed');
+        if (!payload || !payload.email) {
+            throw new Error('Invalid Google authentication payload');
         }
-        
+
         const { email, name, sub: googleId, picture } = payload;
+        console.log('Attempting Google login for email:', email);
         
-        let patient = await Patient.findOne({ email });
+        // Check for admin account first
+        const admin = await Admin.findOne({ email });
+        console.log('Found admin:', admin ? 'Yes' : 'No');
+        
+        if (admin) {
+            // Update Google ID and ensure Google login is enabled
+            await Admin.findByIdAndUpdate(admin._id, {
+                $set: {
+                    googleId: googleId,
+                    isGoogleUser: true,
+                    isVerified: true
+                }
+            });
 
-        if (!patient) {
-            throw new Error('User not registered. Please sign up first.');
-        }
-
-        // Update profile picture if it has changed
-        if (patient.isGoogleUser && picture && patient.profilePicture !== picture) {
-            patient = await Patient.findOneAndUpdate(
-                { email },
+            const token = jwt.sign(
                 { 
-                    $set: { 
-                        profilePicture: picture,
-                        lastUpdated: new Date()
-                    }
+                    id: admin._id,
+                    email: admin.email,
+                    role: 'admin',
+                    permissions: admin.permissions
                 },
-                { new: true }
+                process.env.JWT_SECRET_KEY,
+                { expiresIn: '24h' }
             );
+
+            return {
+                token,
+                user: {
+                    id: admin._id,
+                    admin_id: admin.admin_id,
+                    email: admin.email,
+                    fullname: admin.fullname,
+                    role: 'admin',
+                    permissions: admin.permissions,
+                    profilePicture: picture || admin.profilePicture
+                }
+            };
         }
 
-        const token = jwt.sign(
-            { 
-                id: patient._id, 
-                email: patient.email,
-                name: patient.name,
-                role: 'patient' 
-            },
-            process.env.JWT_SECRET_KEY,
-            { expiresIn: '24h' }
-        );
+        // Check for dentist account
+        const dentist = await Dentist.findOne({ email });
+        if (dentist && dentist.isGoogleUser) {
+            const token = jwt.sign(
+                { 
+                    id: dentist._id,
+                    email: dentist.email,
+                    role: 'dentist'
+                },
+                process.env.JWT_SECRET_KEY,
+                { expiresIn: '24h' }
+            );
 
-        console.log('Google login successful for:', email);
-        
-        return {
-            token,
-            user: {
-                id: patient._id,
-                email: patient.email,
-                name: patient.name,
-                role: 'patient',
-                profilePicture: patient.profilePicture,
-                isGoogleUser: true,
-                patient_id: patient.patient_id
-            }
-        };
+            return {
+                token,
+                user: {
+                    id: dentist._id,
+                    dentist_id: dentist.dentist_id,
+                    email: dentist.email,
+                    name: dentist.name,
+                    role: 'dentist',
+                    profilePicture: picture || dentist.profilePicture,
+                    isGoogleUser: true
+                }
+            };
+        }
+
+        // Check for patient account
+        const patient = await Patient.findOne({ email });
+        if (patient) {
+            // Update Google ID and ensure Google login is enabled
+            await Patient.findByIdAndUpdate(patient._id, {
+                $set: {
+                    googleId: googleId,
+                    isGoogleUser: true,
+                    profilePicture: picture || patient.profilePicture
+                }
+            });
+
+            const token = jwt.sign(
+                { 
+                    id: patient._id,
+                    email: patient.email,
+                    role: 'patient'
+                },
+                process.env.JWT_SECRET_KEY,
+                { expiresIn: '24h' }
+            );
+
+            return {
+                token,
+                user: {
+                    id: patient.patient_id,
+                    email: patient.email,
+                    name: patient.name,
+                    role: 'patient',
+                    profilePicture: picture || patient.profilePicture,
+                    isGoogleUser: true
+                }
+            };
+        }
+
+        throw new Error('No authorized account found for this email.');
     } catch (error) {
         console.error('Google login error:', error);
-        throw new Error(error.message);
+        throw error;
     }
 }
 

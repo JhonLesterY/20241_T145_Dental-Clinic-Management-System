@@ -6,10 +6,10 @@ const appointmentSchema = new mongoose.Schema({
     unique: true,
     default: () => 'APT' + Date.now().toString().slice(-6)
   },
-  userId: {
+  patientId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    ref: 'Patient'
+    
   },
   patientName: {
     type: String,
@@ -52,6 +52,11 @@ const appointmentSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'incomplete', 'complete'],
     default: 'pending'
+  },
+  dentistId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Dentist',
+    required: true
   }
 }, {
   timestamps: true

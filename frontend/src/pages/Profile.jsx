@@ -6,13 +6,18 @@ import User_Profile from "/src/images/user.png";
 const Profile = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
-    fullname: "",
-    email: sessionStorage.getItem('email') || "",
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    suffix: "None",
     phoneNumber: "",
+    email: sessionStorage.getItem('email') || "",
     sex: "Male",
     birthday: "",
-    isProfileComplete: false
-});
+    isProfileComplete: false,
+    hasChangedPassword: false,
+    isGoogleUser: false
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [profilePicture, setProfilePicture] = useState(null);
@@ -44,80 +49,100 @@ const Profile = () => {
 
   const fetchUserProfile = async () => {
     try {
-        setIsLoading(true);
-        const patientId = sessionStorage.getItem('patient_id');
-        const token = sessionStorage.getItem('token');
-  
-        if (!token || !patientId) {
-            navigate('/login');
-            return;
+      setIsLoading(true);
+      const patientId = sessionStorage.getItem('patient_id');
+      const token = sessionStorage.getItem('token');
+
+      if (!token || !patientId) {
+        console.log('Missing credentials - Token:', !!token, 'PatientId:', !!patientId);
+        navigate('/login');
+        return;
+      }
+
+      console.log('Attempting to fetch profile with patient ID:', patientId);
+
+      // Use numeric patient_id endpoint
+      const response = await fetch(`http://localhost:5000/patients/numeric/${patientId}/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      console.log('Profile fetch response status:', response.status);
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.log('Unauthorized access - clearing session');
+          sessionStorage.clear();
+          navigate('/login');
+          return;
         }
-  
-        const response = await fetch(`http://localhost:5000/patients/${patientId}/profile`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-        });
-  
-        if (!response.ok) throw new Error('Failed to fetch profile');
-      
-        const data = await response.json();
-        console.log('Profile data received:', data); // Debug log
+        const errorData = await response.json();
+        console.error('Error response data:', errorData);
+        throw new Error(errorData.message || 'Failed to fetch profile');
+      }
 
-        // Split the full name for Google users
-        let firstName = "", middleName = "", lastName = "";
-        if (data.isGoogleUser && data.name) {
-            const nameParts = data.name.split(' ');
-            if (nameParts.length === 3) {
-                [firstName, middleName, lastName] = nameParts;
-            } else if (nameParts.length === 2) {
-                [firstName, lastName] = nameParts;
-            } else {
-                firstName = data.name;
-            }
-        }
+      const data = await response.json();
+      console.log('Profile data received:', data);
 
-        setUserData({
-            firstName: data.firstName || firstName,
-            middleName: data.middleName || middleName,
-            lastName: data.lastName || lastName,
-            suffix: data.suffix || "None",
-            phoneNumber: data.phoneNumber || "",
-            email: data.email || "",
-            sex: data.sex || "Male",
-            birthday: data.birthday ? new   
-            Date(data.birthday).toISOString().split('T')[0] : "",
-            isProfileComplete: data.isProfileComplete || false,
-            hasChangedPassword: data.hasChangedPassword || false,
-            isGoogleUser: data.isGoogleUser || false
-
-        });
-
-        const needsPasswordChange = !data.isGoogleUser && !data.hasChangedPassword;
-        console.log('Needs password change:', needsPasswordChange); // Debug log
-        console.log('Is Google user:', data.isGoogleUser);
-        console.log('Has changed password:', data.hasChangedPassword);
-
-        setRequiresPasswordChange(needsPasswordChange);
-        setShowPasswordModal(needsPasswordChange);
-
-
-        // Set profile picture with debug logs
-        console.log('Profile picture URL:', data.profilePicture); // Debug log
-        if (data.profilePicture) {
-            setPreviewUrl(data.profilePicture);
-            console.log('Setting preview URL to:', data.profilePicture); // Debug log
+      // Split the full name for Google users
+      let firstName = "", middleName = "", lastName = "";
+      if (data.isGoogleUser && data.name) {
+        const nameParts = data.name.split(' ');
+        if (nameParts.length === 3) {
+          [firstName, middleName, lastName] = nameParts;
+        } else if (nameParts.length === 2) {
+          [firstName, lastName] = nameParts;
         } else {
-            console.log('No profile picture found, using default'); // Debug log
+          firstName = data.name;
         }
+      }
+
+      setUserData({
+        firstName: data.firstName || firstName,
+        middleName: data.middleName || middleName,
+        lastName: data.lastName || lastName,
+        suffix: data.suffix || "None",
+        phoneNumber: data.phoneNumber || "",
+        email: data.email || "",
+        sex: data.sex || "Male",
+        birthday: data.birthday ? new   
+        Date(data.birthday).toISOString().split('T')[0] : "",
+        isProfileComplete: data.isProfileComplete || false,
+        hasChangedPassword: data.hasChangedPassword || false,
+        isGoogleUser: data.isGoogleUser || false
+
+      });
+
+      const needsPasswordChange = !data.isGoogleUser && !data.hasChangedPassword;
+      console.log('Needs password change:', needsPasswordChange); // Debug log
+      console.log('Is Google user:', data.isGoogleUser);
+      console.log('Has changed password:', data.hasChangedPassword);
+
+      setRequiresPasswordChange(needsPasswordChange);
+      setShowPasswordModal(needsPasswordChange);
+
+
+      // Set profile picture with debug logs
+      console.log('Profile picture URL:', data.profilePicture); // Debug log
+      if (data.profilePicture) {
+        setPreviewUrl(data.profilePicture);
+        console.log('Setting preview URL to:', data.profilePicture); // Debug log
+      } else {
+        console.log('No profile picture found, using default'); // Debug log
+      }
     } catch (err) {
-        setError(err.message);
-        console.error('Error fetching profile:', err);
+      setError(err.message);
+      console.error('Error fetching profile:', err);
+      if (err.message.includes('Invalid patient ID')) {
+        sessionStorage.clear();
+        navigate('/login');
+      }
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-};
+  };
 
   const handleLogout = () => {
     sessionStorage.removeItem('token');
@@ -133,100 +158,117 @@ const Profile = () => {
       alert('Please change your temporary password before updating your profile.');
       setShowPasswordModal(true);
       return;
-  }
-    try {
-        const formData = new FormData();
-        
-        // Add all user data
-        Object.keys(userData).forEach(key => {
-            formData.append(key, userData[key]);
-        });
-
-        // Add profile picture if selected
-        if (profilePicture) {
-            formData.append('profilePicture', profilePicture);
-        }
-
-        const patientId = sessionStorage.getItem('patient_id');
-        const token = sessionStorage.getItem('token');
-
-        const response = await fetch(`http://localhost:5000/patients/${patientId}/profile`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`
-                // Don't set Content-Type header when sending FormData
-            },
-            body: formData
-        });
-
-        if (!response.ok) throw new Error('Failed to update profile');
-
-        const data = await response.json();
-        console.log('Profile updated:', data);
-
-        // Update the preview URL if a new picture was uploaded
-        if (data.profilePicture) {
-            setPreviewUrl(data.profilePicture.startsWith('http') 
-                ? data.profilePicture 
-                : `http://localhost:5000${data.profilePicture}`
-            );
-        }
-
-        alert('Profile updated successfully!');
-        navigate('/dashboard');
-    } catch (err) {
-        setError(err.message);
-        console.error('Error updating profile:', err);
     }
-};
 
-const handlePasswordChange = async (e) => {
-  e.preventDefault();
-  
-  if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("New passwords don't match!");
-      return;
-  }
+    try {
+      const formData = new FormData();
+      
+      // Only append non-null and non-undefined values
+      Object.entries(userData).forEach(([key, value]) => {
+        if (value != null) {
+          formData.append(key, value);
+        }
+      });
 
-  try {
+      if (profilePicture) {
+        formData.append('profilePicture', profilePicture);
+      }
+
       const patientId = sessionStorage.getItem('patient_id');
       const token = sessionStorage.getItem('token');
 
-      const response = await fetch(`http://localhost:5000/patients/${patientId}/change-password`, {
-          method: 'PUT',
-          headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-              currentPassword: passwordData.currentPassword,
-              newPassword: passwordData.newPassword
-          })
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-          throw new Error(data.message || 'Failed to change password');
+      if (!patientId || !token) {
+        throw new Error('Missing authentication credentials');
       }
 
-      // Update local state with the response data
-      setUserData(prev => ({
-          ...prev,
-          hasChangedPassword: data.hasChangedPassword,
-          hasLocalPassword: data.hasLocalPassword
-      }));
+      const response = await fetch(`http://localhost:5000/patients/${patientId}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
 
-      setRequiresPasswordChange(false);
-      setShowPasswordModal(false);
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      
-      alert('Password changed successfully!');
-  } catch (err) {
-      alert(err.message);
-      console.error('Error changing password:', err);
-  }
-};
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update profile');
+      }
+
+      const data = await response.json();
+      console.log('Profile updated:', data);
+
+      if (data.profilePicture) {
+        setPreviewUrl(data.profilePicture.startsWith('http') 
+          ? data.profilePicture 
+          : `http://localhost:5000${data.profilePicture}`
+        );
+      }
+
+      alert('Profile updated successfully!');
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message);
+      console.error('Error updating profile:', err);
+      if (err.message.includes('authentication')) {
+        sessionStorage.clear();
+        navigate('/login');
+      }
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    
+    // Prevent Google users from changing password
+    if (userData.isGoogleUser) {
+        alert("Google users cannot change password. Please use Google authentication.");
+        return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+        alert("New passwords don't match!");
+        return;
+    }
+
+    try {
+        const patientId = sessionStorage.getItem('patient_id');
+        const token = sessionStorage.getItem('token');
+
+        const response = await fetch(`http://localhost:5000/patients/${patientId}/change-password`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword
+            })
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to change password');
+        }
+
+        // Update local state with the response data
+        setUserData(prev => ({
+            ...prev,
+            hasChangedPassword: data.hasChangedPassword,
+            hasLocalPassword: data.hasLocalPassword
+        }));
+
+        setRequiresPasswordChange(false);
+        setShowPasswordModal(false);
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        
+        alert('Password changed successfully!');
+    } catch (err) {
+        alert(err.message);
+        console.error('Error changing password:', err);
+    }
+  };
   if (isLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
@@ -381,15 +423,14 @@ const handlePasswordChange = async (e) => {
           >
             {userData.isProfileComplete ? 'Update Profile' : 'Complete Profile'}
           </button>
-          {!userData.isGoogleUser && (
-            <button
-              type="button"
-              onClick={() => setShowPasswordModal(true)}
-              className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            >
-              Change Password
-            </button>
-          )}
+            {!userData.isGoogleUser && (
+                <button
+                    onClick={() => setShowPasswordModal(true)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                    Change Password
+                </button>
+            )}
           <button
             type="button"
             onClick={handleLogout}

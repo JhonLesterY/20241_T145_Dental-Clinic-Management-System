@@ -125,13 +125,6 @@ P_route.get('/', (req, res) => {
 P_route.get('/:patient_id/profile', authenticatePatient, async (req, res) => {
     try {
         const patientId = req.params.patient_id;
-        
-        // Validate MongoDB ObjectID
-        if (!mongoose.Types.ObjectId.isValid(patientId)) {
-            console.log('Invalid MongoDB ObjectID:', patientId);
-            return res.status(400).json({ message: 'Invalid patient ID format' });
-        }
-
         console.log('Attempting to fetch profile for patient:', patientId);
         
         const patient = await patientService.getPatientProfile(patientId);
@@ -194,11 +187,16 @@ P_route.put('/:patient_id/change-password', authenticatePatient, async (req, res
         const { currentPassword, newPassword } = req.body;
         const patientId = req.params.patient_id;
         
-        console.log('Received password change request for patient:', patientId);
-
         const patient = await Patient.findById(patientId);
         if (!patient) {
             return res.status(404).json({ message: 'Patient not found' });
+        }
+
+        // Prevent Google users from changing password
+        if (patient.isGoogleUser) {
+            return res.status(403).json({ 
+                message: 'Google users cannot change password. Please use Google authentication.'
+            });
         }
 
         // Verify current password
@@ -273,6 +271,40 @@ P_route.post('/feedback', authenticatePatient, async (req, res) => {
     } catch (error) {
         console.error('Error submitting feedback:', error);
         res.status(500).json({ message: error.message || 'Failed to submit feedback' });
+    }
+});
+
+// Add this new route for numeric patient_id
+P_route.get('/numeric/:patient_id/profile', authenticatePatient, async (req, res) => {
+    try {
+        const numericPatientId = parseInt(req.params.patient_id);
+        console.log('Attempting to fetch profile for numeric patient ID:', numericPatientId);
+        
+        // Find patient by numeric patient_id
+        const patient = await Patient.findOne({ patient_id: numericPatientId });
+        
+        if (!patient) {
+            return res.status(404).json({ message: 'Patient not found' });
+        }
+
+        // Return the patient data
+        res.json({
+            firstName: patient.firstName || '',
+            middleName: patient.middleName || '',
+            lastName: patient.lastName || '',
+            suffix: patient.suffix || '',
+            phoneNumber: patient.phoneNumber || '',
+            email: patient.email || '',
+            sex: patient.sex || '',
+            birthday: patient.birthday || '',
+            isProfileComplete: patient.isProfileComplete || false,
+            hasChangedPassword: patient.hasChangedPassword || false,
+            isGoogleUser: patient.isGoogleUser || false,
+            profilePicture: patient.profilePicture || ''
+        });
+    } catch (error) {
+        console.error('Error in get profile route:', error);
+        res.status(500).json({ message: error.message });
     }
 });
 
