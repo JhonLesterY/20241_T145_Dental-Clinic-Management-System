@@ -5,6 +5,7 @@ const { uploadToDrive, getFileContent } = require('../driveService');
 const fs = require('fs');
 const path = require('path');
 const Appointment = require('../models/Appointment');
+const Patient = require('../models/Patient');
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
@@ -44,9 +45,15 @@ router.post('/', upload.single('file'), async (req, res) => {
 
         const { patientId, patientName, fileType } = req.body;
 
-        // Find the latest pending appointment for this patient
+        // First find the patient to get their MongoDB _id
+        const patient = await Patient.findOne({ patient_id: parseInt(patientId) });
+        if (!patient) {
+            return res.status(404).json({ error: 'Patient not found' });
+        }
+
+        // Find the latest pending appointment using the MongoDB _id
         const appointment = await Appointment.findOne({
-            userId: patientId,
+            patientId: patient._id,
             status: 'pending'
         }).sort({ createdAt: -1 });
 
@@ -105,28 +112,20 @@ router.post('/', upload.single('file'), async (req, res) => {
 // Add route to get file content
 router.get('/file/:fileId', async (req, res) => {
     try {
-        console.log('Fetching file with ID:', req.params.fileId);
-        const result = await getFileContent(req.params.fileId);
-        console.log('File mime type:', result.mimeType);
+        const fileId = req.params.fileId;
+        console.log('Fetching file with ID:', fileId);
         
-        // Set content type header
-        res.setHeader('Content-Type', result.mimeType);
+        const fileData = await getFileContent(fileId);
         
-        // Pipe the stream directly to response
-        result.content.pipe(res);
+        // Set appropriate headers
+        res.setHeader('Content-Type', fileData.mimeType);
+        res.setHeader('Content-Disposition', `inline; filename="${fileData.fileName}"`);
         
-        // Handle errors in the stream
-        result.content.on('error', (error) => {
-            console.error('Stream error:', error);
-            if (!res.headersSent) {
-                res.status(500).json({ error: 'Error streaming file' });
-            }
-        });
+        // Send the file content directly
+        res.send(fileData.content);
     } catch (error) {
-        console.error('Error getting file:', error);
-        if (!res.headersSent) {
-            res.status(500).json({ error: 'Failed to get file' });
-        }
+        console.error('Error serving file:', error);
+        res.status(500).json({ error: 'Failed to retrieve file' });
     }
 });
 

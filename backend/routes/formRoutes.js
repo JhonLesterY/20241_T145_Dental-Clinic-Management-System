@@ -15,7 +15,6 @@ router.get('/active-form-url', authenticatePatient, async (req, res) => {
         const form = await formServices.getForm(patientId);
         res.json({ formUrl: form.formUrl });
     } catch (error) {
-        console.error('Error getting form URL:', error);
         res.status(500).json({ error: 'Failed to get form URL' });
     }
 });
@@ -26,7 +25,6 @@ router.get('/responses', authenticateAdmin, async (req, res) => {
         const responses = await formServices.getFormResponses();
         res.json(responses);
     } catch (error) {
-        console.error('Error getting responses:', error);
         res.status(500).json({ error: 'Failed to get form responses' });
     }
 });
@@ -50,7 +48,6 @@ router.post('/initialize-form', authenticateAdmin, async (req, res) => {
             form
         });
     } catch (error) {
-        console.error('Error initializing form:', error);
         res.status(500).json({ error: 'Failed to initialize feedback form' });
     }
 });

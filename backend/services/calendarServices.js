@@ -4,10 +4,8 @@ const { oauth2Client } = require('../googleAuth');
 const SCOPES = [
     'https://www.googleapis.com/auth/calendar',
     'https://www.googleapis.com/auth/calendar.events',
+    'https://www.googleapis.com/auth/calendar.events.readonly',
     'https://www.googleapis.com/auth/calendar.readonly',
-    'https://www.googleapis.com/auth/calendar.events.owned',
-    'https://www.googleapis.com/auth/calendar.events.owned.readonly',
-    'https://www.googleapis.com/auth/calendar.settings.readonly'
 ];
 
 // Initialize with service account
@@ -15,28 +13,36 @@ const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'primary';
 
 async function ensureAuthenticated() {
     try {
-        if (!oauth2Client.credentials) {
+        if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REFRESH_TOKEN) {
+            throw new Error('Missing required Google credentials');
+        }
+
+        if (!oauth2Client.credentials || !oauth2Client.credentials.access_token) {
             oauth2Client.setCredentials({
                 refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
                 scope: SCOPES.join(' ')
             });
+            
+            // Force token refresh
+            const { credentials } = await oauth2Client.refreshAccessToken();
+            oauth2Client.setCredentials(credentials);
         }
+        
         return true;
     } catch (error) {
         console.error('Authentication error:', error);
-        throw new Error('Failed to authenticate with Google Calendar');
+        throw new Error('Failed to authenticate with Google Calendar: ' + error.message);
     }
 }
 
 // Create calendar service after ensuring authentication
 const getCalendarService = async () => {
-    if (!oauth2Client.credentials) {
-        oauth2Client.setCredentials({
-            refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
-            scope: SCOPES.join(' ')
-        });
-    }
-    return google.calendar({ version: 'v3', auth: oauth2Client });
+    await ensureAuthenticated();
+    return google.calendar({ 
+        version: 'v3', 
+        auth: oauth2Client,
+        timeout: 15000
+    });
 };
 
 // Modify getEvents to use the authenticated calendar service
@@ -45,17 +51,27 @@ async function getEvents(timeMin, timeMax) {
         await ensureAuthenticated();
         const calendar = await getCalendarService();
         
+        console.log('Fetching events with credentials:', {
+            hasAuth: !!oauth2Client.credentials,
+            hasAccessToken: !!oauth2Client.credentials?.access_token,
+            calendarId: CALENDAR_ID
+        });
+
         const response = await calendar.events.list({
             calendarId: CALENDAR_ID,
             timeMin: timeMin || new Date().toISOString(),
             timeMax: timeMax,
             singleEvents: true,
             orderBy: 'startTime',
+            maxResults: 100
         });
 
-        return response.data.items;
+        return response.data.items || [];
     } catch (error) {
         console.error('Error getting events:', error);
+        if (error.message.includes('insufficient')) {
+            throw new Error('Calendar access not authorized. Please check permissions.');
+        }
         throw error;
     }
 }

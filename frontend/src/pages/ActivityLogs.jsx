@@ -17,6 +17,8 @@ const ActivityLogs = () => {
         end: ''
     });
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [selectedLog, setSelectedLog] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         fetchLogs();
@@ -65,7 +67,7 @@ const ActivityLogs = () => {
             'deleteDentist': 'Deleted Dentist',
             'updateDentist': 'Updated Dentist Details',
             'deletePatient': 'Deleted Patient',
-            'updatePatient': 'Updated Patient Details',
+            'updateProfile': 'Updated Patient Details',
             'updateInventory': 'Updated Inventory',
             'deleteInventoryItem': 'Deleted Inventory Item',
             'addInventoryItem': 'Added Inventory Item',
@@ -75,7 +77,7 @@ const ActivityLogs = () => {
             'login': 'User Login',
             'logout': 'User Logout',
             'changePassword': 'Changed Password',
-            'updateProfile': 'Updated Profile'
+            'updateSettings': 'Updated System Settings'
         };
         return actionMap[action] || action;
     };
@@ -102,31 +104,128 @@ const ActivityLogs = () => {
     const formatDetails = (details) => {
         const formattedDetails = [];
         
-        if (details.name) {
-            formattedDetails.push(`Name: ${details.name}`);
-        }
-        
-        if (details.admin_id) {
-            formattedDetails.push(`Admin ID: ${details.admin_id}`);
-        }
-        
-        if (details.dentist_id) {
-            formattedDetails.push(`Dentist ID: ${details.dentist_id}`);
-        }
-        
-        if (details.patient_id) {
-            formattedDetails.push(`Patient ID: ${details.patient_id}`);
+        // Add performer details if available
+        if (details.performer) {
+            formattedDetails.push(
+                <div key="performer" className="mb-2">
+                    <span className="font-medium text-gray-700">Performed by: </span>
+                    <span className="text-gray-600">
+                        {details.performer.name} ({details.performer.id})
+                    </span>
+                </div>
+            );
         }
 
-        if (details.status) {
-            formattedDetails.push(`Status: ${details.status}`);
+        // Add target details if available
+        if (details.targetName) {
+            formattedDetails.push(
+                <div key="target" className="mb-2">
+                    <span className="font-medium text-gray-700">Target: </span>
+                    <span className="text-gray-600">
+                        {details.targetName} ({details.targetId})
+                    </span>
+                </div>
+            );
         }
 
-        return formattedDetails.map((detail, index) => (
-            <div key={index} className="text-sm">
-                {detail}
+        // Format specific details based on action type
+        Object.entries(details).forEach(([key, value]) => {
+            if (!['performer', 'targetName', 'targetId', 'status'].includes(key)) {
+                let formattedKey = key.split('_').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                ).join(' ');
+                
+                let formattedValue = value;
+                if (key === 'count') {
+                    formattedValue = `${value} appointments viewed`;
+                } else if (typeof value === 'object' && value !== null) {
+                    formattedValue = JSON.stringify(value, null, 2);
+                }
+
+                formattedDetails.push(
+                    <div key={key} className="text-sm">
+                        <span className="font-medium text-gray-700">
+                            {formattedKey}: 
+                        </span>
+                        <span className="text-gray-600 ml-2">
+                            {formattedValue}
+                        </span>
+                    </div>
+                );
+            }
+        });
+
+        return formattedDetails;
+    };
+
+    const handleLogClick = (log) => {
+        setSelectedLog(log);
+        setIsModalOpen(true);
+    };
+
+    const LogDetailsModal = ({ log, onClose }) => {
+        if (!log) return null;
+
+        return (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div className="relative top-20 mx-auto p-5 border w-[600px] shadow-lg rounded-md bg-white">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xl font-semibold">Activity Log Details</h3>
+                        <button 
+                            onClick={onClose}
+                            className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+                        >
+                            ×
+                        </button>
+                    </div>
+                    
+                    <div className="space-y-6">
+                        {/* Timestamp Section */}
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <p className="text-sm font-medium text-gray-500">Timestamp</p>
+                            <p className="text-gray-900 mt-1">
+                                {format(new Date(log.timestamp), 'MMMM d, yyyy HH:mm:ss')}
+                            </p>
+                        </div>
+
+                        {/* User Info Section */}
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <p className="text-sm font-medium text-gray-500">User Information</p>
+                            <div className="mt-2">
+                                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    ${log.userRole === 'admin' ? 'bg-purple-100 text-purple-800' : 
+                                      log.userRole === 'dentist' ? 'bg-blue-100 text-blue-800' : 
+                                      'bg-green-100 text-green-800'}`}>
+                                    {log.userRole.toUpperCase()}
+                                </span>
+                                {log.details.performer && (
+                                    <p className="mt-2 text-gray-700">
+                                        <span className="font-medium">User: </span>
+                                        {log.details.performer.name} ({log.details.performer.email})
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Action Section */}
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <p className="text-sm font-medium text-gray-500">Action</p>
+                            <p className={`${getActionColor(log.action)} mt-1 font-medium`}>
+                                {getActionDisplay(log.action)}
+                            </p>
+                        </div>
+
+                        {/* Additional Details Section */}
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <p className="text-sm font-medium text-gray-500 mb-2">Additional Details</p>
+                            <div className="space-y-2">
+                                {formatDetails(log.details)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        ));
+        );
     };
 
     if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;

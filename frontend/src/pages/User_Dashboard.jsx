@@ -6,7 +6,7 @@ import dentalchair from "/src/images/Dental_Chair_.jpg";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import userIcon from "/src/images/user.png";
-import AdminSideBar from "../components/AdminSideBar";
+import User_Profile_Header from "../components/User_Profile_Header";
 import UserSideBar from "../components/UserSideBar";
 
 const User_Dashboard = () => {
@@ -84,24 +84,7 @@ const User_Dashboard = () => {
 
       {/* Main Content */}
       <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
-        {/* Header */}
-        <header className="bg-white shadow-md">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center space-x-4">
-              <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
-              <h1 className="text-2xl font-semibold text-[#003367]">Dashboard</h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <button className="p-2 rounded-full hover:bg-gray-100 transition">
-                <img className="w-6 h-6" src={bell} alt="Notifications" />
-              </button>
-              <Link to="/profile" className="p-2 rounded-full hover:bg-gray-100 transition">
-                <img className="w-6 h-6" src={userIcon} alt="Profile" />
-              </Link>
-            </div>
-          </div>
-        </header>
+       <User_Profile_Header/>
 
         {/* Main Dashboard Content */}
         <div className="p-6">

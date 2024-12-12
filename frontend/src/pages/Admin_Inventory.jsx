@@ -304,9 +304,7 @@ const Admin_Inventory = () => {
         }
     };
 
-    const handleUpdateItem = async (e) => {
-        e.preventDefault();
-        
+    const handleUpdateItem = async (itemData) => {
         try {
             const token = sessionStorage.getItem('token');
             
@@ -319,7 +317,7 @@ const Admin_Inventory = () => {
                 price: Number(editingItem.price)
             };
 
-            const response = await fetch(`http://localhost:5000/admin/inventory/${editingItem._id}`, {
+            const response = await fetch(`http://localhost:5000/admin/inventory/${itemData._id}`, {
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json',

@@ -33,9 +33,7 @@ const AdminDashboard = () => {
     const [dentistFormData, setDentistFormData] = useState({
       name: '',
       email: '',
-      password: '',
-      phoneNumber: '',
-      dentist_id: '' // Add this field
+      phoneNumber: ''
     });
       const [error, setError] = useState(null);
       const [isLocked, setIsLocked] = useState(false);
@@ -285,42 +283,38 @@ const AdminDashboard = () => {
     }
 
     try {
-      const requestData = {
-        name: dentistFormData.name,
-        email: dentistFormData.email,
-        password: dentistFormData.password,
-        phoneNumber: dentistFormData.phoneNumber
-      };
+        const requestData = {
+            name: dentistFormData.name,
+            email: dentistFormData.email,
+            phoneNumber: dentistFormData.phoneNumber
+        };
 
-      console.log('Sending request with data:', requestData);
+        const createResponse = await fetch('http://localhost:5000/admin/add-dentist', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+            },
+            body: JSON.stringify(requestData)
+        });
 
-      const createResponse = await fetch('http://localhost:5000/admin/add-dentist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('token')
-}`        },
-        body: JSON.stringify(requestData)
-      });
+        if (!createResponse.ok) {
+            const errorData = await createResponse.json();
+            throw new Error(errorData.message || 'Failed to create dentist');
+        }
 
-      if (!createResponse.ok) {
-        const errorData = await createResponse.json();
-        throw new Error(errorData.message || 'Failed to create dentist');
-      }
-
-      const data = await createResponse.json();
-      setShowDentistModal(false);
-      setDentistFormData({
-        name: '',
-        email: '',
-        password: '',
-        phoneNumber: ''
-      });
-      fetchDentists();
-      alert('Dentist created successfully!');
+        const data = await createResponse.json();
+        setShowDentistModal(false);
+        setDentistFormData({
+            name: '',
+            email: '',
+            phoneNumber: ''
+        });
+        fetchDentists();
+        alert('Dentist created successfully! Verification email has been sent.');
     } catch (error) {
-      console.error('Error creating dentist:', error);
-      setError(error.message || 'Failed to create dentist');
+        console.error('Error creating dentist:', error);
+        setError(error.message || 'Failed to create dentist');
     } finally {
         // Release the lock
         try {
@@ -559,6 +553,38 @@ const AdminDashboard = () => {
           alert(error.message);
       }
   };
+
+  const handleConfirmAppointment = async (appointmentId) => {
+    try {
+        // Open a modal to select dentist
+        const selectedDentist = await showDentistSelectionModal();
+        if (!selectedDentist) return;
+
+        const response = await fetch('http://localhost:5000/admin/appointments/confirm', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                appointmentId,
+                dentistId: selectedDentist.dentist_id
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message);
+        }
+
+        // Refresh appointments list
+        fetchAppointments();
+        alert('Appointment confirmed and assigned to dentist successfully!');
+    } catch (error) {
+        console.error('Error confirming appointment:', error);
+        alert(error.message);
+    }
+};
 
   return (
     <div className={`flex h-screen w-screen ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
@@ -936,11 +962,9 @@ const AdminDashboard = () => {
             <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
               <div className="mt-3">
                 <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Add Dentist</h3>
-                {lockMessage && (
-                    <div className="mb-4 text-red-500 text-sm">
-                        {lockMessage}
-                    </div>
-                )}
+                <p className="text-sm text-gray-500 mb-4">
+                  The dentist will receive an email to verify their account and set up Google login.
+                </p>
                 <form onSubmit={handleCreateDentist}>
                   <div className="mb-4">
                     <input
@@ -970,19 +994,6 @@ const AdminDashboard = () => {
                   </div>
                   <div className="mb-4">
                     <input
-                      type="password"
-                      placeholder="Password"
-                      className="w-full px-3 py-2 border rounded-md bg-white"
-                      value={dentistFormData.password}
-                      onChange={(e) => setDentistFormData({
-                        ...dentistFormData,
-                        password: e.target.value
-                      })}
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <input
                       type="tel"
                       placeholder="Phone Number"
                       className="w-full px-3 py-2 border rounded-md bg-white"
@@ -994,11 +1005,6 @@ const AdminDashboard = () => {
                       required
                     />
                   </div>
-                  {error && (
-                    <div className="mb-4 text-red-500 text-sm">
-                      {error}
-                    </div>
-                  )}
                   <div className="flex justify-end space-x-3">
                     <button
                       type="button"

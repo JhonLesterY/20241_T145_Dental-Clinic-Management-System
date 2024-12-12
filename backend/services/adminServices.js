@@ -144,7 +144,7 @@ async function deletePatient(req, res) {
 }
 
 async function addDentist(req, res) {
-    const { name, email, password, phoneNumber } = req.body;
+    const { name, email, phoneNumber } = req.body;
 
     try {
         const existingDentist = await Dentist.findOne({ email });
@@ -156,17 +156,25 @@ async function addDentist(req, res) {
         const lastDentist = await Dentist.findOne().sort({ dentist_id: -1 });
         const nextDentistId = lastDentist ? lastDentist.dentist_id + 1 : 1;
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-
         const newDentist = new Dentist({
-            dentist_id: nextDentistId, // Add this line
+            dentist_id: nextDentistId,
             name,
             email,
-            password: hashedPassword,
-            phoneNumber
+            phoneNumber,
+            isGoogleUser: true,
+            verificationToken: crypto.randomBytes(32).toString('hex'),
+            verificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000)
         });
 
         await newDentist.save();
+
+        // Send verification email
+        await sendAdminVerificationEmail({
+            email: newDentist.email,
+            name: newDentist.name,
+            token: newDentist.verificationToken,
+            role: 'dentist'
+        });
 
         // Log activity
         await logActivity({
@@ -176,9 +184,17 @@ async function addDentist(req, res) {
             details: { dentist_id: newDentist.dentist_id, name: newDentist.name, email: newDentist.email }
         });
 
-        res.status(201).json({ message: 'Dentist added successfully', dentist: newDentist });
+        res.status(201).json({ 
+            message: 'Dentist added successfully. Verification email sent.',
+            dentist: {
+                dentist_id: newDentist.dentist_id,
+                name: newDentist.name,
+                email: newDentist.email,
+                phoneNumber: newDentist.phoneNumber
+            }
+        });
     } catch (error) {
-        console.error('Error adding dentist:', error); // Add this for better debugging
+        console.error('Error adding dentist:', error);
         res.status(500).json({ message: 'Failed to add dentist: ' + error.message });
     }
 }
@@ -248,15 +264,16 @@ async function deleteAdmin(req, res) {
         }
 
         // Log activity
-        await logActivity(
-            req.user.id,
-            req.user.role,
-            'deleteAdmin',
-            { 
-                admin_id: deletedAdmin.admin_id,
-                name: deletedAdmin.fullname
+        await logActivity({
+            userId: req.user._id,
+            userRole: req.user.role,
+            action: ACTIONS.ADMIN_DELETE,
+            details: {
+                targetId: deletedAdmin._id,
+                targetName: deletedAdmin.fullname,
+                admin_id: deletedAdmin.admin_id
             }
-        );
+        });
 
         res.status(200).json({ 
             message: 'Admin deleted successfully'
@@ -572,12 +589,12 @@ const updateRolePermissions = async (adminId, targetRole, permissions) => {
             $set: { permissions: permissions }
         });
 
-        await logActivity(
-            adminId,
-            'admin',
-            'UPDATE_PERMISSIONS',
-            { role: targetRole, permissions: permissions }
-        );
+        await logActivity({
+            userId: adminId,
+            userRole: 'admin',
+            action: ACTIONS.SETTINGS_UPDATE,
+            details: { role: targetRole, permissions: permissions }
+        });
 
         return { success: true, message: `Updated permissions for ${targetRole}` };
     } catch (error) {
@@ -604,12 +621,12 @@ const promoteToHighLevelAdmin = async (adminId, targetAdminId) => {
             }
         });
 
-        await logActivity(
-            adminId,
-            'admin',
-            'PROMOTE_ADMIN',
-            { targetAdminId }
-        );
+        await logActivity({
+            userId: adminId,
+            userRole: 'admin',
+            action: ACTIONS.ADMIN_UPDATE,
+            details: { targetAdminId, action: 'promote' }
+        });
 
         return { success: true };
     } catch (error) {
@@ -692,12 +709,12 @@ const demoteFromHighLevelAdmin = async (adminId, targetAdminId) => {
             }
         });
 
-        await logActivity(
-            adminId,
-            'admin',
-            'DEMOTE_ADMIN',
-            { targetAdminId }
-        );
+        await logActivity({
+            userId: adminId,
+            userRole: 'admin',
+            action: ACTIONS.ADMIN_UPDATE,
+            details: { targetAdminId, action: 'demote' }
+        });
 
         return { 
             success: true,
@@ -707,6 +724,68 @@ const demoteFromHighLevelAdmin = async (adminId, targetAdminId) => {
         throw error;
     }
 };
+
+async function confirmAppointment(req, res) {
+    try {
+        const { appointmentId, dentistId } = req.body;
+        
+        // Debug logs
+        console.log('Confirming appointment:', {
+            appointmentId,
+            dentistId
+        });
+
+        // Find the appointment
+        const appointment = await Appointment.findOne({ appointmentId });
+        console.log('Found appointment:', appointment);
+
+        if (!appointment) {
+            return res.status(404).json({ message: 'Appointment not found' });
+        }
+
+        // Verify dentist exists
+        const dentist = await Dentist.findOne({ dentist_id: dentistId });
+        console.log('Found dentist:', {
+            dentist_id: dentist?.dentist_id,
+            _id: dentist?._id
+        });
+
+        if (!dentist) {
+            return res.status(404).json({ message: 'Dentist not found' });
+        }
+
+        // Update appointment status and assign dentist
+        appointment.status = 'confirmed';
+        appointment.dentistId = dentist._id;  // Using MongoDB _id
+        appointment.confirmedAt = new Date();
+        
+        const savedAppointment = await appointment.save();
+        console.log('Saved appointment:', savedAppointment);
+
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'confirmAppointment',
+            details: { 
+                appointmentId: appointment.appointmentId,
+                dentistId: dentistId,
+                patientName: appointment.patientName
+            }
+        });
+
+        // Send notification to dentist (you can implement email/notification system)
+        // TODO: Implement notification system
+
+        res.status(200).json({ 
+            message: 'Appointment confirmed and assigned to dentist',
+            appointment 
+        });
+    } catch (error) {
+        console.error('Error confirming appointment:', error);
+        res.status(500).json({ message: 'Failed to confirm appointment' });
+    }
+}
 
 module.exports = {
     getAllPatients,
@@ -732,5 +811,6 @@ module.exports = {
     promoteToHighLevelAdmin,
     updateAdminPermissions,
     demoteFromHighLevelAdmin,
+    confirmAppointment,
     
 };

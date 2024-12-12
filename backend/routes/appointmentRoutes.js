@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const Appointment = require('../models/Appointment');
 const { logActivity, ACTIONS } = require('../services/activitylogServices');
+const Dentist = require('../models/Dentist');
 
 // Define time slots (same as frontend)
 const TIME_SLOTS = [
@@ -113,6 +114,44 @@ router.get('/available', async (req, res) => {
   }
 });
 
+// Get available dentist with the least appointments
+const getAvailableDentist = async () => {
+  try {
+    // Get all dentists
+    const dentists = await Dentist.find({ isVerified: true });
+    if (!dentists.length) {
+      throw new Error('No verified dentists available');
+    }
+
+    // Get appointment counts for each dentist
+    const dentistLoads = await Promise.all(
+      dentists.map(async (dentist) => {
+        const appointmentCount = await Appointment.countDocuments({
+          dentistId: dentist._id,
+          status: 'confirmed',
+          appointmentDate: {
+            $gte: new Date() // Only count future appointments
+          }
+        });
+        return {
+          dentistId: dentist._id,
+          appointmentCount
+        };
+      })
+    );
+
+    // Find dentist with least appointments
+    const leastBusyDentist = dentistLoads.reduce((min, current) => 
+      current.appointmentCount < min.appointmentCount ? current : min
+    , dentistLoads[0]);
+
+    return leastBusyDentist.dentistId;
+  } catch (error) {
+    console.error('Error finding available dentist:', error);
+    throw new Error('No dentists available');
+  }
+};
+
 // Update your POST route error handling
 router.post('/', async (req, res) => {
   try {
@@ -147,7 +186,7 @@ router.post('/', async (req, res) => {
     }
 
     const appointment = new Appointment({
-      userId: userId,
+      patientId: userId,
       patientName: req.body.studentName,
       appointmentTime: selectedSlot.time,
       appointmentDate: appointmentDate,
@@ -179,7 +218,11 @@ router.post('/', async (req, res) => {
     res.status(201).json(savedAppointment);
   } catch (error) {
     console.error('Error creating appointment:', error);
-    res.status(500).json({ error: 'Failed to create appointment' });
+    let errorMessage = 'Failed to create appointment';
+    if (error.message === 'No dentists available') {
+      errorMessage = 'No dentists are currently available for appointments';
+    }
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -212,6 +255,7 @@ router.patch('/:id/status', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const userId = decoded.id;
+    const userRole = decoded.role || 'patient'; // Default to patient if role not found
 
     const appointment = await Appointment.findOneAndUpdate(
       { appointmentId: id },
@@ -220,21 +264,19 @@ router.patch('/:id/status', async (req, res) => {
     );
 
     if (appointment) {
-      // Add activity logging
       try {
-        await logActivity(
+        await logActivity({
           userId,
-          decoded.role || 'admin', // Use role from token or default to admin
-          ACTIONS.APPOINTMENT_UPDATE,
-          {
+          userRole,
+          action: ACTIONS.APPOINTMENT_UPDATE,
+          details: {
             appointmentId: id,
             newStatus: status,
             status: 'Successful'
           }
-        );
+        });
       } catch (logError) {
         console.error('Activity logging failed:', logError);
-        // Don't throw error, continue with appointment update
       }
     }
 

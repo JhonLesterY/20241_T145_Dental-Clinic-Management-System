@@ -13,13 +13,14 @@ async function bookAppointment(patient_id, appointmentData) {
         
         const appointment = new Appointment({
             ...appointmentData,
-            patient_id,
+            patientId: patient_id,
+            status: 'pending',
+            dentistId: null
         });
 
         const savedAppointment = await appointment.save();
         console.log('Appointment saved:', savedAppointment);
         
-        // Log the activity with standardized action
         await logActivity(
             patient_id,
             'patient',
@@ -43,9 +44,17 @@ async function bookAppointment(patient_id, appointmentData) {
 // Get all appointments for a specific patient
 async function getAppointments(patient_id) {
     try {
-        const appointments = await Appointment.find({ patient_id });
+        const appointments = await Appointment.find({ 
+            patientId: patient_id 
+        });
+        console.log('Found appointments for patient:', {
+            patientId: patient_id,
+            count: appointments.length,
+            appointments
+        });
         return appointments;
     } catch (error) {
+        console.error('Error getting appointments:', error);
         throw new Error(error.message);
     }
 }
@@ -171,23 +180,39 @@ async function updatePatientProfile(patientId, updateData) {
             throw new Error('Patient not found');
         }
 
+        // Extract birthday and convert it to a Date object if it exists
+        const { birthday, ...otherData } = updateData;
+        const birthdayDate = birthday ? new Date(birthday) : patient.birthday;
+
+        // Check if all required fields are present and valid
+        const hasRequiredFields = 
+            otherData.firstName && 
+            otherData.lastName && 
+            otherData.phoneNumber && 
+            otherData.sex && 
+            birthdayDate;
+
         // For Google users, we don't need to check hasChangedPassword
         const isProfileComplete = patient.isGoogleUser ? 
-            (updateData.firstName && updateData.lastName && updateData.phoneNumber && updateData.sex && updateData.birthday) :
-            (updateData.firstName && updateData.lastName && updateData.phoneNumber && updateData.sex && updateData.birthday && patient.hasChangedPassword);
+            Boolean(hasRequiredFields) :
+            Boolean(hasRequiredFields && patient.hasChangedPassword);
+
+        // Create the update object
+        const updateObject = {
+            ...otherData,
+            birthday: birthdayDate,
+            isProfileComplete,
+            updatedAt: new Date()
+        };
 
         // Update using the MongoDB _id
         const updatedPatient = await Patient.findByIdAndUpdate(
             patient._id,
-            { 
-                ...updateData,
-                isProfileComplete,
-                updatedAt: Date.now()
-            },
+            updateObject,
             { new: true }
         );
 
-        // Handle profile picture URL for Google users
+        // Handle profile picture for Google users
         if (patient.isGoogleUser && updateData.picture) {
             updatedPatient.profilePicture = updateData.picture;
             await updatedPatient.save();
@@ -206,6 +231,7 @@ async function updatePatientProfile(patientId, updateData) {
 
         return updatedPatient;
     } catch (error) {
+        console.error('Error in updatePatientProfile:', error);
         throw new Error(error.message);
     }
 }

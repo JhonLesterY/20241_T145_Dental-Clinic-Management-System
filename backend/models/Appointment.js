@@ -55,8 +55,10 @@ const appointmentSchema = new mongoose.Schema({
   },
   dentistId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Dentist',
-    required: true
+    ref: 'Dentist'
+  },
+  confirmedAt: {
+    type: Date
   }
 }, {
   timestamps: true

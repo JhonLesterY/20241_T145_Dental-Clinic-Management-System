@@ -17,13 +17,29 @@ const dentistSchema = new Schema({
         required: true,
         unique: true
     },
-    password: {
-        type: String,
-        required: true
-    },
     phoneNumber: {
         type: String,
         required: true
+    },
+    isGoogleUser: {
+        type: Boolean,
+        default: true
+    },
+    googleId: {
+        type: String
+    },
+    profilePicture: {
+        type: String
+    },
+    verificationToken: {
+        type: String
+    },
+    verificationExpiry: {
+        type: Date
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
     },
     createdAt: {
         type: Date,

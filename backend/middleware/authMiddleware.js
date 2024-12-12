@@ -1,6 +1,7 @@
 // backend/middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
+const Dentist = require('../models/Dentist');
 
 const authenticateAdmin = async (req, res, next) => {
     try {
@@ -34,7 +35,7 @@ const authenticateAdmin = async (req, res, next) => {
 const authenticatePatient = async (req, res, next) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
-        console.log('Authenticating patient with token:', token);
+       
 
         if (!token) {
             return res.status(401).json({ message: 'No token provided' });
@@ -55,6 +56,38 @@ const authenticatePatient = async (req, res, next) => {
     }
 };
 
+const authenticateDentist = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader?.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'No token provided' });
+        }
+
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        
+        if (decoded.role !== 'dentist') {
+            return res.status(403).json({ message: 'Access denied: Not a dentist' });
+        }
+
+        const dentist = await Dentist.findById(decoded.id);
+        if (!dentist) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        req.user = {
+            id: dentist._id,
+            email: dentist.email,
+            role: 'dentist'
+        };
+
+        next();
+    } catch (error) {
+        console.error('Auth error:', error);
+        res.status(401).json({ message: 'Not authorized' });
+    }
+};
+
 const checkPermission = async (req, res, next) => {
     try {
         const { user } = req;
@@ -72,4 +105,4 @@ const checkPermission = async (req, res, next) => {
     }
 };
 
-module.exports = { authenticateAdmin, authenticatePatient, checkPermission };
+module.exports = { authenticateAdmin, authenticatePatient, authenticateDentist, checkPermission };

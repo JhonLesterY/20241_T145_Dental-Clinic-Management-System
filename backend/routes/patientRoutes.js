@@ -9,7 +9,7 @@ const { authenticatePatient } = require('../middleware/authMiddleware');
 const { checkProfileCompletion } = require('../middleware/profileCheckMiddleware');
 const { logActivity } = require('../services/activitylogServices');
 const mongoose = require('mongoose');
-//const { sendWelcomeEmail, generatePassword } = require('../emailService');
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/profile-pictures')

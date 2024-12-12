@@ -16,12 +16,15 @@ const SCOPES = [
     'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/drive.file',
     'https://www.googleapis.com/auth/drive.metadata',
+    'https://www.googleapis.com/auth/drive.appdata',
+    'https://www.googleapis.com/auth/drive.resource',
     'https://www.googleapis.com/auth/forms.body',
     'https://www.googleapis.com/auth/forms.responses.readonly',
     'https://www.googleapis.com/auth/forms.body.readonly',
     'https://www.googleapis.com/auth/calendar',
     'https://www.googleapis.com/auth/calendar.events',
     'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/calendar.events.readonly',
     'https://www.googleapis.com/auth/calendar.events.owned',
     'https://www.googleapis.com/auth/calendar.events.owned.readonly',
     'https://www.googleapis.com/auth/calendar.settings.readonly'
@@ -53,13 +56,49 @@ const getAccessToken = async () => {
 
 const getDriveService = async () => {
     try {
-        // Get a fresh access token
         const accessToken = await getAccessToken();
         
-        return google.drive({ 
+        const service = google.drive({ 
             version: 'v3',
             auth: oauth2Client
         });
+
+        // Wrap all necessary methods for Drive operations
+        const originalMethods = {
+            create: service.files.create.bind(service.files),
+            get: service.files.get.bind(service.files),
+            list: service.files.list.bind(service.files),
+            permissionsCreate: service.permissions.create.bind(service.permissions)
+        };
+
+        // Override methods with shared drive support
+        service.files.create = async (params) => originalMethods.create({
+            ...params,
+            supportsAllDrives: true,
+            supportsTeamDrives: true
+        });
+
+        service.files.get = async (params) => originalMethods.get({
+            ...params,
+            supportsAllDrives: true,
+            supportsTeamDrives: true
+        });
+
+        service.files.list = async (params) => originalMethods.list({
+            ...params,
+            supportsAllDrives: true,
+            supportsTeamDrives: true,
+            includeItemsFromAllDrives: true,
+            corpora: 'allDrives'
+        });
+
+        service.permissions.create = async (params) => originalMethods.permissionsCreate({
+            ...params,
+            supportsAllDrives: true,
+            supportsTeamDrives: true
+        });
+
+        return service;
     } catch (error) {
         console.error('Error getting drive service:', error);
         throw error;

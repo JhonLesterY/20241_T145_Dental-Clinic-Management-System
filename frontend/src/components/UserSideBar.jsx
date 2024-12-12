@@ -16,8 +16,8 @@ const menuItems = [
   { icons: <BsCalendarCheck size={24} />, label: "Appointment", path: "/appointment" },
   { icons: <MdFeedback size={24} />, label: "Feedback", path: "/feedback" },
   { icons: <MdUploadFile size={24} />, label: "Upload Requirements", path: "/upload-requirements" },  
+  { icons: <MdUploadFile size={24} />, label: "Upload Requirements", path: "/upload-requirements" },
   { icons: <CiSettings size={24} />, label: "Settings", path: "/settings" },
-  { icons: <TbReportSearch size={24} />, label: "Reports", path: "/user-reports" },
 ];
 
 export default function Sidebar() {

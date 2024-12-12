@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 const ActivityLog = require('../models/ActivityLog');
+const Admin = require('../models/Admin');
+const Dentist = require('../models/Dentist');
+const Patient = require('../models/Patient');
 
 // Define all possible actions as constants
 const ACTIONS = {
@@ -21,6 +24,7 @@ const ACTIONS = {
     APPOINTMENT_CREATE: 'createAppointment',
     APPOINTMENT_UPDATE: 'updateAppointment',
     APPOINTMENT_DELETE: 'deleteAppointment',
+    APPOINTMENT_VIEW: 'viewAppointments',
     
     // Inventory actions
     INVENTORY_UPDATE: 'updateInventory',
@@ -33,15 +37,10 @@ const ACTIONS = {
     PASSWORD_CHANGE: 'changePassword',
     
     // Additional actions
-    APPOINTMENT_VIEW: 'viewAppointments',
     FEEDBACK_SUBMIT: 'submitFeedback',
-    FEEDBACK_VIEW: 'viewFeedback',
-    PROFILE_VIEW: 'viewProfile',
     REQUIREMENTS_UPDATE: 'updateRequirements',
     CALENDAR_UPDATE: 'updateCalendar',
     SETTINGS_UPDATE: 'updateSettings',
-    
-    // System actions
     SYSTEM_ERROR: 'systemError',
     SYSTEM_MAINTENANCE: 'systemMaintenance'
 };
@@ -61,46 +60,76 @@ const getUserModel = (userRole) => {
     }
 };
 
-const logActivity = async (userId, userRole, action, details = {}) => {
+const logActivity = async (params) => {
     try {
-        console.log('\n--- Activity Logging Start ---');
-        console.log('Input parameters:', { userId, userRole, action, details });
+        // Handle both object parameter and individual parameters
+        const { userId, userRole, action } = typeof params === 'object' && !Array.isArray(params) 
+            ? params 
+            : { userId: arguments[0], userRole: arguments[1], action: arguments[2] };
+            
+        let details = typeof params === 'object' && !Array.isArray(params)
+            ? { ...params.details }
+            : { ...arguments[3] } || {};
 
         if (!userId || !userRole || !action) {
             console.error('Missing required parameters:', { userId, userRole, action });
             return;
         }
 
-        if (IMPORTANT_ACTIONS.includes(action)) {
-            const userIdObj = mongoose.Types.ObjectId.isValid(userId) 
-                ? new mongoose.Types.ObjectId(userId) 
-                : userId;
+        // Convert string ID to ObjectId if needed
+        const userIdObj = mongoose.Types.ObjectId.isValid(userId) 
+            ? new mongoose.Types.ObjectId(userId) 
+            : userId;
 
+        // Get user details based on role
+        let userDetails;
+        try {
+            console.log('Looking up user with ID:', userIdObj);
+            
+            switch (userRole.toLowerCase()) {
+                case 'admin':
+                    userDetails = await Admin.findOne({ _id: userIdObj });
+                    break;
+                case 'dentist':
+                    userDetails = await Dentist.findOne({ _id: userIdObj });
+                    break;
+                case 'patient':
+                    userDetails = await Patient.findOne({ _id: userIdObj });
+                    break;
+            }
+            
+            console.log('Found user details:', userDetails);
+        } catch (error) {
+            console.error('Error finding user details:', error);
+        }
+
+        // For viewAppointments action - now modifying a non-const details
+        if (action === ACTIONS.APPOINTMENT_VIEW) {
+            details = {
+                ...details,
+                count: details.count || 0,
+                description: `Viewed ${details.count} appointments`,
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        // Create and save the log with the modified details
+        if (IMPORTANT_ACTIONS.includes(action)) {
             const logData = {
                 userId: userIdObj,
                 userModel: getUserModel(userRole),
                 userRole: userRole.toLowerCase(),
                 action,
-                details: {
-                    ...details,
-                    status: details.status || 'Successful'
-                },
+                details,
                 timestamp: new Date()
             };
 
             console.log('Creating log with data:', logData);
             const log = new ActivityLog(logData);
-            const savedLog = await log.save();
-            console.log('Log saved successfully:', savedLog);
-        } else {
-            console.warn('Action not recognized:', action);
-            console.log('Available actions:', IMPORTANT_ACTIONS);
+            await log.save();
         }
-        
-        console.log('--- Activity Logging End ---\n');
     } catch (error) {
         console.error('Failed to log activity:', error);
-        console.error('Error stack:', error.stack);
     }
 };
 

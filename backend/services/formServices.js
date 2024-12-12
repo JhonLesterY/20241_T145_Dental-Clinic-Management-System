@@ -21,11 +21,13 @@ async function getForm(patientEmail) {
         
         // Field IDs from your form
         const FIELD_IDS = {
-            EMAIL: '1897336823',  // Email field ID
-            OVERALL_EXPERIENCE: '1086842232',
-            STAFF_PROFESSIONALISM: '1599310959',
-            TREATMENT_SATISFACTION: '1645046579',
-            CLINIC_CLEANLINESS: '1296274858'
+            EMAIL: '71170ff7',  // Updated to match the response mapping
+            OVERALL_EXPERIENCE: '40c7e578',
+            STAFF_PROFESSIONALISM: '5f538c6f',
+            TREATMENT_SATISFACTION: '620d6b33',
+            CLINIC_CLEANLINESS: '4d4395aa',
+            RATING: '5ec7554c',
+            COMMENTS: '6c97fa0d'
         };
         
         // Construct the public URL with prefilled patient email
@@ -53,16 +55,11 @@ async function getFormResponses() {
         const forms = await getFormsService();
         const formId = '1QMIf2EbuFc0lpQvbqVj9mBDtfJ4mSMItskEKJOLh6UY';
         
-        console.log('Fetching responses for form:', formId);
-        
         const responsesResponse = await forms.forms.responses.list({
             formId: formId
         });
 
-        console.log('Raw response from Google Forms:', JSON.stringify(responsesResponse.data, null, 2));
-
         if (!responsesResponse.data.responses) {
-            console.log('No responses found');
             return [];
         }
 
@@ -109,6 +106,12 @@ async function getFormResponses() {
 
 const storeFormResponse = async (response) => {
     try {
+        const existingFeedback = await Feedback.findOne({ responseId: response.responseId });
+        
+        if (existingFeedback) {
+            return existingFeedback;
+        }
+
         const feedback = new Feedback({
             responseId: response.responseId,
             patient: response.answers['Patient Email'],
@@ -122,9 +125,7 @@ const storeFormResponse = async (response) => {
             createdAt: new Date(response.submittedAt)
         });
         
-        // Save the feedback to database
         await feedback.save();
-        console.log('Feedback saved to database:', feedback._id);
         return feedback;
     } catch (error) {
         console.error('Error storing form response:', error);
@@ -134,36 +135,23 @@ const storeFormResponse = async (response) => {
 
 const syncFormResponses = async () => {
     try {
-        console.log('Starting form response sync...');
         const responses = await getFormResponses();
-        console.log('Fetched responses:', responses);
         
         for (const response of responses) {
             try {
-                console.log('Processing response:', response);
-                const result = await storeFormResponse(response);
-                if (result) {
-                    console.log('Stored response in database');
-                }
+                await storeFormResponse(response);
             } catch (error) {
                 console.error('Error processing response:', error);
-                // Continue with next response instead of stopping
                 continue;
             }
         }
-        
-        console.log('Form responses synchronized successfully');
     } catch (error) {
         console.error('Error syncing form responses:', error);
-        // Don't throw the error, just log it
     }
 };
 
-// Add these at the end of the file
-// Run sync every 5 minutes
 setInterval(syncFormResponses, 60000);
 
-// Run initial sync when server starts
 syncFormResponses().catch(console.error);
 
 // Create a new feedback form

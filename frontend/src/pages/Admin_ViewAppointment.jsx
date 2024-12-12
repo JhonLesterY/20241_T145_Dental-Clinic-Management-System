@@ -105,6 +105,7 @@ const Admin_ViewAppointment = () => {
     const [fileContent, setFileContent] = useState(null);
     const [fileType, setFileType] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     const documents = [
       { type: 'School ID', data: appointment.requirements?.schoolId },
@@ -113,102 +114,119 @@ const Admin_ViewAppointment = () => {
     ];
 
     const handleViewFile = async (fileId) => {
+      setError(null);
       try {
         setLoading(true);
         console.log('Fetching file:', fileId);
         
-        // Create URL for the file
         const fileUrl = `http://localhost:5000/upload/file/${fileId}`;
-        
-        // Set up headers
-        const headers = {
-          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
-        };
-
-        // First check if file exists and get content type
-        const headResponse = await fetch(fileUrl, {
-          method: 'HEAD',
-          headers
+        const response = await fetch(fileUrl, {
+          headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+          },
         });
 
-        if (!headResponse.ok) throw new Error('Failed to fetch file');
+        if (!response.ok) {
+          throw new Error('Failed to fetch file');
+        }
 
-        const contentType = headResponse.headers.get('content-type');
-        console.log('Content Type:', contentType);
+        const contentType = response.headers.get('content-type');
         setFileType(contentType);
 
-        // For all files, get the blob and create URL
-        const response = await fetch(fileUrl, { headers });
-        if (!response.ok) throw new Error('Failed to fetch file content');
-        
         const blob = await response.blob();
-        console.log('Blob size:', blob.size, 'Blob type:', blob.type);
+        
+        // Clean up previous URL if it exists
+        if (fileContent) {
+          URL.revokeObjectURL(fileContent);
+        }
         
         const url = URL.createObjectURL(blob);
-        console.log('Created URL:', url);
         setFileContent(url);
         setSelectedFile(fileId);
       } catch (error) {
         console.error('Error viewing file:', error);
-        alert('Failed to load file');
+        setError(error.message || 'Failed to load file');
       } finally {
         setLoading(false);
       }
     };
 
     const renderFilePreview = () => {
-      console.log('Rendering preview with:', { fileType, fileContent });
       if (!selectedFile || !fileContent) return null;
+      if (error) return <div className="text-red-500">{error}</div>;
 
-      if (fileType && fileType.startsWith('image/')) {
-        console.log('Rendering as image');
-        return (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <div className="relative max-w-full max-h-[60vh]">
-              <img 
-                src={fileContent} 
-                alt="Document Preview" 
-                className="object-contain w-full h-full"
-                onError={(e) => {
-                  console.error('Image load error:', e);
-                  const errorDiv = document.createElement('div');
-                  errorDiv.className = 'text-red-500';
-                  errorDiv.textContent = 'Failed to load image';
-                  e.target.parentElement.appendChild(errorDiv);
-                  e.target.style.display = 'none';
-                }}
-              />
+      try {
+        if (fileType?.startsWith('image/')) {
+          return (
+            <div className="w-full h-full flex items-center justify-center bg-gray-100">
+              <div className="relative max-w-full max-h-[60vh]">
+                {error ? (
+                  <div className="text-red-500 p-4">{error}</div>
+                ) : (
+                  <img 
+                    src={fileContent} 
+                    alt="Document Preview" 
+                    className="object-contain w-full h-full"
+                    onError={(e) => {
+                      console.error('Image load error');
+                      setError('Failed to load image');
+                      e.target.style.display = 'none';
+                    }}
+                    onLoad={() => setError(null)}
+                  />
+                )}
+              </div>
             </div>
-          </div>
-        );
-      } else if (fileType === 'application/pdf') {
-        console.log('Rendering as PDF');
-        return (
-          <div className="w-full h-full">
-            <object
-              data={fileContent}
-              type="application/pdf"
-              className="w-full h-full"
-            >
-              <p>Unable to display PDF. <a href={fileContent} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Download PDF</a></p>
-            </object>
-          </div>
-        );
-      } else {
-        console.log('Rendering as other file type');
-        return (
-          <div className="flex items-center justify-center h-full">
-            <a 
-              href={fileContent} 
-              download 
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Download File
-            </a>
-          </div>
-        );
+          );
+        } else if (fileType === 'application/pdf') {
+          return (
+            <div className="w-full h-[60vh]">
+              <object
+                data={fileContent}
+                type="application/pdf"
+                className="w-full h-full"
+              >
+                <div className="p-4 text-center">
+                  <p>Unable to display PDF directly.</p>
+                  <a 
+                    href={fileContent} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline"
+                  >
+                    Open PDF in new tab
+                  </a>
+                </div>
+              </object>
+            </div>
+          );
+        } else {
+          return (
+            <div className="flex items-center justify-center h-full">
+              <a 
+                href={fileContent} 
+                download 
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Download File
+              </a>
+            </div>
+          );
+        }
+      } catch (err) {
+        console.error('Preview error:', err);
+        return <div className="text-red-500">Error displaying preview</div>;
       }
     };
+
+    useEffect(() => {
+      return () => {
+        // Cleanup function to revoke object URL when component unmounts
+        if (fileContent) {
+          URL.revokeObjectURL(fileContent);
+        }
+      };
+    }, [fileContent]);
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">

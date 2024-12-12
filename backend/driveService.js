@@ -62,42 +62,87 @@ const getOrCreatePatientFolder = async (drive, patientDetails) => {
         const folderName = `Patient_${patientDetails.patientId}_${patientDetails.patientName}`;
         const parentFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
-        // Check if folder exists
-        const response = await drive.files.list({
-            q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and '${parentFolderId}' in parents`,
-            fields: 'files(id, name)',
-            spaces: 'drive'
-        });
+        console.log('Attempting to create/find folder:', folderName);
+        console.log('Parent folder ID:', parentFolderId);
 
-        if (response.data.files.length > 0) {
-            return response.data.files[0].id;
+        if (!parentFolderId) {
+            throw new Error('GOOGLE_DRIVE_FOLDER_ID not configured');
         }
 
-        // Create new folder
+        // First verify parent folder exists and is accessible with retries
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        while (retryCount < maxRetries) {
+            try {
+                await drive.files.get({
+                    fileId: parentFolderId,
+                    fields: 'id, name, capabilities',
+                    supportsAllDrives: true
+                });
+                break; // Success, exit loop
+            } catch (parentError) {
+                console.error(`Parent folder access attempt ${retryCount + 1} failed:`, parentError);
+                retryCount++;
+                
+                if (retryCount === maxRetries) {
+                    throw new Error('Cannot access parent folder after multiple attempts. Please verify folder ID and permissions.');
+                }
+                // Wait before retrying
+                await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            }
+        }
+
+        // Rest of your existing folder creation/search code
+        const searchQuery = {
+            q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and '${parentFolderId}' in parents and trashed=false`,
+            fields: 'files(id, name)',
+            spaces: 'drive',
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true
+        };
+
+        const existingFolder = await drive.files.list(searchQuery);
+        
+        if (existingFolder.data.files.length > 0) {
+            return existingFolder.data.files[0].id;
+        }
+
+        // Create new folder with explicit permissions
         const folderMetadata = {
             name: folderName,
             mimeType: 'application/vnd.google-apps.folder',
-            parents: [parentFolderId]
+            parents: [parentFolderId],
+            // Add explicit permission settings
+            permissionIds: ['anyoneWithLink'],
+            writersCanShare: true
         };
 
-        const folder = await drive.files.create({
+        const newFolder = await drive.files.create({
             requestBody: folderMetadata,
-            fields: 'id'
+            fields: 'id',
+            supportsAllDrives: true
         });
 
-        // Set folder permissions
+        // Set folder permissions immediately
         await drive.permissions.create({
-            fileId: folder.data.id,
+            fileId: newFolder.data.id,
             requestBody: {
-                role: 'reader',
+                role: 'writer',
                 type: 'anyone'
-            }
+            },
+            supportsAllDrives: true,
+            sendNotificationEmail: false
         });
 
-        return folder.data.id;
+        return newFolder.data.id;
     } catch (error) {
-        console.error('Error creating folder:', error);
-        throw new Error(`Failed to get/create patient folder: ${error.message}`);
+        console.error('Detailed folder error:', {
+            message: error.message,
+            stack: error.stack,
+            details: error.response?.data
+        });
+        throw new Error(`Folder operation failed: ${error.message}`);
     }
 };
 
@@ -105,26 +150,49 @@ const getFileContent = async (fileId) => {
     try {
         const drive = await getDriveService();
         
-        // Get file metadata
-        const file = await drive.files.get({
+        // Get file metadata first
+        const metadata = await drive.files.get({
             fileId: fileId,
-            fields: 'mimeType'
+            fields: 'id, name, mimeType',
+            supportsAllDrives: true
         });
+
+        if (!metadata.data) {
+            throw new Error('File not found');
+        }
 
         // Get file content
         const response = await drive.files.get({
             fileId: fileId,
-            alt: 'media'
+            alt: 'media',
+            supportsAllDrives: true
         }, {
-            responseType: 'stream'
+            responseType: 'arraybuffer'
         });
 
+        // Ensure we have valid buffer data
+        let buffer;
+        if (response.data instanceof ArrayBuffer) {
+            buffer = Buffer.from(new Uint8Array(response.data));
+        } else if (typeof response.data === 'string') {
+            buffer = Buffer.from(response.data);
+        } else if (Buffer.isBuffer(response.data)) {
+            buffer = response.data;
+        } else {
+            throw new Error('Unexpected response data type');
+        }
+
         return {
-            content: response.data,
-            mimeType: file.data.mimeType
+            content: buffer,
+            mimeType: metadata.data.mimeType,
+            fileName: metadata.data.name
         };
     } catch (error) {
-        console.error('Error getting file from Drive:', error);
+        console.error('Error getting file from Drive:', {
+            error: error.message,
+            stack: error.stack,
+            responseType: typeof response?.data
+        });
         throw new Error(`Failed to get file from Google Drive: ${error.message}`);
     }
 };

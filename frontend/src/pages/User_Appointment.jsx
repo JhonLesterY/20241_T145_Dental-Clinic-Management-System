@@ -7,6 +7,7 @@ import bell from "/src/images/bell.png";
 import magnify from "/src/images/magnifying-glass.png";
 import UserSideBar from "../components/UserSideBar";
 import userIcon from "/src/images/user.png";
+import User_Profile_Header from "../components/User_Profile_Header";
 
 const TIME_SLOTS = [
   { time: "8:00 - 10:00 AM", id: 1, maxSlots: 3 },
@@ -138,41 +139,46 @@ const User_Appointment = () => {
     try {
       const patientId = sessionStorage.getItem('patient_id');
       const token = sessionStorage.getItem('token');
-      
-      console.log('Checking profile with:', { patientId, token }); // Debug log
-      
+
       if (!token || !patientId) {
-        console.log('Missing credentials');
+        console.log('Missing authentication credentials');
+        sessionStorage.clear();
         navigate('/login');
         return;
       }
-  
-      const response = await fetch(`http://localhost:5000/patients/${patientId}/profile`, {
+
+      const response = await fetch(`http://localhost:5000/patients/numeric/${patientId}/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
       });
-  
+
+      const data = await response.json();
+      
       if (!response.ok) {
-        console.log('Profile response not ok:', response.status);
-        if (response.status === 401) {
-          sessionStorage.clear(); // Clear all session data
-          navigate('/login');
+        console.error('Profile fetch error:', data);
+        if (response.status === 401 || response.status === 404) {
+          sessionStorage.clear();
+          navigate('/login', { 
+            state: { message: data.message || 'Please login again.' }
+          });
           return;
         }
-        throw new Error('Failed to fetch profile');
+        throw new Error(data.message || 'Failed to fetch profile');
       }
       
-      const data = await response.json();
-      console.log('Profile data received:', data); // Debug log
-  
-      // Store user data in session storage
+      console.log('Profile data received:', data);
       sessionStorage.setItem('userData', JSON.stringify(data));
       
-      if (!data.isProfileComplete) {
+      // Special handling for Google users
+      const isProfileIncomplete = data.isGoogleUser ? 
+        !data.firstName || !data.lastName || !data.phoneNumber || !data.sex || !data.birthday :
+        !data.isProfileComplete || !data.hasChangedPassword;
+
+      if (isProfileIncomplete) {
         navigate('/profile', { 
-          state: { message: 'Please complete your profile before making an appointment' }
+          state: { message: 'Please complete your profile first' }
         });
         return;
       }
@@ -180,6 +186,10 @@ const User_Appointment = () => {
       setIsProfileComplete(true);
     } catch (error) {
       console.error('Error checking profile:', error);
+      sessionStorage.clear();
+      navigate('/login', {
+        state: { message: 'An error occurred. Please login again.' }
+      });
     } finally {
       setIsLoading(false);
     }
@@ -331,49 +341,7 @@ const User_Appointment = () => {
           sidebarOpen ? "ml-64" : "ml-16"
         }`}
       >
-        {/* Header */}
-        <header className="bg-white shadow-md">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center space-x-4">
-              <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
-              <h1 className="text-2xl font-semibold text-[#003367]">
-                Book Your Appointment
-              </h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {/* Search Bar */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <svg
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M21 21l-4.35-4.35M16 10a6 6 0 1112 0 6 6 0 01-12 0z"
-                  />
-                </svg>
-              </div>
-
-              <button
-                className="p-2 rounded-full hover:bg-gray-100 transition"
-                aria-label="Notifications"
-              >
-                <img className="w-6 h-6" src={bell} alt="Notifications" />
-              </button>
-            </div>
-          </div>
-        </header>
+       <User_Profile_Header/>
         <div className="w-[78rem] mx-auto my-4"></div>
 
         {/* Date Section */}

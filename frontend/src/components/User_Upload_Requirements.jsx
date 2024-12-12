@@ -4,6 +4,7 @@ import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import UserSideBar from "../components/UserSideBar";
 import toast from 'react-hot-toast';
+import User_Profile_Header from "../components/User_Profile_Header";
 
 const User_Upload_Requirements = () => {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ const User_Upload_Requirements = () => {
         return;
       }
   
-      const response = await fetch(`http://localhost:5000/patients/${patientId}/profile`, {
+      const response = await fetch(`http://localhost:5000/patients/numeric/${patientId}/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -59,9 +60,14 @@ const User_Upload_Requirements = () => {
       console.log('Profile data received:', data);
       sessionStorage.setItem('userData', JSON.stringify(data));
       
-      if (!data.isProfileComplete) {
+      // Special handling for Google users
+      const isProfileIncomplete = data.isGoogleUser ? 
+        !data.firstName || !data.lastName || !data.phoneNumber || !data.sex || !data.birthday :
+        !data.isProfileComplete || !data.hasChangedPassword;
+  
+      if (isProfileIncomplete) {
         navigate('/profile', { 
-          state: { message: 'Please complete your profile before uploading requirements' }
+          state: { message: 'Please complete your profile first' }
         });
         return;
       }
@@ -177,46 +183,7 @@ const User_Upload_Requirements = () => {
 
       {/* Main Content */}
       <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
-        {/* Header */}
-        <header className="bg-white shadow-md">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center space-x-4">
-              <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
-              <h1 className="text-2xl font-semibold text-[#003367]">Upload Requirements</h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {/* Search Bar */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {/* New Search Icon (Magnifying Glass) */}
-                <svg
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M21 21l-4.35-4.35M16 10a6 6 0 1112 0 6 6 0 01-12 0z"
-                  />
-                </svg>
-              </div>
-
-              {/* Notifications Button */}
-              <button className="p-2 rounded-full hover:bg-gray-100 transition">
-                <img className="w-6 h-6" src={bell} alt="Notifications" />
-              </button>
-            </div>
-          </div>
-        </header>
+      <User_Profile_Header/>
 
         {/* Main Dashboard Content */}
         <div className="p-6">

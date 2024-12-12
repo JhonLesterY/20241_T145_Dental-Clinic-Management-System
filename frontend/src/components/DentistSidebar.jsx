@@ -13,9 +13,10 @@ import { CiSettings } from "react-icons/ci";
 // Menu Items
 const menuItems = [
   { icons: <IoHomeOutline size={24} />, label: "Dashboard", path: "/dentist-dashboard" },
-  { icons: <FaEye size={24} />, label: "View Consultation", path: "/dentist-viewConsultation" }, // Updated Icon
+  { icons: <FaEye size={24} />, label: "View Appointments", path: "/dentist/appointments" },
+  { icons: <FaEye size={24} />, label: "View Consultation", path: "/dentist-viewConsultation" },
   { icons: <MdOutlineDashboard size={24} />, label: "View Feedback", path: "/dentist-viewFeedback" },
-  { icons: <FaPlusCircle size={24} />, label: "Add Consultation", path: "/dentist-addConsultation" }, // Updated Icon
+  { icons: <FaPlusCircle size={24} />, label: "Add Consultation", path: "/dentist-addConsultation" },
   { icons: <CiSettings size={24} />, label: "Settings", path: "/dentist-settings" },
   { icons: <TbReportSearch size={24} />, label: "Reports", path: "/reports" },
 ];
@@ -31,26 +32,46 @@ export default function Sidebar({ open, setOpen }) {
 
   // Fetch admin details from the backend
   useEffect(() => {
-    const fetchAdminData = async () => {
+    const fetchDentistData = async () => {
       try {
-        const response = await axios.get("/adminRoute/adminServices/getAdmin", {
+        const dentistId = sessionStorage.getItem("dentist_id");
+        const token = sessionStorage.getItem("token");
+        
+        if (!token || !dentistId) {
+          setAdminData({ email: "Please log in" });
+          return;
+        }
+
+        // Debug logs
+        console.log('Dentist ID:', dentistId);
+        console.log('Token:', token);
+
+        const response = await fetch(`http://localhost:5000/dentists/${dentistId}/profile`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`, // Authentication token
-          },
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
-        setAdminData(response.data); // Set admin data from response
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch dentist data');
+        }
+
+        const data = await response.json();
+        console.log('Dentist data:', data);
+        setAdminData(data);
       } catch (error) {
-        console.error("Error fetching admin data:", error);
-        setAdminData({ email: "Error: Unable to fetch data" });
+        console.error("Error fetching dentist data:", error);
+        setAdminData({ email: "Error loading profile" });
       }
     };
 
-    fetchAdminData();
+    fetchDentistData();
   }, []);
 
   // Logout function to clear token and navigate to login page
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    sessionStorage.clear();
     navigate("/login");
   };
 

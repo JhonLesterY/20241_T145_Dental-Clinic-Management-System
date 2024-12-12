@@ -197,7 +197,7 @@ A_route.get('/reports', adminService.getReports);
 // Inventory Management
 A_route.get('/inventory', authenticateAdmin, adminService.getInventory);
 A_route.post('/inventory', authenticateAdmin, adminService.addInventoryItem);
-A_route.put('/inventory/:item_id', authenticateAdmin, adminService.updateInventoryItem);
+A_route.put('/inventory/:itemId', authenticateAdmin, adminService.updateInventoryItem);
 A_route.delete('/inventory/:item_id', authenticateAdmin, adminService.deleteInventoryItem);
 
 A_route.get('/activity-logs', authenticateAdmin, async (req, res) => {
@@ -634,5 +634,7 @@ A_route.get('/calendar/blocked-dates/:date', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+
+A_route.post('/appointments/confirm', authenticateAdmin, adminService.confirmAppointment);
 
 module.exports = A_route;

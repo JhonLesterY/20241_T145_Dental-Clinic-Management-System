@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import UserSideBar from "../components/UserSideBar";
+import User_Profile_Header from "../components/User_Profile_Header";
 
 // Helper function to format dates
 const formatDate = (date) => {
@@ -82,24 +83,7 @@ const Settings = () => {
       <div
         className={`flex-1 transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}
       >
-        {/* Header */}
-        <header className="bg-white shadow-md">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center space-x-4">
-              <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
-              <h1 className="text-2xl font-semibold text-[#003367]">Settings</h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <button
-                className="p-2 rounded-full hover:bg-gray-100 transition"
-                aria-label="Notifications"
-              >
-                <img className="w-6 h-6" src={bell} alt="Notifications" />
-              </button>
-            </div>
-          </div>
-        </header>
+        <User_Profile_Header/>
 
         <div className="w-[78rem] mx-auto my-4"></div>
 
