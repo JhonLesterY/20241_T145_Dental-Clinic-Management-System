@@ -38,72 +38,77 @@ import Admin_Report from "./pages/Admin_Report";
 import ActivityLogs from "./pages/ActivityLogs";
 import { ThemeProvider } from './context/ThemeContext';
 import AdminVerification from "./pages/AdminVerification";
+import { UserThemeProvider } from './context/UserThemeContext';
 import Dentist_ViewAppointments from "./pages/Dentist_ViewAppointments";
-
+import { DentistThemeProvider } from './context/DentistThemeContext';
 
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
   return (
     <ThemeProvider>
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-        <>  
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Landing_Page />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/about-us" element={<About_us />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
-            
-            {/* Protected Routes for Users */}
-            <Route element={<ProtectedRoutes accountType="patient" />}>
-              <Route path="/dashboard" element={<User_Dashboard />} />
-              <Route path="/appointment" element={<User_Appointment />} />
-              <Route path="/feedback" element={<Feedback />} />
-              <Route path="/upload-requirements" element={<User_Upload_Requirements />} />
-              <Route path="/appointment-confirmation" element={<Appointment_Confirmation />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/user-sidebar" element={<UserSideBar />} />
-              <Route path="/user-reports" element={<User_Report />} />
-            </Route>
+      <UserThemeProvider>
+        <DentistThemeProvider>
+          <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+            <>  
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Landing_Page />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<SignUp />} />
+                <Route path="/about-us" element={<About_us />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
+                
+                {/* Protected Routes for Users */}
+                <Route element={<ProtectedRoutes accountType="patient" />}>
+                  <Route path="/dashboard" element={<User_Dashboard />} />
+                  <Route path="/appointment" element={<User_Appointment />} />
+                  <Route path="/feedback" element={<Feedback />} />
+                  <Route path="/upload-requirements" element={<User_Upload_Requirements />} />
+                  <Route path="/appointment-confirmation" element={<Appointment_Confirmation />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/user-sidebar" element={<UserSideBar />} />
+                  <Route path="/user-reports" element={<User_Report />} />
+                </Route>
 
-        {/* Protected Routes for Admins */}
-        <Route element={<ProtectedRoutes accountType="admin" />}>
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/admin-calendar" element={<Calendar />} />
-          <Route path="/admin-inventory" element={<Inventory />} />
-          <Route path="/admin-profile" element={<Admin_profile />} />
-          <Route path="/admin-settings" element={<Admin_settings />} />
-          <Route path="/admin-viewAppointment" element={<ViewAppointment />} />
-          <Route path="/appointment-confirmation" element={<Confirmation />} />
-          <Route path="/admin-viewFeedback" element={<Admin_ViewFeedback />} />
-          <Route path="/admin-sidebar" element={<AdminSideBar />} />
-          <Route path="/admin-userManagement" element={<Admin_UserManagement />} />
-          <Route path="/admin-report" element={<Admin_Report />} />
-          <Route path="/activity-logs" element={<ActivityLogs />} />
-        </Route>
-        
-        {/* Protected Routes for Dentists */}
-        <Route element={<ProtectedRoutes accountType="dentist" />}>
-          <Route path="/dentist-dashboard" element={<DentistDashboard />} />
-          <Route path="/dentist-viewConsultation" element={<Dentist_ViewConsultation />} />
-          <Route path="/dentist-addConsultation" element={<Dentist_AddConsultation />} />
-          <Route path="/dentist-settings" element={<Dentist_Settings />} />
-          <Route path="/dentist-profile" element={<Dentist_Profile />} />
-          <Route path="/dentist-viewFeedback" element={<Dentist_ViewFeedback />} />
-          <Route path="/dentist-sidebar" element={<DentistSideBar />} />
-          <Route path="/reports" element={<Dentist_Report />} />
-          <Route path="/dentist/appointments" element={<Dentist_ViewAppointments />} />
-        </Route>
+                {/* Protected Routes for Admins */}
+                <Route element={<ProtectedRoutes accountType="admin" />}>
+                  <Route path="/admin-dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin-calendar" element={<Calendar />} />
+                  <Route path="/admin-inventory" element={<Inventory />} />
+                  <Route path="/admin-profile" element={<Admin_profile />} />
+                  <Route path="/admin-settings" element={<Admin_settings />} />
+                  <Route path="/admin-viewAppointment" element={<ViewAppointment />} />
+                  <Route path="/appointment-confirmation" element={<Confirmation />} />
+                  <Route path="/admin-viewFeedback" element={<Admin_ViewFeedback />} />
+                  <Route path="/admin-sidebar" element={<AdminSideBar />} />
+                  <Route path="/admin-userManagement" element={<Admin_UserManagement />} />
+                  <Route path="/admin-report" element={<Admin_Report />} />
+                  <Route path="/activity-logs" element={<ActivityLogs />} />
+                
+                </Route>
+                
+                {/* Protected Routes for Dentists */}
+                <Route element={<ProtectedRoutes accountType="dentist" />}>
+                  <Route path="/dentist-dashboard" element={<DentistDashboard />} />
+                  <Route path="/dentist-viewConsultation" element={<Dentist_ViewConsultation />} />
+                  <Route path="/dentist-addConsultation" element={<Dentist_AddConsultation />} />
+                  <Route path="/dentist-settings" element={<Dentist_Settings />} />
+                  <Route path="/dentist-profile" element={<Dentist_Profile />} />
+                  <Route path="/dentist-viewFeedback" element={<Dentist_ViewFeedback />} />
+                  <Route path="/dentist-sidebar" element={<DentistSideBar />} />
+                  <Route path="/reports" element={<Dentist_Report />} />
+                  <Route path="/dentist-viewAppointments" element={<Dentist_ViewAppointments />} />
+                </Route>
 
-        <Route path="/verify-admin/:token" element={<AdminVerification />} />
+                <Route path="/verify-admin/:token" element={<AdminVerification />} />
 
-       
-      </Routes>
-    </>
-    </GoogleOAuthProvider>
+              </Routes>
+            </>
+          </GoogleOAuthProvider>
+        </DentistThemeProvider>
+      </UserThemeProvider>
     </ThemeProvider>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import DentistSideBar from "../components/DentistSidebar";
 import User_Profile from "/src/images/user.png";
+import { useDentistTheme } from '../context/DentistThemeContext';
 
 const Profile = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -18,6 +19,7 @@ const Profile = () => {
   });
 
   const fileInputRef = useRef();
+  const { isDarkMode } = useDentistTheme();
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -45,15 +47,10 @@ const Profile = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-    {/* Sidebar */}
-    <DentistSideBar open={sidebarOpen} setOpen={setSidebarOpen} /> {/* Use UserSideBar for the dentist */}
-
-      <div className="flex-1 flex flex-col">
-        <div className="w-[95rem] mx-auto my-4"></div>
-
-        {/* Profile Content */}
-        <div className="p-6 flex flex-col items-center">
+    <div className="flex h-screen w-screen overflow-hidden">
+      <DentistSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
+      <div className={`flex-1 flex flex-col overflow-y-auto ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+        <div className={`flex-1 flex flex-col items-center p-6 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
           {/* Profile Image Upload */}
           <div className="mb-6 text-center relative">
             <img
@@ -72,7 +69,7 @@ const Profile = () => {
             </label>
           </div>
 
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <form onSubmit={handleSubmit} className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 gap-6 px-4">
             {Object.entries(userData).map(([key, value], idx) => (
               key !== "isProfileComplete" && (
                 <div key={idx} className="flex flex-col">

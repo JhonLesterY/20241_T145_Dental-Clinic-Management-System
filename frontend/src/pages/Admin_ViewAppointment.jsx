@@ -309,70 +309,97 @@ const Admin_ViewAppointment = () => {
       
       {/* Main Content */}
       <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'} transition-all duration-300`}>
-        <div className="flex items-center justify-between bg-white p-4 shadow-md rounded-lg">
+        <div className={`flex items-center justify-between p-4 shadow-md rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="flex items-center">
             <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
-            <span className="ml-2 text-2xl font-bold text-gray-800">View Appointments</span>
+            <span className={`ml-2 text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>View Appointments</span>
           </div>
           
           <div className="flex items-center space-x-4">
-            <div className="flex items-center border border-gray-300 rounded-lg px-3 py-1">
-              <FontAwesomeIcon icon={faSearch} className="text-gray-500" />
+            <div className={`flex items-center border rounded-lg px-3 py-1 ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+              <FontAwesomeIcon icon={faSearch} className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
               <input
                 type="text"
                 placeholder="Search by name, ID, or email..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className={`w-full px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isDarkMode ? 'bg-gray-700 text-gray-200 placeholder-gray-400' : 'bg-white'
+                }`}
               />
             </div>
           </div>
         </div>
+
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className={`rounded-lg shadow-md overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>
                     Appointment ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>
                     Patient Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>
                     Time
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
                 {appointments.map((appointment) => (
-                  <tr key={appointment.appointmentId} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <tr key={appointment.appointmentId} className={`${
+                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                  }`}>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                      isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                    }`}>
                       {appointment.appointmentId}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
                       {appointment.patientName}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
                       {new Date(appointment.appointmentDate).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
                       {appointment.appointmentTime}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className={`px-6 py-4 whitespace-nowrap ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                         ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
                           appointment.status === 'declined' ? 'bg-red-100 text-red-800' : 
@@ -380,7 +407,9 @@ const Admin_ViewAppointment = () => {
                         {appointment.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
                       {appointment.status === 'pending' && (
                         <div className="flex space-x-2">
                           <button
@@ -422,7 +451,7 @@ const Admin_ViewAppointment = () => {
             </table>
             
             {appointments.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 No appointments found
               </div>
             )}

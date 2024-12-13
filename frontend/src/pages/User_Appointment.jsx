@@ -8,6 +8,7 @@ import magnify from "/src/images/magnifying-glass.png";
 import UserSideBar from "../components/UserSideBar";
 import userIcon from "/src/images/user.png";
 import User_Profile_Header from "../components/User_Profile_Header";
+import { useUserTheme } from '../context/UserThemeContext';
 
 const TIME_SLOTS = [
   { time: "8:00 - 10:00 AM", id: 1, maxSlots: 3 },
@@ -84,6 +85,7 @@ const User_Appointment = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDateBlocked, setIsDateBlocked] = useState(false);
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
+  const { isDarkMode } = useUserTheme();
 
   useEffect(() => {
     const checkCurrentDate = async () => {
@@ -331,106 +333,111 @@ const User_Appointment = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
       {/* Sidebar */}
       <UserSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
       {/* Main Content */}
-      <div
-        className={`flex-1 transition-all duration-500 ${
-          sidebarOpen ? "ml-64" : "ml-16"
-        }`}
-      >
-       <User_Profile_Header/>
+      <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
+        <User_Profile_Header/>
         <div className="w-[78rem] mx-auto my-4"></div>
 
         {/* Date Section */}
         <div className="flex flex-col items-center mb-4">
           <div className="flex gap-2 items-center">
-            <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-xl shadow-md w-full max-w-md">
+            <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl shadow-md w-full max-w-md">
               Today: {formatDate(new Date())}
             </div>
           </div>
         </div>
 
-          {/* Appointment Slot Section */}
-          <div className="w-full bg-white border rounded-xl shadow-lg max-w-4xl mx-auto p-6">
-            <div className="flex items-center justify-between mb-5">
-              <div className="text-lg font-medium text-gray-700">{formatDate(currentDate)}</div>
+        {/* Appointment Slot Section */}
+        <div className={`w-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} rounded-xl shadow-lg max-w-4xl mx-auto p-6`}>
+          <div className="flex items-center justify-between mb-5">
+            <div className={`text-lg font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+              {formatDate(currentDate)}
             </div>
+          </div>
 
-            <div className="space-y-4">
+          <div className="space-y-4">
             {TIME_SLOTS.map((slot) => {
-                const slotData = availableSlots.find(s => s.id === slot.id) || {};
-                const isAvailable = slotData.available;
-                const remainingSlots = slotData.remainingSlots || 0;
-                
-                return (
-                  <div
-                    key={slot.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <input
-                        type="radio"
-                        id={`slot-${slot.id}`}
-                        name="timeSlot"
-                        value={slot.id}
-                        checked={selectedSlot === slot.id}
-                        onChange={() => handleSlotSelection(slot.id)}
-                        disabled={!isAvailable}
-                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
-                      />
-                      <label
-                        htmlFor={`slot-${slot.id}`}
-                        className={`flex-1 flex items-center justify-between cursor-pointer ${
-                          !isAvailable ? 'cursor-not-allowed text-gray-400' : 'text-gray-700'
+              const slotData = availableSlots.find(s => s.id === slot.id) || {};
+              const isAvailable = slotData.available;
+              const remainingSlots = slotData.remainingSlots || 0;
+              
+              return (
+                <div
+                  key={slot.id}
+                  className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                    isDarkMode 
+                      ? 'border-gray-700 hover:bg-gray-700' 
+                      : 'border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <input
+                      type="radio"
+                      id={`slot-${slot.id}`}
+                      name="timeSlot"
+                      value={slot.id}
+                      checked={selectedSlot === slot.id}
+                      onChange={() => handleSlotSelection(slot.id)}
+                      disabled={!isAvailable}
+                      className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
+                    />
+                    <label
+                      htmlFor={`slot-${slot.id}`}
+                      className={`flex-1 flex items-center justify-between cursor-pointer ${
+                        !isAvailable 
+                          ? 'cursor-not-allowed text-gray-400' 
+                          : isDarkMode 
+                            ? 'text-gray-200' 
+                            : 'text-gray-700'
+                      }`}
+                    >
+                      <span className="font-medium">{slot.time}</span>
+                      <span 
+                        className={`text-sm font-medium ${
+                          isAvailable ? 'text-blue-500' : 'text-red-500'
                         }`}
                       >
-                        <span className="font-medium">{slot.time}</span>
-                        <span 
-                          className={`text-sm font-medium ${
-                            isAvailable ? 'text-blue-500' : 'text-red-500'
-                          }`}
-                        >
-                          {isAvailable 
-                            ? `Available Slots: ${remainingSlots}` 
-                            : 'Fully Booked'}
-                        </span>
-                      </label>
-                    </div>
+                        {isAvailable 
+                          ? `Available Slots: ${remainingSlots}` 
+                          : 'Fully Booked'}
+                      </span>
+                    </label>
                   </div>
-                );
-              })}
+                </div>
+              );
+            })}
+          </div>
+
+          {selectedSlot === null && (
+            <div className={`mt-4 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              Please select a time slot to continue
             </div>
-
-            {selectedSlot === null && (
-              <div className="mt-4 text-sm text-gray-500">
-                Please select a time slot to continue
-              </div>
-            )}
-          </div>
-
-          {/* Next Button */}
-          <div className="flex justify-end mt-4">
-                  <button
-              onClick={handleNext}
-              disabled={!selectedSlot || isSubmitting}
-              className={`
-                cursor-pointer shadow-sm rounded-xl px-5 py-2 
-                ${selectedSlot && !isSubmitting
-                  ? 'bg-[#003367] hover:shadow-lg transform hover:scale-105 transition- transform duration-200 ease-in-out' 
-                  : 'bg-gray-400 cursor-not-allowed'
-                }
-                shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500
-              `}
-            >
-              {isSubmitting ? 'Submitting...' : 'Next'}
-            </button>
-          </div>
-          </div>
+          )}
         </div>
-     
+
+        {/* Next Button */}
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={handleNext}
+            disabled={!selectedSlot || isSubmitting}
+            className={`
+              cursor-pointer shadow-sm rounded-xl px-5 py-2 text-white
+              ${selectedSlot && !isSubmitting
+                ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg transform hover:scale-105 transition-transform duration-200 ease-in-out' 
+                : 'bg-gray-400 cursor-not-allowed'
+              }
+              shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500
+            `}
+          >
+            {isSubmitting ? 'Submitting...' : 'Next'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 

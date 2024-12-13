@@ -3,6 +3,7 @@ import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import UserSideBar from "../components/UserSideBar";
 import User_Profile_Header from "../components/User_Profile_Header";
+import { useUserTheme } from '../context/UserThemeContext';
 
 // Helper function to format dates
 const formatDate = (date) => {
@@ -21,10 +22,11 @@ const Settings = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
 
-  const [isDarkMode, setIsDarkMode] = useState(false); // State for dark mode toggle
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true); // State for notifications toggle
 
   const today = new Date().toLocaleDateString();
+
+  const { isDarkMode, toggleTheme } = useUserTheme();
 
   useEffect(() => {
     // Fetch consultations data from an API or mock data
@@ -63,19 +65,13 @@ const Settings = () => {
     setSelectedFeedback(feedback.length ? feedback[0].feedback : "No feedback available");
   };
 
-  // Toggle theme (light/dark)
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    document.body.classList.toggle("dark", !isDarkMode);
-  };
-
   // Toggle notifications
   const toggleNotifications = () => {
     setIsNotificationsEnabled(!isNotificationsEnabled);
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
       {/* UserSideBar */}
       <UserSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
       
@@ -88,36 +84,47 @@ const Settings = () => {
         <div className="w-[78rem] mx-auto my-4"></div>
 
         {/* Dentist Settings Section */}
-        <div className="flex flex-col gap-5 mt-8 mx-auto w-full max-w-6xl">
+        <div className="flex flex-col gap-5 mt-8 mx-auto w-full max-w-6xl p-4">
           {/* Switch Theme */}
-          <div className="bg-white border shadow-md p-5 rounded-xl mb-1.5 text-black">
+          <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} border shadow-md p-5 rounded-xl mb-1.5 ${isDarkMode ? 'text-white' : 'text-black'}`}>
             <div className="flex justify-between items-center">
               <span>Switch Theme</span>
-              <button className="inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center transform hover:scale-105 transition-transform duration-200 ease-in-out">Dark Mode</button>
+              <button 
+                onClick={toggleTheme}
+                className="inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center transform hover:scale-105 transition-transform duration-200 ease-in-out"
+              >
+                {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+              </button>
             </div>
           </div>
 
           {/* Notification Settings */}
-          <div className="bg-white border shadow-md p-5 rounded-xl mb-1.5 text-black">
+          <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} border shadow-md p-5 rounded-xl mb-1.5 ${isDarkMode ? 'text-white' : 'text-black'}`}>
             <div className="flex justify-between items-center">
               <span>Notification Settings</span>
-              <button className="inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center transform hover:scale-105 transition-transform duration-200 ease-in-out">Edit</button>
+              <button className="inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105">
+                Edit
+              </button>
             </div>
           </div>
 
           {/* Help */}
-          <div className="bg-white border shadow-md p-5 rounded-xl mb-1.5 text-black">
+          <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} border shadow-md p-5 rounded-xl mb-1.5 ${isDarkMode ? 'text-white' : 'text-black'}`}>
             <div className="flex justify-between items-center">
               <span>Help</span>
-              <button className="inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center transform hover:scale-105 transition-transform duration-200 ease-in-out">View</button>
+              <button className="inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105">
+                View
+              </button>
             </div>
           </div>
 
           {/* Privacy Policy */}
-          <div className="bg-white border shadow-md p-5 rounded-xl mb-1.5 text-black">
+          <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} border shadow-md p-5 rounded-xl mb-1.5 ${isDarkMode ? 'text-white' : 'text-black'}`}>
             <div className="flex justify-between items-center">
               <span>Privacy Policy</span>
-              <button className="inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center transform hover:scale-105 transition-transform duration-200 ease-in-out">View</button>
+              <button className="inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105">
+                View
+              </button>
             </div>
           </div>
           </div>

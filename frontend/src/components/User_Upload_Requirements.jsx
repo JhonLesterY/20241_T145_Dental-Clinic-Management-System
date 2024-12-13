@@ -5,6 +5,7 @@ import bell from "/src/images/bell.png";
 import UserSideBar from "../components/UserSideBar";
 import toast from 'react-hot-toast';
 import User_Profile_Header from "../components/User_Profile_Header";
+import { useUserTheme } from '../context/UserThemeContext';
 
 const User_Upload_Requirements = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const User_Upload_Requirements = () => {
   const [schoolIdFile, setSchoolIdFile] = useState(""); 
   const [registrationCertFile, setRegistrationCertFile] = useState(""); 
   const [vaccinationCardFile, setVaccinationCardFile] = useState(""); 
+  const { isDarkMode } = useUserTheme();
   const [uploadStatus, setUploadStatus] = useState({
     schoolId: { status: '', link: '' },
     registrationCert: { status: '', link: '' },
@@ -170,31 +172,47 @@ const User_Upload_Requirements = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <div className="text-blue-600 text-xl">Loading...</div>
+      <div className={`flex h-screen w-screen items-center justify-center ${
+        isDarkMode ? 'bg-gray-900' : 'bg-gray-100'
+      }`}>
+        <div className={`text-xl ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+          Loading...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
       {/* UserSideBar */}
       <UserSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
       {/* Main Content */}
       <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
-      <User_Profile_Header/>
+        <User_Profile_Header/>
 
         {/* Main Dashboard Content */}
         <div className="p-6">
-          <h2 className="text-2xl font-semibold text-[#003367] mb-6">Upload Your Requirements</h2>
+          <h2 className={`text-2xl font-semibold mb-6 ${
+            isDarkMode ? 'text-white' : 'text-[#003367]'
+          }`}>
+            Upload Your Requirements
+          </h2>
 
           {/* Upload Requirements Section */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* School ID Card */}
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-              <h3 className="text-xl font-semibold text-[#003367] mb-4">School ID</h3>
-              <p className="text-gray-600 mb-4">
+            <div className={`rounded-lg shadow-md p-6 hover:shadow-lg transition ${
+              isDarkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
+              <h3 className={`text-xl font-semibold mb-4 ${
+                isDarkMode ? 'text-white' : 'text-[#003367]'
+              }`}>
+                School ID
+              </h3>
+              <p className={`mb-4 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 Upload your valid school ID to verify your enrollment status.
               </p>
               <input 
@@ -206,7 +224,11 @@ const User_Upload_Requirements = () => {
               />
               <label 
                 htmlFor="schoolId" 
-                className="cursor-pointer inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center"
+                className={`cursor-pointer inline-block font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center ${
+                  isDarkMode 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                    : 'bg-[#3b82f6] hover:bg-[#2563eb] text-white'
+                }`}
               >
                 {schoolIdFile || "Choose a file"}
               </label>
@@ -214,9 +236,17 @@ const User_Upload_Requirements = () => {
             </div>
 
             {/* Certificate of Registration */}
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-              <h3 className="text-xl font-semibold text-[#003367] mb-4">Certificate of Registration</h3>
-              <p className="text-gray-600 mb-4">
+            <div className={`rounded-lg shadow-md p-6 hover:shadow-lg transition ${
+              isDarkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
+              <h3 className={`text-xl font-semibold mb-4 ${
+                isDarkMode ? 'text-white' : 'text-[#003367]'
+              }`}>
+                Certificate of Registration
+              </h3>
+              <p className={`mb-4 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 Upload your Certificate of Registration to confirm your academic registration.
               </p>
               <input 
@@ -228,7 +258,11 @@ const User_Upload_Requirements = () => {
               />
               <label 
                 htmlFor="registrationCert" 
-                className="cursor-pointer inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center"
+                className={`cursor-pointer inline-block font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center ${
+                  isDarkMode 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                    : 'bg-[#3b82f6] hover:bg-[#2563eb] text-white'
+                }`}
               >
                 {registrationCertFile || "Choose a file"}
               </label>
@@ -236,9 +270,17 @@ const User_Upload_Requirements = () => {
             </div>
 
             {/* Vaccination Card */}
-            <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-              <h3 className="text-xl font-semibold text-[#003367] mb-4">Vaccination Card</h3>
-              <p className="text-gray-600 mb-4">
+            <div className={`rounded-lg shadow-md p-6 hover:shadow-lg transition ${
+              isDarkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
+              <h3 className={`text-xl font-semibold mb-4 ${
+                isDarkMode ? 'text-white' : 'text-[#003367]'
+              }`}>
+                Vaccination Card
+              </h3>
+              <p className={`mb-4 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 Upload your vaccination card to verify your immunization status.
               </p>
               <input 
@@ -250,7 +292,11 @@ const User_Upload_Requirements = () => {
               />
               <label 
                 htmlFor="vaccinationCard" 
-                className="cursor-pointer inline-block bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center"
+                className={`cursor-pointer inline-block font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center ${
+                  isDarkMode 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                    : 'bg-[#3b82f6] hover:bg-[#2563eb] text-white'
+                }`}
               >
                 {vaccinationCardFile || "Choose a file"}
               </label>

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import DentistSideBar from "../components/DentistSidebar";
+import { useDentistTheme } from '../context/DentistThemeContext';
 
 // Helper function to format dates
 const formatDate = (date) => {
@@ -35,6 +36,7 @@ const Dentist_ViewFeedback = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [isLoadingFeedback, setIsLoadingFeedback] = useState(true);
+  const { isDarkMode } = useDentistTheme();
 
   const today = new Date().toLocaleDateString();
 
@@ -79,18 +81,18 @@ const Dentist_ViewFeedback = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
       {/* Sidebar */}
       <DentistSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
       {/* Main Content */}
       <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
         {/* Header */}
-        <header className="bg-white shadow-md">
+        <header className={`${isDarkMode ? 'bg-gray-800 shadow-gray-900' : 'bg-white'} shadow-md`}>
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center space-x-4">
               <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
-              <h1 className="text-2xl font-semibold text-[#003367]">View Feedback</h1>
+              <h1 className={`text-2xl font-semibold ${isDarkMode ? 'text-white' : 'text-[#003367]'}`}>View Feedback</h1>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -99,11 +101,11 @@ const Dentist_ViewFeedback = () => {
                 <input
                   type="text"
                   placeholder="Search"
-                  className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`pl-10 pr-4 py-2 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 />
                 {/* Search Icon (Magnifying Glass) */}
                 <svg
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500"
+                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -119,7 +121,7 @@ const Dentist_ViewFeedback = () => {
               </div>
 
               <div className="flex items-center space-x-4">
-                <button className="p-2 rounded-full hover:bg-gray-100 transition" aria-label="Notifications">
+                <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition`} aria-label="Notifications">
                   <img className="w-6 h-6" src={bell} alt="Notifications" />
                 </button>
               </div>
@@ -140,34 +142,36 @@ const Dentist_ViewFeedback = () => {
 
         {/* Consultations List */}
         <div className="flex flex-col items-center mt-6 mx-auto w-full max-w-7xl">
-          <div className="w-full bg-white border rounded-xl shadow-lg max-w-6xl mx-auto p-6">
+          <div className={`w-full border rounded-xl shadow-lg max-w-6xl mx-auto p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             {isLoading ? (
-              <div className="text-center text-gray-500">Loading consultations...</div>
+              <div className={`text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Loading consultations...</div>
             ) : consultations.length === 0 ? (
-              <div className="text-center text-gray-500">No upcoming feedback</div>
+              <div className={`text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>No upcoming feedback</div>
             ) : (
               <div className="space-y-4">
                 {consultations.map((consultation) => (
                   <div
                     key={consultation.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                      isDarkMode ? 'border-gray-700 hover:bg-gray-700 text-white' : 'border-gray-200 hover:bg-gray-50'
+                    }`}
                   >
                     <div className="flex items-center gap-3 flex-1">
-                      <div className="font-medium">{consultation.patientName}</div>
-                      <div className="text-sm text-gray-500">
+                      <div className={`font-medium ${isDarkMode ? 'text-white' : ''}`}>{consultation.patientName}</div>
+                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         {formatDate(new Date(consultation.date))}
                       </div>
                     </div>
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleViewFeedbackClick(consultation.id)}
-                        className="text-blue-500 hover:text-blue-700 transition"
+                        className="text-blue-500 hover:text-blue-400 transition"
                       >
                         View Feedback
                       </button>
                       <Link
                         to={`/consultation-details/${consultation.id}`}
-                        className="text-blue-500 hover:text-blue-700 transition"
+                        className="text-blue-500 hover:text-blue-400 transition"
                       >
                         View Details
                       </Link>
@@ -180,9 +184,9 @@ const Dentist_ViewFeedback = () => {
 
           {/* Feedback Section */}
           {selectedFeedback && (
-            <div className="mt-6 w-full max-w-4xl mx-auto bg-white border rounded-xl shadow-lg p-6">
-              <h2 className="text-2xl font-semibold text-[#003367]">Feedback</h2>
-              <p className="mt-4 text-gray-600">{selectedFeedback}</p>
+            <div className={`mt-6 w-full max-w-4xl mx-auto bg-white border rounded-xl shadow-lg p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+              <h2 className={`text-2xl font-semibold ${isDarkMode ? 'text-white' : 'text-[#003367]'}`}>Feedback</h2>
+              <p className={`mt-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{selectedFeedback}</p>
             </div>
           )}
         </div>

@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import UserSideBar from "../components/UserSideBar";
 import User_Profile from "/src/images/user.png";
+import { useUserTheme } from '../context/UserThemeContext';
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { isDarkMode } = useUserTheme();
   const [userData, setUserData] = useState({
     firstName: "",
     middleName: "",
@@ -278,16 +280,16 @@ const Profile = () => {
   }
 
   return (
-    <div className="flex h-screen w-screen bg-gray-50 overflow-hidden">
+    <div className={`flex h-screen w-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} overflow-hidden`}>
       <UserSideBar />
-      <div className="flex-1 flex flex-col items-center justify-center bg-gray-100 text-white p-8">
+      <div className={`flex-1 flex flex-col items-center justify-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} p-8`}>
         {!userData.isProfileComplete && (
           <div className="w-full max-w-2xl mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-lg">
             ⚠️ Please complete your profile to access all features
           </div>
         )}
 
-        <div className="w-full max-w-2xl p-8 bg-white text-gray-800 rounded-lg shadow-lg">
+        <div className={`w-full max-w-2xl p-8 rounded-lg shadow-lg ${isDarkMode ? 'bg-gray-700 text-gray-100' : 'bg-white text-gray-800'}`}>
         <div className="flex justify-center mb-6">
     <div className="relative group">
         <img
@@ -353,11 +355,13 @@ const Profile = () => {
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-gray-600">Suffix</label>
+                <label className={`block ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>Suffix</label>
                 <select 
                   value={userData.suffix}
                   onChange={(e) => setUserData({ ...userData, suffix: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isDarkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'
+                  }`}
                 >
                   <option value="None">None</option>
                   <option value="Jr.">Jr.</option>
@@ -379,25 +383,29 @@ const Profile = () => {
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-gray-600">Email</label>
+                <label className={`block ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>Email</label>
                 <input
-                    type="email"
-                    value={userData.email}
-                    className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none cursor-not-allowed"
-                    required
-                    readOnly
-                    disabled
+                  type="email"
+                  value={userData.email}
+                  className={`w-full px-4 py-3 border rounded-lg cursor-not-allowed ${
+                    isDarkMode ? 'bg-gray-600 text-gray-300 border-gray-600' : 'bg-gray-100 text-gray-500 border-gray-300'
+                  }`}
+                  required
+                  readOnly
+                  disabled
                 />
-            </div>
+              </div>
             </div>
 
             <div className="flex gap-4">
               <div className="flex-1">
-                <label className="block text-gray-600">Sex at Birth*</label>
+                <label className={`block ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>Sex at Birth*</label>
                 <select 
                   value={userData.sex}
                   onChange={(e) => setUserData({ ...userData, sex: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isDarkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'
+                  }`}
                   required
                 >
                   <option value="Male">Male</option>
@@ -405,12 +413,14 @@ const Profile = () => {
                 </select>
               </div>
               <div className="flex-1">
-                <label className="block text-gray-600">Birthday*</label>
+                <label className={`block ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>Birthday*</label>
                 <input
                   type="date"
                   value={userData.birthday}
                   onChange={(e) => setUserData({ ...userData, birthday: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isDarkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'
+                  }`}
                   required
                 />
               </div>

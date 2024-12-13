@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import bell from "/src/images/bell.png";
 import userIcon from "/src/images/user.png";
+import { useUserTheme } from '../context/UserThemeContext';
 
 const Header = ({ title }) => {
   const navigate = useNavigate();
   const [userProfilePic, setUserProfilePic] = useState(userIcon);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const { isDarkMode } = useUserTheme();
 
   useEffect(() => {
     fetchUserProfile();
@@ -50,23 +52,35 @@ const Header = ({ title }) => {
   };
 
   return (
-    <div className="bg-white shadow-sm z-10">
+    <div className={`shadow-sm z-10 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
       <div className="flex items-center justify-between px-6 py-3">
-        <h1 className="text-2xl font-semibold text-[#003367]">{title}</h1>
+        <h1 className={`text-2xl font-semibold ${isDarkMode ? 'text-white' : 'text-[#003367]'}`}>
+          {title}
+        </h1>
         <div className="flex items-center space-x-4">
-          <img src={bell} alt="Notifications" className="h-6 w-6 cursor-pointer" />
+          <img 
+            src={bell} 
+            alt="Notifications" 
+            className={`h-6 w-6 cursor-pointer ${isDarkMode ? 'filter invert' : ''}`} 
+          />
           <div 
             className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={handleProfileClick}
           >
             <div className="text-right">
-              <h2 className="text-sm font-semibold text-gray-800">{userName}</h2>
-              <p className="text-xs text-gray-500">{userEmail}</p>
+              <h2 className={`text-sm font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                {userName}
+              </h2>
+              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                {userEmail}
+              </p>
             </div>
             <img 
               src={userProfilePic} 
               alt="Profile" 
-              className="h-10 w-10 rounded-full object-cover border-2 border-gray-100 shadow-sm"
+              className={`h-10 w-10 rounded-full object-cover border-2 ${
+                isDarkMode ? 'border-gray-700' : 'border-gray-100'
+              } shadow-sm`}
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = userIcon;
