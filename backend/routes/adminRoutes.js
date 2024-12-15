@@ -13,9 +13,11 @@ const deadlockPreventionMiddleware = require('../middleware/deadlockPreventionMi
 const reportService = require('../services/reportService');
 const { checkAdminLevel } = require('../middleware/adminLevelMiddleware');
 const { checkPermission } = require('../middleware/checkPermissionMiddleware');
-const { logActivity } = require('../services/activitylogServices');
+const { logActivity, ACTIONS } = require('../services/activitylogServices');
 const calendarService = require('../services/calendarServices');
 const BlockedDate = require('../models/BlockedDate');
+const Appointment = require('../models/Appointment');
+const Dentist = require('../models/Dentist');
 
 
 const storage = multer.diskStorage({
@@ -625,9 +627,17 @@ A_route.delete('/calendar/blocked-dates', authenticateAdmin, async (req, res) =>
 // Get blocked status for specific date
 A_route.get('/calendar/blocked-dates/:date', async (req, res) => {
     try {
-        const date = req.params.date;
+        const inputDate = new Date(req.params.date);
+        
+        // Create start and end of day in local timezone
+        const startOfDay = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate());
+        const endOfDay = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate() + 1);
+
         const blockedDate = await BlockedDate.findOne({ 
-            date: new Date(date) 
+            date: {
+                $gte: startOfDay,
+                $lt: endOfDay
+            }
         });
         res.json({ isBlocked: !!blockedDate });
     } catch (error) {
@@ -635,6 +645,98 @@ A_route.get('/calendar/blocked-dates/:date', async (req, res) => {
     }
 });
 
-A_route.post('/appointments/confirm', authenticateAdmin, adminService.confirmAppointment);
+A_route.get('/appointments/confirmed', authenticateAdmin, async (req, res) => {
+    try {
+        const confirmedAppointments = await Appointment.find({ status: 'confirmed' })
+            .sort({ appointmentDate: 1, appointmentTime: 1 })
+            .select('appointmentId patientName appointmentTime appointmentDate status dentistId requirements');
 
+        // Log activity
+        await logActivity(
+            req.user.id,
+            'admin',
+            ACTIONS.APPOINTMENT_VIEW,
+            { 
+                count: confirmedAppointments.length,
+                status: 'Successful',
+                filter: 'confirmed'
+            }
+        );
+
+        res.status(200).json(confirmedAppointments);
+    } catch (error) {
+        console.error('Error in getConfirmedAppointments:', error);
+        res.status(500).json({ message: 'Failed to retrieve confirmed appointments: ' + error.message });
+    }
+});
+
+A_route.get('/appointments/confirmed', authenticateAdmin, adminService.getConfirmedAppointments);
+
+A_route.post('/appointments/assign', authenticateAdmin, async (req, res) => {
+    try {
+        const { appointmentId, dentistId } = req.body;
+
+        // Find the appointment
+        const appointment = await Appointment.findOne({ appointmentId });
+        if (!appointment) {
+            return res.status(404).json({ message: 'Appointment not found' });
+        }
+
+        // Find the dentist using dentist_id instead of dentistId
+        const dentist = await Dentist.findOne({ dentist_id: dentistId });
+        if (!dentist) {
+            console.error('Dentist not found for ID:', dentistId);
+            return res.status(404).json({ 
+                message: 'Dentist not found', 
+                details: `No dentist with ID ${dentistId} exists` 
+            });
+        }
+
+        // Assign the dentist
+        appointment.dentistId = dentist._id;
+        await appointment.save();
+
+        // Log the activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: req.user.role,
+            action: ACTIONS.APPOINTMENT_UPDATE,
+            details: {
+                appointmentId: appointment.appointmentId,
+                dentistId: dentist.dentist_id,
+                dentistName: dentist.name
+            }
+        });
+
+        res.status(200).json({ 
+            message: 'Dentist assigned successfully', 
+            appointment 
+        });
+    } catch (error) {
+        console.error('Error assigning dentist:', error);
+        res.status(500).json({ 
+            message: 'Failed to assign dentist', 
+            error: error.message 
+        });
+    }
+});
+A_route.get('/dentists', authenticateAdmin, async (req, res) => {
+    try {
+        const dentists = await Dentist.find({});
+        
+        // Log the dentists for debugging
+        console.log('Fetched Dentists:', dentists.map(d => ({
+            dentist_id: d.dentist_id,
+            name: d.name
+        })));
+
+        res.status(200).json(dentists);
+    } catch (error) {
+        console.error('Error fetching dentists:', error);
+        res.status(500).json({ 
+            message: 'Failed to fetch dentists', 
+            error: error.message 
+        });
+    }
+});
 module.exports = A_route;

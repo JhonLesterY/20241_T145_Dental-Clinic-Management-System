@@ -269,7 +269,8 @@ async function loginWithGoogle(payload, recaptchaToken) {
                 $set: {
                     googleId: googleId,
                     isGoogleUser: true,
-                    isVerified: true
+                    isVerified: true,
+                    profilePicture: picture || admin.profilePicture
                 }
             });
 

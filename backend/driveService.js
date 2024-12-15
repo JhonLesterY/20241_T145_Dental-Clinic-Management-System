@@ -146,23 +146,26 @@ const getOrCreatePatientFolder = async (drive, patientDetails) => {
     }
 };
 
-const getFileContent = async (fileId) => {
+const getFileContent = async(fileId) => {
+    let metadata = null;
+    let response = null;
+
     try {
         const drive = await getDriveService();
         
         // Get file metadata first
-        const metadata = await drive.files.get({
+        metadata = await drive.files.get({
             fileId: fileId,
             fields: 'id, name, mimeType',
             supportsAllDrives: true
         });
 
-        if (!metadata.data) {
-            throw new Error('File not found');
+        if (!metadata || !metadata.data) {
+            throw new Error('File metadata not found');
         }
 
         // Get file content
-        const response = await drive.files.get({
+        response = await drive.files.get({
             fileId: fileId,
             alt: 'media',
             supportsAllDrives: true
@@ -170,28 +173,53 @@ const getFileContent = async (fileId) => {
             responseType: 'arraybuffer'
         });
 
+        if (!response || !response.data) {
+            throw new Error('File content not received');
+        }
+
+        // Detailed logging of response data
+        console.log('Response data details:', {
+            type: typeof response.data,
+            constructor: response.data?.constructor?.name,
+            isArrayBuffer: response.data instanceof ArrayBuffer,
+            isBuffer: Buffer.isBuffer(response.data),
+            length: response.data.byteLength || response.data.length
+        });
+
         // Ensure we have valid buffer data
         let buffer;
         if (response.data instanceof ArrayBuffer) {
             buffer = Buffer.from(new Uint8Array(response.data));
+        } else if (response.data instanceof Uint8Array) {
+            buffer = Buffer.from(response.data);
         } else if (typeof response.data === 'string') {
             buffer = Buffer.from(response.data);
         } else if (Buffer.isBuffer(response.data)) {
             buffer = response.data;
+        } else if (response.data && response.data.buffer instanceof ArrayBuffer) {
+            buffer = Buffer.from(response.data.buffer);
+        } else if (response.data instanceof Blob) {
+            const arrayBuffer = await response.data.arrayBuffer();
+            buffer = Buffer.from(arrayBuffer);
         } else {
-            throw new Error('Unexpected response data type');
+            throw new Error(`Unexpected response data type: ${typeof response.data}`);
         }
 
+        // Convert buffer to base64
+        const base64Content = buffer.toString('base64');
+
         return {
-            content: buffer,
+            content: base64Content,
             mimeType: metadata.data.mimeType,
             fileName: metadata.data.name
         };
     } catch (error) {
-        console.error('Error getting file from Drive:', {
-            error: error.message,
-            stack: error.stack,
-            responseType: typeof response?.data
+        console.error('Detailed error getting file from Drive:', {
+            fileId: fileId,
+            metadataStatus: metadata ? 'Retrieved' : 'Not Retrieved',
+            responseStatus: response ? 'Retrieved' : 'Not Retrieved',
+            errorMessage: error.message,
+            errorStack: error.stack
         });
         throw new Error(`Failed to get file from Google Drive: ${error.message}`);
     }

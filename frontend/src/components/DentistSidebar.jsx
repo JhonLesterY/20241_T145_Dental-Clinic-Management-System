@@ -13,7 +13,7 @@ import { CiSettings } from "react-icons/ci";
 // Menu Items
 const menuItems = [
   { icons: <IoHomeOutline size={24} />, label: "Dashboard", path: "/dentist-dashboard" },
-  { icons: <FaEye size={24} />, label: "View Appointments", path: "/dentist/appointments" },
+  { icons: <FaEye size={24} />, label: "View Appointments", path: "/dentist-viewAppointments" },
   { icons: <FaEye size={24} />, label: "View Consultation", path: "/dentist-viewConsultation" },
   { icons: <MdOutlineDashboard size={24} />, label: "View Feedback", path: "/dentist-viewFeedback" },
   { icons: <FaPlusCircle size={24} />, label: "Add Consultation", path: "/dentist-addConsultation" },
@@ -136,7 +136,7 @@ export default function Sidebar({ open, setOpen }) {
             !open && "opacity-0 translate-x-10"
           }`}
         >
-          <p className="font-semibold">{adminData.email || "Sign Out"}</p>
+          <p className="font-semibold">{"Sign Out"}</p>
         </div>
       </div>
     </nav>

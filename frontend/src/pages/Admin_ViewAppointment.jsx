@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import AdminSideBar from '../components/AdminSideBar';
-import Logo from "/src/images/Dental_logo.png";
 import { FaCheck, FaTimes, FaEye, FaFileAlt } from 'react-icons/fa'; // For confirm/decline icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const Admin_ViewAppointment = () => {
   const { isDarkMode } = useTheme();
+  const navigate = useNavigate(); // Initialize useNavigate
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -121,27 +122,31 @@ const Admin_ViewAppointment = () => {
         
         const fileUrl = `http://localhost:5000/upload/file/${fileId}`;
         const response = await fetch(fileUrl, {
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+            'Accept': '*/*'
           },
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch file');
+          const errorText = await response.text();
+          console.error('File fetch error:', errorText);
+          throw new Error(`Failed to fetch file: ${response.status} ${errorText}`);
         }
 
-        const contentType = response.headers.get('content-type');
-        setFileType(contentType);
-
-        const blob = await response.blob();
+        const fileData = await response.json(); // Expecting JSON response with base64 content
         
-        // Clean up previous URL if it exists
-        if (fileContent) {
-          URL.revokeObjectURL(fileContent);
+        // Validate file data
+        if (!fileData || !fileData.content || !fileData.mimeType) {
+          throw new Error('Invalid file data received');
         }
+
+        // Create data URL for image/pdf preview
+        const dataUrl = `data:${fileData.mimeType};base64,${fileData.content}`;
         
-        const url = URL.createObjectURL(blob);
-        setFileContent(url);
+        setFileType(fileData.mimeType);
+        setFileContent(dataUrl);
         setSelectedFile(fileId);
       } catch (error) {
         console.error('Error viewing file:', error);
@@ -152,39 +157,46 @@ const Admin_ViewAppointment = () => {
     };
 
     const renderFilePreview = () => {
-      if (!selectedFile || !fileContent) return null;
+      // Early return conditions
+      if (!selectedFile) return null;
+      if (loading) return <div className="text-center">Loading...</div>;
       if (error) return <div className="text-red-500">{error}</div>;
 
+      // Validate fileContent and fileType
+      if (!fileContent || !fileType) {
+        return <div className="text-yellow-500">No file content available</div>;
+      }
+
       try {
-        if (fileType?.startsWith('image/')) {
+        // Image preview
+        if (fileType.startsWith('image/')) {
           return (
             <div className="w-full h-full flex items-center justify-center bg-gray-100">
               <div className="relative max-w-full max-h-[60vh]">
-                {error ? (
-                  <div className="text-red-500 p-4">{error}</div>
-                ) : (
-                  <img 
-                    src={fileContent} 
-                    alt="Document Preview" 
-                    className="object-contain w-full h-full"
-                    onError={(e) => {
-                      console.error('Image load error');
-                      setError('Failed to load image');
-                      e.target.style.display = 'none';
-                    }}
-                    onLoad={() => setError(null)}
-                  />
-                )}
+                <img 
+                  src={fileContent} 
+                  alt="Document Preview" 
+                  className="object-contain w-full h-full"
+                  onError={(e) => {
+                    console.error('Image load error');
+                    e.target.style.display = 'none';
+                    setError('Failed to load image');
+                  }}
+                />
               </div>
             </div>
           );
-        } else if (fileType === 'application/pdf') {
+        } 
+        // PDF preview
+        else if (fileType === 'application/pdf') {
           return (
             <div className="w-full h-[60vh]">
-              <object
-                data={fileContent}
-                type="application/pdf"
-                className="w-full h-full"
+              <iframe
+                src={fileContent}
+                width="100%"
+                height="100%"
+                title="PDF Preview"
+                frameBorder="0"
               >
                 <div className="p-4 text-center">
                   <p>Unable to display PDF directly.</p>
@@ -197,12 +209,15 @@ const Admin_ViewAppointment = () => {
                     Open PDF in new tab
                   </a>
                 </div>
-              </object>
+              </iframe>
             </div>
           );
-        } else {
+        } 
+        // Generic file download
+        else {
           return (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center justify-center h-full space-y-4">
+              <p className="text-gray-600">Unsupported file type: {fileType}</p>
               <a 
                 href={fileContent} 
                 download 
@@ -214,8 +229,13 @@ const Admin_ViewAppointment = () => {
           );
         }
       } catch (err) {
-        console.error('Preview error:', err);
-        return <div className="text-red-500">Error displaying preview</div>;
+        console.error('Preview rendering error:', err);
+        return (
+          <div className="text-red-500 flex flex-col items-center justify-center h-full">
+            <p>Error displaying preview</p>
+            <p className="text-sm">{err.message}</p>
+          </div>
+        );
       }
     };
 
@@ -316,6 +336,12 @@ const Admin_ViewAppointment = () => {
           </div>
           
           <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigate('/admin-confirmedAppointments')} // Correctly call navigate
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Confirmed Appointments
+            </button>
             <div className={`flex items-center border rounded-lg px-3 py-1 ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
               <FontAwesomeIcon icon={faSearch} className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
               <input
@@ -439,8 +465,7 @@ const Admin_ViewAppointment = () => {
                       )}
                       {appointment.status !== 'pending' && (
                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                          ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
-                        >
+                          ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                           {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                         </span>
                       )}

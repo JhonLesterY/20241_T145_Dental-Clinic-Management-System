@@ -1,26 +1,74 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import DentistSideBar from "../components/DentistSidebar";
 import { useDentistTheme } from '../context/DentistThemeContext';
+import axios from 'axios';
 
 const Dentist_AddConsultation = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { isDarkMode } = useDentistTheme();
+  const [appointments, setAppointments] = useState([]);
+  const [inventoryMedicines, setInventoryMedicines] = useState([]);
   const [formData, setFormData] = useState({
-    id: "",
+    appointmentId: "",
     patientName: "",
     consultationDate: "",
     consultationDetails: "",
-    contactNumber: "",
+    prescription: []
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [appointmentsResponse, inventoryResponse] = await Promise.all([
+          axios.get('http://localhost:5000/appointments/confirmed'),
+          axios.get('http://localhost:5000/inventory')
+        ]);
+        setAppointments(appointmentsResponse.data);
+        setInventoryMedicines(inventoryResponse.data.filter(item => item.quantity > 0));
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleAppointmentSelect = (event) => {
+    const selectedAppointment = appointments.find(
+      app => app._id === event.target.value
+    );
+    setFormData(prev => ({
+      ...prev, 
+      appointmentId: event.target.value,
+      patientName: selectedAppointment.patientName
+    }));
+  };
+
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const addMedicinePrescription = () => {
+    setFormData(prev => ({
+      ...prev,
+      prescription: [...prev.prescription, { medicineId: '', quantity: 1 }]
+    }));
+  };
+
+  const updateMedicinePrescription = (index, field, value) => {
+    const newPrescription = [...formData.prescription];
+    newPrescription[index][field] = value;
+    setFormData(prev => ({ ...prev, prescription: newPrescription }));
+  };
+
+  const removeMedicinePrescription = (index) => {
+    const newPrescription = formData.prescription.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, prescription: newPrescription }));
   };
 
   const handleSubmit = async (event) => {
@@ -28,30 +76,20 @@ const Dentist_AddConsultation = () => {
     setLoading(true);
     setError("");
 
-    // Example: API call simulation (replace with your actual API call)
     try {
-      const response = await fetch("http://localhost:5000/consultations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit consultation.");
-      }
-
-      console.log("Form Submitted:", formData);
+      const response = await axios.post("http://localhost:5000/consultations", formData);
+      console.log("Consultation Added:", response.data);
+      
+      // Reset form
       setFormData({
-        id: "",
+        appointmentId: "",
         patientName: "",
         consultationDate: "",
         consultationDetails: "",
-        contactNumber: "",
+        prescription: []
       });
     } catch (error) {
-      setError("There was an error submitting the form.");
+      setError(error.response?.data?.message || "Failed to submit consultation");
     } finally {
       setLoading(false);
     }
@@ -161,6 +199,59 @@ const Dentist_AddConsultation = () => {
                   rows="4"
                   required
                 ></textarea>
+              </div>
+
+                {/* Medicine Prescription Section */}
+              <div className="col-span-2">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>
+                    Medicine Prescription
+                  </h3>
+                  <button 
+                    type="button"
+                    onClick={addMedicinePrescription}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg"
+                  >
+                    Add Medicine
+                  </button>
+                </div>
+
+                {formData.prescription.map((prescItem, index) => (
+                  <div key={index} className="grid grid-cols-3 gap-4 mb-4">
+                    <select
+                      value={prescItem.medicineId}
+                      onChange={(e) => updateMedicinePrescription(index, 'medicineId', e.target.value)}
+                      className={`border rounded-lg p-2 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
+                      required
+                    >
+                      <option value="">Select Medicine</option>
+                      {inventoryMedicines.map(medicine => (
+                        <option key={medicine._id} value={medicine._id}>
+                          {medicine.itemName} (Stock: {medicine.quantity})
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="number"
+                      value={prescItem.quantity}
+                      onChange={(e) => updateMedicinePrescription(index, 'quantity', parseInt(e.target.value))}
+                      min="1"
+                      max={inventoryMedicines.find(m => m._id === prescItem.medicineId)?.quantity || 1}
+                      className={`border rounded-lg p-2 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
+                      placeholder="Quantity"
+                      required
+                    />
+
+                    <button 
+                      type="button"
+                      onClick={() => removeMedicinePrescription(index)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
               </div>
 
               <div className="col-span-2 flex justify-end">

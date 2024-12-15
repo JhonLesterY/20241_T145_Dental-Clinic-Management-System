@@ -90,7 +90,11 @@ const AdminCalendar = () => {
                 if (!response.ok) throw new Error('Failed to fetch blocked dates');
                 const dates = await response.json();
                 // Ensure we're working with an array of date strings
-                const formattedDates = dates.map(date => new Date(date).toISOString().split('T')[0]);
+                const formattedDates = dates.map(dateObj => {
+                    // Check if it's an object with a date property or a direct date
+                    const dateToFormat = dateObj.date ? dateObj.date : dateObj;
+                    return new Date(dateToFormat).toISOString().split('T')[0];
+                });
                 setBlockedDates(formattedDates || []);
             } catch (error) {
                 console.error('Error fetching blocked dates:', error);
@@ -297,7 +301,7 @@ const AdminCalendar = () => {
     const startDay = new Date(currentYear, currentMonth, 1).getDay();
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-    const handleBlockDate = async (date) => {
+  const handleBlockDate = async (date) => {
         try {
             const localDate = new Date(date);
             localDate.setHours(12, 0, 0, 0);
@@ -320,7 +324,11 @@ const AdminCalendar = () => {
             const updatedBlockedDates = await response.json();
             // Ensure we're working with an array
             const formattedDates = Array.isArray(updatedBlockedDates) 
-                ? updatedBlockedDates.map(date => new Date(date).toISOString().split('T')[0])
+                ? updatedBlockedDates.map(dateObj => {
+                    // Check if it's an object with a date property or a direct date
+                    const dateToFormat = dateObj.date ? dateObj.date : dateObj;
+                    return new Date(dateToFormat).toISOString().split('T')[0];
+                })
                 : [];
                 
             setBlockedDates(formattedDates);

@@ -72,6 +72,10 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const formRoutes = require('./routes/formRoutes');
 const fs = require('fs');
 const uploadDir = path.join(__dirname, 'uploads/profile-pictures');
+const consultationRoutes = require('./routes/consultationRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
+
+
 if (!fs.existsSync(uploadDir)){
     fs.mkdirSync(uploadDir, { recursive: true });
 
@@ -88,6 +92,8 @@ app.use('/dentists', dentistRoutes);
 app.use('/appointments', appointmentRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/form', formRoutes);
+app.use('/consultations', consultationRoutes);
+app.use('/inventory', inventoryRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

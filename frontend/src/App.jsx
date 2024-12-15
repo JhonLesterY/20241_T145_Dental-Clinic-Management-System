@@ -40,6 +40,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import AdminVerification from "./pages/AdminVerification";
 import { UserThemeProvider } from './context/UserThemeContext';
 import Dentist_ViewAppointments from "./pages/Dentist_ViewAppointments";
+import Admin_ConfirmedAppointments from "./pages/Admin_ConfirmedAppointments";
 import { DentistThemeProvider } from './context/DentistThemeContext';
 
 function App() {
@@ -80,6 +81,7 @@ function App() {
                   <Route path="/admin-profile" element={<Admin_profile />} />
                   <Route path="/admin-settings" element={<Admin_settings />} />
                   <Route path="/admin-viewAppointment" element={<ViewAppointment />} />
+          <Route path="/admin-confirmedAppointments" element={<Admin_ConfirmedAppointments />} />
                   <Route path="/appointment-confirmation" element={<Confirmation />} />
                   <Route path="/admin-viewFeedback" element={<Admin_ViewFeedback />} />
                   <Route path="/admin-sidebar" element={<AdminSideBar />} />

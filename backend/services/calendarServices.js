@@ -260,25 +260,43 @@ const BlockedDate = require('../models/BlockedDate');
 
 async function getBlockedDates() {
     try {
-        const blockedDates = await BlockedDate.find().sort({ date: 1 });
-        return blockedDates.map(bd => bd.date.toISOString().split('T')[0]);
+        const blockedDates = await BlockedDate.find({});
+        return blockedDates.map(blockedDate => ({
+            ...blockedDate.toObject(),
+            date: new Date(Date.UTC(
+                blockedDate.date.getUTCFullYear(),
+                blockedDate.date.getUTCMonth(),
+                blockedDate.date.getUTCDate()
+            ))
+        }));
     } catch (error) {
-        throw new Error(`Failed to fetch blocked dates: ${error.message}`);
+        console.error('Error retrieving blocked dates:', error);
+        throw new Error('Failed to retrieve blocked dates');
     }
 }
 
 async function blockDate(date) {
     try {
+        // Normalize the date to start of day in UTC
+        const normalizedDate = new Date(Date.UTC(
+            new Date(date).getUTCFullYear(), 
+            new Date(date).getUTCMonth(), 
+            new Date(date).getUTCDate()
+        ));
+        
         // First check if the date is already blocked
         const existingBlock = await BlockedDate.findOne({ 
-            date: new Date(date) 
+            date: {
+                $gte: normalizedDate,
+                $lt: new Date(normalizedDate.getTime() + 24 * 60 * 60 * 1000)
+            }
         });
         
         if (existingBlock) {
             throw new Error('Date is already blocked');
         }
         
-        const blockedDate = new BlockedDate({ date: new Date(date) });
+        const blockedDate = new BlockedDate({ date: normalizedDate });
         await blockedDate.save();
         return await getBlockedDates();
     } catch (error) {
@@ -292,7 +310,10 @@ async function blockDate(date) {
 async function unblockDate(date) {
     try {
         await BlockedDate.findOneAndDelete({ 
-            date: new Date(date) 
+            date: {
+                $gte: new Date(date),
+                $lt: new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000)
+            }
         });
         return await getBlockedDates();
     } catch (error) {

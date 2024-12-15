@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminSideBar from '../components/AdminSideBar';
+import AdminHeader from '../components/AdminHeader';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faThLarge, faFileAlt, faCalendarAlt, faClipboardList, faComments, faCog, faBell, faTooth, faSearch, faUsers } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
@@ -12,6 +13,7 @@ const AdminDashboard = () => {
         profilePicture: ''
     });
     const { isDarkMode } = useTheme();
+    
 
     useEffect(() => {
         const fetchAdminData = async () => {
@@ -37,9 +39,12 @@ const AdminDashboard = () => {
             <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
             {/* Main Content */}
-            <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'} ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-                {/* Add your dashboard content here */}
+            <div className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-16'} ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                <AdminHeader 
+                    title="Admin Dashboard" 
+                />
+                
+                
             </div>
         </div>
     );

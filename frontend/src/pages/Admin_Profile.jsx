@@ -69,38 +69,53 @@ const fetchAdminProfile = async () => {
       const adminId = sessionStorage.getItem('admin_id');
       const token = sessionStorage.getItem('token');
       
+      // Fetch profile picture from session storage first
+      const storedProfilePicture = sessionStorage.getItem('profilePicture');
+      if (storedProfilePicture) {
+          setPreviewUrl(storedProfilePicture);
+      }
+      
       if (!adminId) {
           throw new Error('Admin ID not found in session');
       }
 
       const response = await fetch(`http://localhost:5000/admin/${adminId}/profile`, {
           headers: {
-              'Authorization': `Bearer ${token}`
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
           }
       });
 
       if (!response.ok) {
-          throw new Error('Failed to fetch profile');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch admin profile');
       }
 
       const data = await response.json();
       
-      // Format the date to YYYY-MM-DD for the input field
-      const formattedBirthday = data.birthday ? 
-          new Date(data.birthday).toISOString().split('T')[0] : '';
-
+      // Update user data
       setUserData({
-          ...data,
-          birthday: formattedBirthday
+          fullname: data.fullname,
+          email: data.email,
+          phoneNumber: data.phoneNumber || '',
+          sex: data.sex || '',
+          birthday: data.birthday ? new Date(data.birthday).toISOString().split('T')[0] : '',
+          isProfileComplete: data.isProfileComplete || false
       });
+
+      // If profile picture not in session storage but available in response, update it
+      if (!storedProfilePicture && data.profilePicture) {
+          setPreviewUrl(data.profilePicture);
+          sessionStorage.setItem('profilePicture', data.profilePicture);
+      }
 
       setIsLoading(false);
   } catch (error) {
-      console.error('Error fetching profile:', error);
-      setError(error.message);
+      console.error('Error fetching admin profile:', error);
       setIsLoading(false);
   }
 };
+// In the handleSubmit function
 const handleSubmit = async (e) => {
   e.preventDefault();
   
@@ -113,11 +128,9 @@ const handleSubmit = async (e) => {
       formData.append('email', userData.email);
       formData.append('phoneNumber', userData.phoneNumber);
       formData.append('sex', userData.sex);
-      formData.append('birthday', userData.birthday);
+      formData.append('birthday', userData.birthday);  
       
-      if (profilePicture) {
-          formData.append('profilePicture', profilePicture);
-      }
+      // Removed the profilePicture append line completely
 
       console.log('Submitting profile data:', Object.fromEntries(formData));
 
@@ -136,7 +149,7 @@ const handleSubmit = async (e) => {
 
       const data = await response.json();
       setUserData(data);
-      
+     
       // Update session storage with profile completion status
       sessionStorage.setItem('isProfileComplete', 'true');
       
@@ -152,7 +165,6 @@ const handleSubmit = async (e) => {
       alert(error.message);
   }
 };
-// Update password change handler
 // Update the password change handler
 const handlePasswordChange = async (e) => {  // Add 'e' parameter
   e.preventDefault();  // Add this to prevent form submission

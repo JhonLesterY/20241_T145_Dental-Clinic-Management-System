@@ -186,7 +186,6 @@ const Admin_ViewFeedback = () => {
       }
 
       const data = await response.json();
-      console.log('Form created successfully:', data);
       setMessage('Form created successfully! The form has been set as active.');
       
       // Clear form fields
@@ -334,17 +333,35 @@ const Admin_ViewFeedback = () => {
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                    {filteredFeedback.map((response, index) => (
-                      <tr key={response.responseId || `response-${index}`}
-                          className={`${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-blue-50/50'} transition-colors`}>
-                        {Object.values(response.answers).map((value, i) => (
-                          <td key={i} className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-nowrap`}>
-                            {value}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
+                {filteredFeedback.map((response, index) => (
+                  <tr key={response.responseId || `response-${index}`} className={`${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-blue-50/50'} transition-colors`}>
+                    <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-nowrap`}>
+                      {new Date(response.submittedAt).toLocaleDateString()} {/* Assuming submittedAt is the date */}
+                    </td>
+                    <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-nowrap`}>
+                      {response.answers['Patient Email'] || 'Not provided'} {/* Assuming this is the correct field */}
+                    </td>
+                    <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-nowrap`}>
+                      {response.answers['Overall Experience'] || 'Not provided'} {/* Assuming this is the correct field */}
+                    </td>
+                    <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-nowrap`}>
+                      {response.answers['Staff Professionalism'] || 'Not provided'} {/* Assuming this is the correct field */}
+                    </td>
+                    <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-nowrap`}>
+                      {response.answers['Treatment Satisfaction'] || 'Not provided'} {/* Assuming this is the correct field */}
+                    </td>
+                    <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-nowrap`}>
+                      {response.answers['Clinic Cleanliness'] || 'Not provided'} {/* Assuming this is the correct field */}
+                    </td>
+                    <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-nowrap`}>
+                      {response.answers['Rating'] || 'Not provided'} {/* Assuming this is the correct field */}
+                    </td>
+                    <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-nowrap`}>
+                      {response.answers['Comments'] || 'Not provided'} {/* Assuming this is the correct field */}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
                 </table>
               </div>
             </div>

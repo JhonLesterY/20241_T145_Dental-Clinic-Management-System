@@ -28,7 +28,7 @@ async function createAdmin(req, res) {
             admin_id: newAdminId,
             fullname: req.body.fullname,
             email: req.body.email,
-            isGoogleUser: req.body.isGoogleUser || true,
+            isGoogleUser: req.body.isGoogleUser  || true,
             verificationToken: verificationToken,
             verificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
             permissionLevel: req.body.permissionLevel,
@@ -120,6 +120,12 @@ async function deletePatient(req, res) {
         
         if (!deletedPatient) {
             return res.status(404).json({ message: 'Patient not found' });
+        }
+
+        const remainingPatients = await Patient.find().sort({ patient_id: 1 });
+        for (let i = 0; i < remainingPatients.length; i++) {
+            remainingPatients[i].patient_id = i + 1; // Set new patient_id to be sequential
+            await remainingPatients[i].save(); // Save the updated patient
         }
 
         // Log activity
@@ -216,6 +222,13 @@ async function deleteDentist(req, res) {
             return res.status(404).json({ message: 'Dentist not found' });
         }
 
+         // Update the IDs of remaining dentists
+         const remainingDentists = await Dentist.find().sort({ dentist_id: 1 });
+         for (let i = 0; i < remainingDentists.length; i++) {
+             remainingDentists[i].dentist_id = i + 1; // Set new dentist_id to be sequential
+             await remainingDentists[i].save(); // Save the updated dentist
+         }
+         
         // Log activity
         await logActivity(
             req.user.id,
@@ -262,6 +275,13 @@ async function deleteAdmin(req, res) {
         if (!deletedAdmin) {
             return res.status(404).json({ message: 'Admin not found' });
         }
+
+         // Update the IDs of remaining admins
+         const remainingAdmins = await Admin.find().sort({ admin_id: 1 });
+         for (let i = 0; i < remainingAdmins.length; i++) {
+             remainingAdmins[i].admin_id = i + 1; // Set new admin_id to be sequential
+             await remainingAdmins[i].save(); // Save the updated admin
+         }
 
         // Log activity
         await logActivity({
@@ -786,6 +806,18 @@ async function confirmAppointment(req, res) {
         res.status(500).json({ message: 'Failed to confirm appointment' });
     }
 }
+async function getConfirmedAppointments(req, res) {
+    try {
+        const confirmedAppointments = await Appointment.find({ status: 'confirmed' })
+            .populate('patientId', 'fullname contact_number')
+            .sort({ appointmentDate: 1 });
+
+        res.status(200).json(confirmedAppointments);
+    } catch (error) {
+        console.error('Error fetching confirmed appointments:', error);
+        res.status(500).json({ message: 'Failed to retrieve confirmed appointments', error: error.message });
+    }
+}
 
 module.exports = {
     getAllPatients,
@@ -812,5 +844,6 @@ module.exports = {
     updateAdminPermissions,
     demoteFromHighLevelAdmin,
     confirmAppointment,
+    getConfirmedAppointments
     
 };

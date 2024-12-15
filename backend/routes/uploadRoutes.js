@@ -117,15 +117,18 @@ router.get('/file/:fileId', async (req, res) => {
         
         const fileData = await getFileContent(fileId);
         
-        // Set appropriate headers
-        res.setHeader('Content-Type', fileData.mimeType);
-        res.setHeader('Content-Disposition', `inline; filename="${fileData.fileName}"`);
-        
-        // Send the file content directly
-        res.send(fileData.content);
+        // Return JSON with base64 content
+        res.json({
+            content: fileData.content,
+            mimeType: fileData.mimeType,
+            fileName: fileData.fileName
+        });
     } catch (error) {
         console.error('Error serving file:', error);
-        res.status(500).json({ error: 'Failed to retrieve file' });
+        res.status(500).json({ 
+            error: 'Failed to retrieve file',
+            message: error.message 
+        });
     }
 });
 

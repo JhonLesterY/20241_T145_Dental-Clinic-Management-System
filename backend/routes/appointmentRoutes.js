@@ -293,4 +293,14 @@ router.options('/:id/status', (req, res) => {
   res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
   res.sendStatus(200);
 });
+
+router.get('/confirmed', async (req, res) => {
+  try {
+    const confirmedAppointments = await Appointment.find({ status: 'Confirmed' });
+    res.json(confirmedAppointments);
+  } catch (error) {
+    console.error('Error fetching confirmed appointments:', error);
+    res.status(500).json({ message: 'Error fetching confirmed appointments' });
+  }
+});
 module.exports = router;
