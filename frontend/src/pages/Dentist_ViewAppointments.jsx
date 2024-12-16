@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DentistSideBar from '../components/DentistSidebar';
 import Logo from '/src/images/Dental_logo.png';
-import {useTheme} from '../context/ThemeContext';
+import { useDentistTheme } from '../context/DentistThemeContext';
 
 const Dentist_ViewAppointments = () => {
-    const { isDarkMode } = useTheme();
+    const { isDarkMode } = useDentistTheme();
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -15,12 +15,6 @@ const Dentist_ViewAppointments = () => {
     useEffect(() => {
         fetchAppointments();
     }, []);
-    useEffect(() => {
-        console.log('Current Appointments State:', appointments);
-        if (appointments.length === 0) {
-            console.warn('No appointments found. Check if fetchAppointments is working correctly.');
-        }
-    }, [appointments]);
 
     const fetchAppointments = async () => {
         try {
@@ -55,11 +49,11 @@ const Dentist_ViewAppointments = () => {
     };
 
     return (
-        <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
+        <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
             <DentistSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
             
-            <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
-                <header className={`shadow-md ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+            <div className={`flex-1 flex flex-col transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
+                <header className={`${isDarkMode ? 'bg-gray-800 shadow-gray-900' : 'bg-white'} shadow-md`}>
                     <div className="flex items-center justify-between px-6 py-4">
                         <div className="flex items-center space-x-4">
                             <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
@@ -70,96 +64,62 @@ const Dentist_ViewAppointments = () => {
                     </div>
                 </header>
 
-                <div className="p-6">
-                    {loading ? (
-                        <div className="flex justify-center items-center h-64">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                <div className="w-[78rem] mx-auto my-4"></div>
+
+                {/* Date Section */}
+                <div className="flex flex-col items-center mb-4">
+                    <div className="flex gap-2 items-center">
+                        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-xl shadow-md w-full max-w-md">
+                            Today: {new Date().toLocaleDateString()}
                         </div>
-                    ) : error ? (
-                        <div className={`text-red-500 text-center ${isDarkMode ? 'bg-gray-800 p-4 rounded' : ''}`}>{error}</div>
-                    ) : (
-                        <div className={`rounded-lg shadow overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                            <table className="min-w-full">
-                                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                    </div>
+                </div>
+
+                {/* Appointments List */}
+                <div className="flex flex-col items-center mt-6 mx-auto w-full max-w-7xl">
+                    <div className={`w-full border rounded-xl shadow-lg max-w-6xl mx-auto p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                        {loading ? (
+                            <div className="flex justify-center items-center h-64">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                            </div>
+                        ) : error ? (
+                            <div className={`text-red-500 text-center ${isDarkMode ? 'bg-gray-800 p-4 rounded' : ''}`}>{error}</div>
+                        ) : (
+                            <table className="w-full">
+                                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                                     <tr>
                                         {['Patient Name', 'Date', 'Time', 'Requirements'].map((header, index) => (
-                                            <th 
-                                                key={index} 
-                                                className={`
-                                                    px-6 py-3 text-left text-xs font-medium uppercase tracking-wider
-                                                    ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}
-                                                `}
-                                            >
+                                            <th className={`py-3 px-4 text-left text-sm font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>
                                                 {header}
                                             </th>
                                         ))}
                                     </tr>
                                 </thead>
-                                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700 bg-gray-800' : 'divide-gray-200 bg-white'}`}>
+                                <tbody>
                                     {appointments.map((appointment) => (
-                                        <tr 
-                                            key={appointment.appointmentId}
-                                            className={`
-                                                ${isDarkMode 
-                                                    ? 'hover:bg-gray-700' 
-                                                    : 'hover:bg-gray-100'}
-                                            `}
-                                        >
-                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
-                                                {appointment.patientName || 'Unknown Patient'}
+                                        <tr key={appointment.id} className={`border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                            <td className={`py-3 px-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                                {appointment.patientName}
                                             </td>
-                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
-                                                {appointment.appointmentDate 
-                                                    ? new Date(appointment.appointmentDate).toLocaleDateString() 
-                                                    : 'No Date'}
+                                            <td className={`py-3 px-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                                {appointment.date}
                                             </td>
-                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
-                                                {appointment.appointmentTime || 'No Time'}
+                                            <td className={`py-3 px-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                                {appointment.time}
                                             </td>
-                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
-                                                {(() => {
-                                                    // If requirements is an object with schoolId
-                                                    if (appointment.requirements && typeof appointment.requirements === 'object') {
-                                                        if (appointment.requirements.schoolId) {
-                                                            const schoolId = appointment.requirements.schoolId;
-                                                            return (
-                                                                <div>
-                                                                    <p>File: {schoolId.fileName || 'Unnamed File'}</p>
-                                                                    {schoolId.webViewLink && (
-                                                                        <a 
-                                                                            href={schoolId.webViewLink} 
-                                                                            target="_blank" 
-                                                                            rel="noopener noreferrer"
-                                                                            className={`
-                                                                                ${isDarkMode 
-                                                                                    ? 'text-blue-400 hover:text-blue-300' 
-                                                                                    : 'text-blue-600 hover:text-blue-800'}
-                                                                                hover:underline
-                                                                            `}
-                                                                        >
-                                                                            View File
-                                                                        </a>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        }
-                                                        // If requirements is an object but not in expected format
-                                                        return JSON.stringify(appointment.requirements);
-                                                    }
-                                                    // If requirements is a simple string or undefined
-                                                    return appointment.requirements || 'None';
-                                                })()}
+                                            <td className={`py-3 px-4 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                                {appointment.requirements}
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
 
-export default Dentist_ViewAppointments; 
+export default Dentist_ViewAppointments;
