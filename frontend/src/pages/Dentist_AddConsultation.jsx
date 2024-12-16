@@ -3,7 +3,9 @@ import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import DentistSideBar from "../components/DentistSidebar";
 import { useDentistTheme } from '../context/DentistThemeContext';
+import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import {jwtDecode} from 'jwt-decode';
 
 const Dentist_AddConsultation = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -15,25 +17,51 @@ const Dentist_AddConsultation = () => {
     patientName: "",
     consultationDate: "",
     consultationDetails: "",
+    contactNumber: "",
     prescription: []
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { accessToken } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Get token from sessionStorage (backend token)
+        const token = sessionStorage.getItem('token');
+        
+        // Debug: Log the token and decode it
+        if (token) {
+          const decodedToken = jwtDecode(token);
+          console.log('Decoded Backend Token:', decodedToken);
+          console.log('Dentist ID from Token:', decodedToken.id);
+        }
+
         const [appointmentsResponse, inventoryResponse] = await Promise.all([
-          axios.get('http://localhost:5000/appointments/confirmed'),
+          axios.get('http://localhost:5000/appointments/confirmed', {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }),
           axios.get('http://localhost:5000/inventory')
         ]);
+        
+        console.log('Fetched Appointments:', appointmentsResponse.data);
+        
+        // Add a check if no appointments
+        if (appointmentsResponse.data.length === 0) {
+          console.warn('No confirmed appointments found');
+        }
+        
         setAppointments(appointmentsResponse.data);
         setInventoryMedicines(inventoryResponse.data.filter(item => item.quantity > 0));
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching data:", error.response ? error.response.data : error.message);
       }
     };
+
+    // Fetch data when component mounts
     fetchData();
   }, []);
 
@@ -41,11 +69,15 @@ const Dentist_AddConsultation = () => {
     const selectedAppointment = appointments.find(
       app => app._id === event.target.value
     );
-    setFormData(prev => ({
-      ...prev, 
-      appointmentId: event.target.value,
-      patientName: selectedAppointment.patientName
-    }));
+    if (selectedAppointment) {
+      setFormData(prev => ({
+        ...prev, 
+        appointmentId: selectedAppointment._id,
+        patientName: selectedAppointment.patientName,
+        contactNumber: selectedAppointment.contactNumber || '',
+        consultationDate: selectedAppointment.appointmentDate || new Date().toISOString().split('T')[0]
+      }));
+    }
   };
 
   const handleInputChange = (event) => {
@@ -62,8 +94,24 @@ const Dentist_AddConsultation = () => {
 
   const updateMedicinePrescription = (index, field, value) => {
     const newPrescription = [...formData.prescription];
-    newPrescription[index][field] = value;
-    setFormData(prev => ({ ...prev, prescription: newPrescription }));
+    
+    if (field === 'medicineId') {
+      // Find the selected medicine
+      const selectedMedicine = inventoryMedicines.find(med => med._id === value);
+      
+      newPrescription[index] = {
+        medicineId: value,
+        medicineName: selectedMedicine ? selectedMedicine.itemName : '',
+        quantity: newPrescription[index].quantity || 1
+      };
+    } else {
+      newPrescription[index][field] = value;
+    }
+    
+    setFormData(prevData => ({
+      ...prevData,
+      prescription: newPrescription
+    }));
   };
 
   const removeMedicinePrescription = (index) => {
@@ -77,19 +125,29 @@ const Dentist_AddConsultation = () => {
     setError("");
 
     try {
-      const response = await axios.post("http://localhost:5000/consultations", formData);
+      // Format the consultation date to ensure correct format
+      const formattedFormData = {
+        ...formData,
+        consultationDate: formData.consultationDate 
+          ? new Date(formData.consultationDate).toISOString().split('T')[0] 
+          : new Date().toISOString().split('T')[0]
+      };
+
+      const response = await axios.post("http://localhost:5000/consultations", formattedFormData);
       console.log("Consultation Added:", response.data);
       
-      // Reset form
+      // Reset form with default values to prevent uncontrolled input
       setFormData({
         appointmentId: "",
         patientName: "",
-        consultationDate: "",
+        consultationDate: new Date().toISOString().split('T')[0], // Default to today's date
         consultationDetails: "",
+        contactNumber: "",
         prescription: []
       });
     } catch (error) {
       setError(error.response?.data?.message || "Failed to submit consultation");
+      console.error("Consultation submission error:", error);
     } finally {
       setLoading(false);
     }
@@ -137,17 +195,22 @@ const Dentist_AddConsultation = () => {
         <div className="p-6">
           <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-6 mb-8`}>
             <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
-              <div>
+            <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Appointment ID</label>
-                <input
-                  type="text"
-                  name="id"
-                  value={formData.id}
-                  onChange={handleInputChange}
+                <select
+                  name="appointmentId"
+                  value={formData.appointmentId}
+                  onChange={handleAppointmentSelect}
                   className={`mt-1 w-full border rounded-lg p-2 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
-                  placeholder="Enter Appointment ID"
                   required
-                />
+                >
+                  <option value="">Select Appointment ID</option>
+                  {appointments.map(appointment => (
+                    <option key={appointment._id} value={appointment._id}>
+                      {appointment._id} - {appointment.patientName}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -158,20 +221,8 @@ const Dentist_AddConsultation = () => {
                   value={formData.patientName}
                   onChange={handleInputChange}
                   className={`mt-1 w-full border rounded-lg p-2 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
-                  placeholder="Enter Patient Name"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Consultation Date</label>
-                <input
-                  type="date"
-                  name="consultationDate"
-                  value={formData.consultationDate}
-                  onChange={handleInputChange}
-                  className={`mt-1 w-full border rounded-lg p-2 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
-                  required
+                  placeholder="Patient Name"
+                  readOnly
                 />
               </div>
 
@@ -184,6 +235,18 @@ const Dentist_AddConsultation = () => {
                   onChange={handleInputChange}
                   className={`mt-1 w-full border rounded-lg p-2 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
                   placeholder="Enter Contact Number"
+                  readOnly
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Consultation Date</label>
+                <input
+                  type="date"
+                  name="consultationDate"
+                  value={formData.consultationDate}
+                  onChange={handleInputChange}
+                  className={`mt-1 w-full border rounded-lg p-2 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
                   required
                 />
               </div>

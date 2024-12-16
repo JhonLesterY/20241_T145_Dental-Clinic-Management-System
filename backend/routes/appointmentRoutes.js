@@ -296,11 +296,26 @@ router.options('/:id/status', (req, res) => {
 
 router.get('/confirmed', async (req, res) => {
   try {
-    const confirmedAppointments = await Appointment.find({ status: 'Confirmed' });
+    // Get the token from the request headers
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Decode the token to get the dentist ID
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const dentistId = decoded.id;
+
+    // Find confirmed appointments for this specific dentist
+    const confirmedAppointments = await Appointment.find({ 
+      status: { $regex: /^confirmed$/i },
+      dentistId: dentistId
+    });
+    
     res.json(confirmedAppointments);
   } catch (error) {
     console.error('Error fetching confirmed appointments:', error);
-    res.status(500).json({ message: 'Error fetching confirmed appointments' });
+    res.status(500).json({ error: 'Failed to fetch confirmed appointments' });
   }
 });
 module.exports = router;

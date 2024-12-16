@@ -5,7 +5,8 @@ const Appointment = require('../models/Appointment');
 const Inventory = require('../models/Inventory');
 const bcrypt = require('bcryptjs');
 const { logActivity, ACTIONS } = require('../services/activitylogServices');
-const { sendWelcomeEmail, sendAdminVerificationEmail } = require('../emailService'); 
+const { sendAdminVerificationEmail } = require('../emailService');
+const { sendDentistVerificationEmail } = require('../emailService');
 const lockService = require('../services/lockService');
 const crypto = require('crypto');
 
@@ -24,11 +25,20 @@ async function createAdmin(req, res) {
         const lastAdmin = await Admin.findOne().sort({ admin_id: -1 });
         const newAdminId = lastAdmin ? lastAdmin.admin_id + 1 : 1;
 
+        let profilePicture = req.body.profilePicture || '';
+        if (req.body.isGoogleUser && req.body.googleId) {
+            // Construct Google profile picture URL
+            profilePicture = `https://lh3.googleusercontent.com/-a/ACg8ocJ${req.body.googleId}=s96-c`;
+        }
+
+
         const newAdmin = new Admin({
             admin_id: newAdminId,
             fullname: req.body.fullname,
             email: req.body.email,
             isGoogleUser: req.body.isGoogleUser  || true,
+            googleId: req.body.googleId || '',
+            profilePicture: profilePicture,
             verificationToken: verificationToken,
             verificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
             permissionLevel: req.body.permissionLevel,
@@ -40,24 +50,26 @@ async function createAdmin(req, res) {
         console.log('Saved admin:', {
             id: savedAdmin._id,
             email: savedAdmin.email,
-            verificationToken: savedAdmin.verificationToken
+            verificationToken: savedAdmin.verificationToken,
+            profilePicture: savedAdmin.profilePicture
         });
 
-        if (req.body.sendVerificationEmail) {
+       
             await sendAdminVerificationEmail({
                 email: savedAdmin.email,
                 name: savedAdmin.fullname,
                 token: verificationToken,
                 role: 'admin'
             });
-        }
+        
 
         res.status(201).json({ 
             message: 'Admin created successfully. Verification email sent.',
             admin: {
                 admin_id: newAdmin.admin_id,
                 email: newAdmin.email,
-                fullname: newAdmin.fullname
+                fullname: newAdmin.fullname,
+                profilePicture: newAdmin.profilePicture
             }
         });
     } catch (error) {
@@ -162,24 +174,29 @@ async function addDentist(req, res) {
         const lastDentist = await Dentist.findOne().sort({ dentist_id: -1 });
         const nextDentistId = lastDentist ? lastDentist.dentist_id + 1 : 1;
 
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+
         const newDentist = new Dentist({
             dentist_id: nextDentistId,
             name,
             email,
             phoneNumber,
             isGoogleUser: true,
-            verificationToken: crypto.randomBytes(32).toString('hex'),
-            verificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000)
+            verificationToken: verificationToken,
+            verificationExpiry: verificationExpiry,
+            isVerified: false
+           
         });
 
-        await newDentist.save();
+        const savedDentist = await newDentist.save();
 
         // Send verification email
-        await sendAdminVerificationEmail({
-            email: newDentist.email,
-            name: newDentist.name,
-            token: newDentist.verificationToken,
-            role: 'dentist'
+        await sendDentistVerificationEmail({
+            email: savedDentist.email,
+            name: savedDentist.name,
+            token: verificationToken
         });
 
         // Log activity
@@ -249,7 +266,6 @@ async function deleteDentist(req, res) {
     }
 }
 
-// Add this function
 async function deleteAdmin(req, res) {
     const lockStatus = await lockService.acquireLock('delete-operation', req.user.id);
     if (lockStatus.locked) {
@@ -333,30 +349,6 @@ async function getAllAppointments(req, res) {
     } catch (error) {
         console.error('Error in getAllAppointments:', error);
         res.status(500).json({ message: 'Failed to retrieve appointments: ' + error.message });
-    }
-}
-
-async function sendReminders(req, res) {
-    try {
-        const appointments = await Appointment.find({ reminderSent: false, date: { $gte: new Date() } });
-        
-        appointments.forEach(appointment => {
-            // Implement your reminder logic here
-            appointment.reminderSent = true;
-            appointment.save();
-        });
-
-        // Log activity
-        await logActivity({
-            userId: req.user._id,
-            userRole: 'admin',
-            action: 'sendReminders',
-            details: { sentCount: appointments.length }
-        });
-
-        return res.status(200).json({ message: 'Reminders sent successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Failed to send reminders: ' + error.message });
     }
 }
 
@@ -823,8 +815,7 @@ module.exports = {
     getAllPatients,
     deletePatient,
     deleteDentist,
-    getAllAppointments,
-    sendReminders,
+    getAllAppointments, 
     getReports,
     getInventory,
     addInventoryItem,

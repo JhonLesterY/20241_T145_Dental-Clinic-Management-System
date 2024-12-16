@@ -11,6 +11,25 @@ async function bookAppointment(patient_id, appointmentData) {
     try {
         console.log('Starting bookAppointment:', { patient_id, appointmentData });
         
+        // Validate patient ID format
+        if (!mongoose.Types.ObjectId.isValid(patient_id)) {
+            console.error('Invalid patient ID format:', patient_id);
+            throw new Error('Invalid patient ID format');
+        }
+        
+        // First, validate that the patient exists
+        const patient = await Patient.findById(patient_id);
+        
+        console.log('Patient lookup result:', {
+            patient_id: patient_id,
+            patient_exists: !!patient,
+            patient_details: patient ? patient.toObject() : null
+        });
+        
+        if (!patient) {
+            throw new Error('Patient not found');
+        }
+
         const appointment = new Appointment({
             ...appointmentData,
             patientId: patient_id,

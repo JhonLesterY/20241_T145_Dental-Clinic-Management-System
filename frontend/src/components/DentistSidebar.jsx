@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios"; // For making API requests
 import Logo from "/src/images/Dental_logo.png";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from 'jwt-decode';
 
 // Icons
 import { MdMenuOpen, MdOutlineDashboard, MdLogout } from "react-icons/md";
@@ -38,15 +39,32 @@ export default function Sidebar({ open, setOpen }) {
         const token = sessionStorage.getItem("token");
         
         if (!token || !dentistId) {
+          console.error("No token or dentist ID found");
           setAdminData({ email: "Please log in" });
+          navigate("/login");
           return;
         }
 
-        // Debug logs
-        console.log('Dentist ID:', dentistId);
-        console.log('Token:', token);
+        // Validate token before making the request
+        try {
+          const decodedToken = jwtDecode(token);
+          const currentTime = Math.floor(Date.now() / 1000);
+          
+          if (decodedToken.exp < currentTime) {
+            console.error("Token has expired");
+            sessionStorage.clear();
+            navigate("/login");
+            return;
+          }
+        } catch (decodeError) {
+          console.error("Invalid token:", decodeError);
+          sessionStorage.clear();
+          navigate("/login");
+          return;
+        }
 
         const response = await fetch(`http://localhost:5000/dentists/${dentistId}/profile`, {
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -54,7 +72,9 @@ export default function Sidebar({ open, setOpen }) {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch dentist data');
+          const errorText = await response.text();
+          console.error('Server response:', errorText);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
@@ -63,9 +83,9 @@ export default function Sidebar({ open, setOpen }) {
       } catch (error) {
         console.error("Error fetching dentist data:", error);
         setAdminData({ email: "Error loading profile" });
+        navigate("/login");
       }
     };
-
     fetchDentistData();
   }, []);
 

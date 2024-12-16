@@ -127,9 +127,42 @@ const sendAdminVerificationEmail = async ({ email, name, token, role }) => {
     }
 };
 
+const sendDentistVerificationEmail = async ({ email, name, token }) => {
+    try {
+        console.log('Starting dentist verification email process...');
+        const transporter = await createTransporter();
+        console.log('Transporter created successfully');
+
+        const mailOptions = {
+            from: {
+                name: 'UniCare Dental',
+                address: process.env.EMAIL_FROM
+            },
+            to: email,
+            subject: 'Verify Your Dentist Account - UniCare Dental',
+            html: `
+                <h1>Hello Dr. ${name},</h1>
+                <p>Welcome to UniCare Dental! Your account is almost ready.</p>
+                <p>Please click the link below to verify your dentist account:</p>
+                <a href="${process.env.FRONTEND_URL}/verify-dentist/${token}">Verify Account</a>
+                <p>This verification link will expire in 24 hours.</p>
+                <p>If you did not request this, please contact our admin team.</p>
+                <p>Best regards,<br>UniCare Dental Team</p>
+            `
+        };
+
+        const result = await transporter.sendMail(mailOptions);
+        console.log('Dentist verification email sent successfully');
+        return result;
+    } catch (error) {
+        console.error('Error sending dentist verification email:', error);
+        throw error;
+    }
+};
 module.exports = {
     createTransporter,
     sendWelcomeEmail,
     sendPasswordResetEmail,
-    sendAdminVerificationEmail
+    sendAdminVerificationEmail,
+    sendDentistVerificationEmail
 };

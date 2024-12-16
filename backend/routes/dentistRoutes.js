@@ -61,6 +61,18 @@ D_route.get('/:dentist_id/feedback', authenticateDentist, async (req, res) => {
 });
 
 // Report Generation
-D_route.get('/:dentist_id/reports', authenticateDentist, dentistService.generateReport);
+D_route.get('/:dentist_id/generate-report', authenticateDentist, async (req, res) => {
+    try {
+      const dentistId = req.params.dentist_id;
+      const { reportType } = req.query;
+  
+      const report = await dentistService.generateReport(dentistId, reportType);
+      
+      res.status(200).json(report);
+    } catch (error) {
+      console.error('Error in report generation route:', error);
+      res.status(500).json({ message: 'Failed to generate report' });
+    }
+  });
 
 module.exports = D_route;

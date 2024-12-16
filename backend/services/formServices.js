@@ -132,7 +132,6 @@ const syncFormResponses = async () => {
             try {
                 await storeFormResponse(response);
             } catch (error) {
-                // Log only the error message
                 console.error('Error processing response:', error.message);
                 continue;
             }

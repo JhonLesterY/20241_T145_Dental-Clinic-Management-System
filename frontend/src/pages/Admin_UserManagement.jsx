@@ -6,6 +6,7 @@ import { faThLarge, faFileAlt, faCalendarAlt, faClipboardList, faComments, faCog
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 
+
 const AdminUserManagement = () => {
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(true);   
@@ -150,12 +151,14 @@ const AdminUserManagement = () => {
           viewReports: true,
           managePermissions: true,
           manageInventory: true,
-          manageCalendar: true
-      } : newAdminData.permissions;
+          manageCalendar: true,
+          manageAdmins: true
+      } : newAdminData.permissions
 
       const adminData = {
           ...newAdminData,
-          permissions
+          permissions,
+          sendAdminVerificationEmail:true
       };
 
       try {

@@ -1,20 +1,21 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const A_route = express.Router();   
-const adminService = require('../services/adminServices');
-const { authenticateAdmin } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const bcrypt = require('bcrypt'); 
-const Admin = require('../models/Admin');
 const path = require('path');
-const ActivityLog = require('../models/ActivityLog');
+const A_route = express.Router();   
+const adminService = require('../services/adminServices');
 const lockService = require('../services/lockService');
-const deadlockPreventionMiddleware = require('../middleware/deadlockPreventionMiddleware');
-const reportService = require('../services/reportService');
+const calendarService = require('../services/calendarServices');
+const { authenticateAdmin } = require('../middleware/authMiddleware');
 const { checkAdminLevel } = require('../middleware/adminLevelMiddleware');
 const { checkPermission } = require('../middleware/checkPermissionMiddleware');
 const { logActivity, ACTIONS } = require('../services/activitylogServices');
-const calendarService = require('../services/calendarServices');
+const { sendAdminVerificationEmail } = require('../emailService');
+const Admin = require('../models/Admin');
+const ActivityLog = require('../models/ActivityLog');
+const deadlockPreventionMiddleware = require('../middleware/deadlockPreventionMiddleware');
+const reportService = require('../services/reportService');
 const BlockedDate = require('../models/BlockedDate');
 const Appointment = require('../models/Appointment');
 const Dentist = require('../models/Dentist');
@@ -193,7 +194,6 @@ A_route.post('/add-dentist', authenticateAdmin, adminService.addDentist);
 A_route.post('/create', authenticateAdmin, checkPermission('manageAdmins'), adminService.createAdmin);
 
 A_route.get('/appointments', authenticateAdmin, adminService.getAllAppointments);
-A_route.post('/appointments/reminders', adminService.sendReminders);
 A_route.get('/reports', adminService.getReports);
 
 // Inventory Management
@@ -350,7 +350,6 @@ A_route.post('/promote/:adminId', authenticateAdmin, async (req, res) => {
     }
 });
 
-// High-level admin only routes
 A_route.post('/promote', 
     authenticateAdmin, 
     checkAdminLevel('HIGH'), 
@@ -397,7 +396,6 @@ A_route.get('/current', authenticateAdmin, async (req, res) => {
     }
 });
 
-// Add Admin Registration Route
 A_route.post('/register', 
     authenticateAdmin, 
     checkPermission('manageUsers'), 
@@ -551,6 +549,29 @@ A_route.get('/verify-admin/:token', async (req, res) => {
             message: 'An error occurred during verification. Please try again later.',
             status: 'error'
         });
+    }
+});
+A_route.get('/verify-dentist/:token', async (req, res) => {
+    try {
+        const dentist = await Dentist.findOne({
+            verificationToken: req.params.token,
+            verificationExpiry: { $gt: Date.now() }
+        });
+
+        if (!dentist) {
+            return res.status(400).json({ message: 'Invalid or expired verification token' });
+        }
+
+        dentist.isVerified = true;
+        dentist.verificationToken = undefined;
+        dentist.verificationExpiry = undefined;
+
+        await dentist.save();
+
+        res.status(200).json({ message: 'Dentist account verified successfully' });
+    } catch (error) {
+        console.error('Dentist verification error:', error);
+        res.status(500).json({ message: 'Server error during dentist verification' });
     }
 });
 

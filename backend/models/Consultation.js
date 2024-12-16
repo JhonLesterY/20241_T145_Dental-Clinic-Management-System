@@ -42,6 +42,26 @@ const consultationSchema = new Schema({
             required: true
         }
     }],
+    usedItems: [{
+        itemId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'InventoryItem',
+            required: true
+        },
+        itemName: {
+            type: String,
+            required: true
+        },
+        quantity: {
+            type: Number,
+            required: true,
+            min: 1
+        },
+        dateUsed: {
+            type: Date,
+            default: Date.now
+        }
+    }],
     createdAt: {
         type: Date,
         default: Date.now

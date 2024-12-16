@@ -130,30 +130,61 @@ const getFeedback = async (dentistId) => {
 };
 
 // Generate report
-const generateReport = async (dentistId) => {
+const generateReport = async (dentistId, reportType = 'monthly') => {
     try {
-        const appointments = await Appointment.find({ dentistId });
-        const consultations = await Consultation.find({ dentistId });
-
-        const report = {
-            totalAppointments: appointments.length,
-            totalConsultations: consultations.length,
-            reportDate: new Date(),
-        };
-
-        await logActivity(
-            dentistId,
-            'dentist',
-            'generateReport',
-            { timestamp: new Date() }
-        );
-
-        return report;
+      const dentist = await Dentist.findById(dentistId);
+      if (!dentist) {
+        throw new Error('Dentist not found');
+      }
+  
+      // Fetch relevant data
+      const appointments = await Appointment.find({ 
+        dentistId: dentist._id, 
+        status: 'confirmed' 
+      }).populate('patientId');
+  
+      const consultations = await Consultation.find({ 
+        dentistId: dentist._id 
+      });
+  
+      const feedback = await Feedback.find({ 
+        dentistId: dentist._id 
+      });
+  
+      // Compute summary statistics
+      const summary = {
+        totalAppointments: appointments.length,
+        completedAppointments: appointments.filter(a => a.status === 'completed').length,
+        pendingAppointments: appointments.filter(a => a.status === 'pending').length,
+        cancelledAppointments: appointments.filter(a => a.status === 'cancelled').length,
+        completionRate: (appointments.filter(a => a.status === 'completed').length / appointments.length * 100).toFixed(2) + '%',
+        
+        totalConsultations: consultations.length,
+        newPatients: new Set(appointments.map(a => a.patientId._id)).size,
+        recurringPatients: 0 // You might want to implement a more sophisticated logic
+      };
+  
+      return {
+        dentistName: dentist.name,
+        specialization: dentist.specialization,
+        yearsOfExperience: dentist.yearsOfExperience,
+        summary,
+        appointments: appointments.map(a => ({
+          date: a.date,
+          patientName: a.patientId.name,
+          procedure: a.procedure,
+          status: a.status
+        })),
+        feedback: feedback.map(f => ({
+          comment: f.comment,
+          rating: f.rating
+        }))
+      };
     } catch (error) {
-        console.error('Error generating report:', error);
-        throw error;
+      console.error('Error generating dentist report:', error);
+      throw error;
     }
-};
+  };
 
 module.exports = {
     getDentistProfile,
