@@ -13,6 +13,7 @@ const { checkPermission } = require('../middleware/checkPermissionMiddleware');
 const { logActivity, ACTIONS } = require('../services/activitylogServices');
 const { sendAdminVerificationEmail } = require('../emailService');
 const Admin = require('../models/Admin');
+const Patient = require('../models/Patient');
 const ActivityLog = require('../models/ActivityLog');
 const deadlockPreventionMiddleware = require('../middleware/deadlockPreventionMiddleware');
 const reportService = require('../services/reportService');
@@ -697,25 +698,63 @@ A_route.post('/appointments/assign', authenticateAdmin, async (req, res) => {
     try {
         const { appointmentId, dentistId } = req.body;
 
-        // Find the appointment
+        // Log incoming data for debugging
+        console.log('Assign Dentist Request:', {
+            appointmentId,
+            dentistId,
+            appointmentIdType: typeof appointmentId,
+            dentistIdType: typeof dentistId
+        });
+
+        // Find the appointment by its appointmentId (not _id)
         const appointment = await Appointment.findOne({ appointmentId });
         if (!appointment) {
+            console.error('Appointment not found:', appointmentId);
             return res.status(404).json({ message: 'Appointment not found' });
         }
 
-        // Find the dentist using dentist_id instead of dentistId
-        const dentist = await Dentist.findOne({ dentist_id: dentistId });
+        // Ensure dentistId is converted to a number
+        const parsedDentistId = Number(dentistId);
+
+        // Find the dentist using dentist_id
+        const dentist = await Dentist.findOne({ dentist_id: parsedDentistId });
         if (!dentist) {
-            console.error('Dentist not found for ID:', dentistId);
+            console.error('Dentist not found for ID:', parsedDentistId);
             return res.status(404).json({ 
                 message: 'Dentist not found', 
-                details: `No dentist with ID ${dentistId} exists` 
+                details: `No dentist with ID ${parsedDentistId} exists` 
             });
         }
 
+        // Log found dentist details
+        console.log('Found Dentist:', {
+            _id: dentist._id,
+            dentist_id: dentist.dentist_id,
+            name: dentist.name
+        });
+
         // Assign the dentist
         appointment.dentistId = dentist._id;
-        await appointment.save();
+        
+        // Log before save
+        console.log('Before Save:', {
+            appointmentDentistId: appointment.dentistId,
+            dentistObjectId: dentist._id
+        });
+
+        const savedAppointment = await appointment.save();
+
+        // Log after save
+        console.log('After Save:', {
+            savedAppointmentDentistId: savedAppointment.dentistId,
+            savedAppointmentId: savedAppointment._id
+        });
+
+        // Decrypt and return the appointment
+        const decryptedAppointment = appointment.decryptSensitiveFields();
+
+        // Log the decrypted appointment
+        console.log('Decrypted Appointment:', decryptedAppointment);
 
         // Log the activity
         await logActivity({
@@ -723,7 +762,7 @@ A_route.post('/appointments/assign', authenticateAdmin, async (req, res) => {
             userRole: req.user.role,
             action: ACTIONS.APPOINTMENT_UPDATE,
             details: {
-                appointmentId: appointment.appointmentId,
+                appointmentId: decryptedAppointment.appointmentId,
                 dentistId: dentist.dentist_id,
                 dentistName: dentist.name
             }
@@ -731,13 +770,14 @@ A_route.post('/appointments/assign', authenticateAdmin, async (req, res) => {
 
         res.status(200).json({ 
             message: 'Dentist assigned successfully', 
-            appointment 
+            appointment: decryptedAppointment 
         });
     } catch (error) {
         console.error('Error assigning dentist:', error);
         res.status(500).json({ 
             message: 'Failed to assign dentist', 
-            error: error.message 
+            error: error.toString(),
+            errorStack: error.stack
         });
     }
 });
@@ -756,6 +796,29 @@ A_route.get('/dentists', authenticateAdmin, async (req, res) => {
         console.error('Error fetching dentists:', error);
         res.status(500).json({ 
             message: 'Failed to fetch dentists', 
+            error: error.message 
+        });
+    }
+});
+A_route.get('/dashboard-metrics', authenticateAdmin, async (req, res) => {
+    try {
+        const totalPatients = await Patient.countDocuments();
+        const totalAppointments = await Appointment.countDocuments();
+        const completedAppointments = await Appointment.countDocuments({ status: 'completed' });
+        const pendingAppointments = await Appointment.countDocuments({ status: 'pending' });
+        const cancelledAppointments = await Appointment.countDocuments({ status: 'cancelled' });
+
+        res.json({
+            totalPatients,
+            totalAppointments,
+            completedAppointments,
+            pendingAppointments,
+            cancelledAppointments
+        });
+    } catch (error) {
+        console.error('Error fetching dashboard metrics:', error);
+        res.status(500).json({ 
+            message: 'Failed to retrieve dashboard metrics', 
             error: error.message 
         });
     }

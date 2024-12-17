@@ -189,19 +189,15 @@ const getFileContent = async(fileId) => {
         // Ensure we have valid buffer data
         let buffer;
         if (response.data instanceof ArrayBuffer) {
-            buffer = Buffer.from(new Uint8Array(response.data));
-        } else if (response.data instanceof Uint8Array) {
             buffer = Buffer.from(response.data);
-        } else if (typeof response.data === 'string') {
-            buffer = Buffer.from(response.data);
-        } else if (Buffer.isBuffer(response.data)) {
-            buffer = response.data;
-        } else if (response.data && response.data.buffer instanceof ArrayBuffer) {
-            buffer = Buffer.from(response.data.buffer);
         } else if (response.data instanceof Blob) {
             const arrayBuffer = await response.data.arrayBuffer();
             buffer = Buffer.from(arrayBuffer);
+        } else if (typeof response.data === 'object' && response.data.data) {
+            // Handle cases where response.data might be an object with a data property
+            buffer = Buffer.from(response.data.data);
         } else {
+            console.error('Unexpected response data type:', typeof response.data, response.data);
             throw new Error(`Unexpected response data type: ${typeof response.data}`);
         }
 

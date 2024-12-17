@@ -71,7 +71,10 @@ D_route.get('/:dentist_id/generate-report', authenticateDentist, async (req, res
       res.status(200).json(report);
     } catch (error) {
       console.error('Error in report generation route:', error);
-      res.status(500).json({ message: 'Failed to generate report' });
+      res.status(500).json({ 
+        message: 'Failed to generate report', 
+        error: error.message 
+      });
     }
   });
 

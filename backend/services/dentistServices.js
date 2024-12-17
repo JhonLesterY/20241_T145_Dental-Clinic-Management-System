@@ -137,48 +137,37 @@ const generateReport = async (dentistId, reportType = 'monthly') => {
         throw new Error('Dentist not found');
       }
   
-      // Fetch relevant data
-      const appointments = await Appointment.find({ 
-        dentistId: dentist._id, 
-        status: 'confirmed' 
-      }).populate('patientId');
-  
+      // Fetch consultations with detailed population
       const consultations = await Consultation.find({ 
         dentistId: dentist._id 
+      })
+      .populate({
+        path: 'patientId',
+        select: 'firstName lastName middleName age course year'
+      })
+      .populate({
+        path: 'prescription.medicineId',
+        select: 'itemName'
       });
   
-      const feedback = await Feedback.find({ 
-        dentistId: dentist._id 
-      });
-  
-      // Compute summary statistics
-      const summary = {
-        totalAppointments: appointments.length,
-        completedAppointments: appointments.filter(a => a.status === 'completed').length,
-        pendingAppointments: appointments.filter(a => a.status === 'pending').length,
-        cancelledAppointments: appointments.filter(a => a.status === 'cancelled').length,
-        completionRate: (appointments.filter(a => a.status === 'completed').length / appointments.length * 100).toFixed(2) + '%',
-        
-        totalConsultations: consultations.length,
-        newPatients: new Set(appointments.map(a => a.patientId._id)).size,
-        recurringPatients: 0 // You might want to implement a more sophisticated logic
-      };
+      // Transform consultations for dentist report
+      const dentistReports = consultations.map(consultation => ({
+        consultationId: consultation._id,
+        date: consultation.consultationDate,
+        toothNumber: consultation.toothNumber,
+        patientName: `${consultation.patientId.firstName} ${consultation.patientId.middleName || ''} ${consultation.patientId.lastName}`.trim(),
+        age: consultation.patientId.age,
+        courseAndYear: `${consultation.patientId.course || ''} ${consultation.patientId.year || ''}`.trim(),
+        treatment: consultation.notes,
+        medicine: consultation.prescription.map(p => p.medicineId.itemName).join(', '),
+        quantity: consultation.prescription.map(p => p.quantity).join(', '),
+        signature: dentist.name // You might want to replace this with an actual signature mechanism
+      }));
   
       return {
         dentistName: dentist.name,
         specialization: dentist.specialization,
-        yearsOfExperience: dentist.yearsOfExperience,
-        summary,
-        appointments: appointments.map(a => ({
-          date: a.date,
-          patientName: a.patientId.name,
-          procedure: a.procedure,
-          status: a.status
-        })),
-        feedback: feedback.map(f => ({
-          comment: f.comment,
-          rating: f.rating
-        }))
+        reports: dentistReports
       };
     } catch (error) {
       console.error('Error generating dentist report:', error);

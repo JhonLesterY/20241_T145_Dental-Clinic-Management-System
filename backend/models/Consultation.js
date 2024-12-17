@@ -27,7 +27,7 @@ const consultationSchema = new Schema({
         type: String,
         required: true
     },
-    treatment: {
+    toothNumber: {
         type: String,
         required: true
     },

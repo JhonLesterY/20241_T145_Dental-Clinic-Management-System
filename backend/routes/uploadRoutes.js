@@ -113,18 +113,14 @@ router.post('/', upload.single('file'), async (req, res) => {
 router.get('/file/:fileId', async (req, res) => {
     try {
         const fileId = req.params.fileId;
-        console.log('Fetching file with ID:', fileId);
+        // Generate a direct Google Drive view link
+        const driveViewLink = `https://drive.google.com/file/d/${fileId}/view`;
         
-        const fileData = await getFileContent(fileId);
-        
-        // Return JSON with base64 content
+        // Return JSON with the direct view link
         res.json({
-            content: fileData.content,
-            mimeType: fileData.mimeType,
-            fileName: fileData.fileName
+            viewLink: driveViewLink
         });
     } catch (error) {
-        console.error('Error serving file:', error);
         res.status(500).json({ 
             error: 'Failed to retrieve file',
             message: error.message 

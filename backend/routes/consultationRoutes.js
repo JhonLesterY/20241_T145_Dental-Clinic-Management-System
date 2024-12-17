@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const Patient = require('../models/Patient');
 const Consultation = require('../models/Consultation');
 const InventoryItem = require('../models/Inventory');
 const Appointment = require('../models/Appointment');
@@ -21,6 +22,11 @@ router.get('/', async (req, res) => {
         path: 'dentistId',
         select: 'name email',
         options: { strictPopulate: false }
+      })
+      .populate({
+        path: 'prescription.medicineId',
+        select: 'itemName', // Populate medicine name
+        model: 'InventoryItem'
       })
       .sort({ consultationDate: -1 });
 
@@ -47,9 +53,9 @@ router.get('/', async (req, res) => {
         if (patient) {
           const nameParts = [
             patient.firstName || '',
-            patient.middleName ? ` ${patient.middleName}` : '',
+            patient.middleName ? ` ${patient.middleName}` : ' ',
             patient.lastName || '',
-            patient.suffix ? ` ${patient.suffix}` : ''
+           
           ];
           
           const constructedName = nameParts.join('').trim();
@@ -59,6 +65,13 @@ router.get('/', async (req, res) => {
         // Fallback to appointment patient name
         return appointmentName || 'Unknown Patient';
       };
+
+      const formattedPrescription = consultation.prescription.map(item => ({
+        medicineName: item.medicineId ? item.medicineId.itemName : 'Unknown Medicine',
+        quantity: item.quantity
+      }));
+
+      
 
       return {
         _id: consultation._id,
@@ -70,7 +83,7 @@ router.get('/', async (req, res) => {
           firstName: consultation.patientId.firstName || '',
           middleName: consultation.patientId.middleName || '',
           lastName: consultation.patientId.lastName || '',
-          suffix: consultation.patientId.suffix || '',
+        
           email: consultation.patientId.email || '',
           phoneNumber: consultation.patientId.phoneNumber || ''
         } : null,
@@ -80,7 +93,7 @@ router.get('/', async (req, res) => {
         consultationDate: consultation.consultationDate,
         notes: consultation.notes,
         treatment: consultation.treatment,
-        prescription: consultation.prescription,
+        prescription: formattedPrescription,
         usedItems: consultation.usedItems || []
       };
     });
@@ -170,8 +183,22 @@ router.post('/', async (req, res) => {
       appointmentId, 
       consultationDate, 
       consultationDetails, 
-      prescription 
+      toothNumber,
+      prescription = [] 
     } = req.body;
+
+    // Find the appointment by its custom appointmentId
+    const appointment = await Appointment.findOne({ appointmentId: appointmentId });
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    // Validate required fields
+    if (!consultationDetails || !toothNumber) {
+      return res.status(400).json({ 
+        message: "Consultation details and tooth number are required" 
+      });
+    }
 
     const enrichedPrescription = await Promise.all(prescription.map(async (med) => {
       try {
@@ -191,53 +218,44 @@ router.post('/', async (req, res) => {
       }
     }));
 
-    // Find the appointment to get patient and dentist IDs
-    const appointment = await Appointment.findById(appointmentId);
-    if (!appointment) {
-      return res.status(404).json({ message: "Appointment not found" });
-    }
-
-    // Validate medicine availability
-    for (let item of prescription) {
-      const inventoryItem = await InventoryItem.findById(item.medicineId);
-      
-      if (!inventoryItem) {
-        return res.status(400).json({ 
-          message: `Medicine with ID ${item.medicineId} not found` 
-        });
-      }
-
-      if (inventoryItem.quantity < item.quantity) {
-        return res.status(400).json({ 
-          message: `Insufficient stock for ${inventoryItem.itemName}` 
-        });
+    for (const med of enrichedPrescription) {
+      try {
+        const medicineItem = await InventoryItem.findById(med.medicineId);
+        if (medicineItem) {
+          // Ensure we don't go below zero
+          medicineItem.quantity = Math.max(0, medicineItem.quantity - med.quantity);
+          await medicineItem.save();
+        }
+      } catch (error) {
+        console.warn(`Could not update inventory for medicine: ${med.medicineName}`, error);
       }
     }
 
-    // Deduct medicines from inventory
-    for (let item of prescription) {
-      await InventoryItem.findByIdAndUpdate(
-        item.medicineId, 
-        { $inc: { quantity: -item.quantity } }
-      );
-    }
-
-    // Create consultation
-    const consultation = new Consultation({
-      appointmentId,
+    // Create new consultation
+    const newConsultation = new Consultation({
+      appointmentId: appointment._id, // Use MongoDB _id here
       patientId: appointment.patientId,
-      dentistId: appointment.dentistId,
-      consultationDate,
+      dentistId: appointment.dentistId || null, // Use dentist from appointment if available
+      consultationDate: consultationDate || new Date(),
       notes: consultationDetails,
-      treatment: consultationDetails,
+      toothNumber: toothNumber, // Use tooth number as treatment
       prescription: enrichedPrescription
     });
 
-    await consultation.save();
-    res.status(201).json(consultation);
+
+
+    await newConsultation.save();
+
+    res.status(201).json({ 
+      message: 'Consultation added successfully', 
+      consultation: newConsultation 
+    });
   } catch (error) {
-    console.error("Consultation creation error:", error);
-    res.status(500).json({ message: "Error creating consultation", error: error.message });
+    console.error('Error adding consultation:', error);
+    res.status(500).json({ 
+      message: 'Failed to add consultation', 
+      error: error.message 
+    });
   }
 });
 
@@ -277,6 +295,54 @@ router.post('/:consultationId/used-items', async (req, res) => {
     console.error('Error adding used items:', error);
     res.status(500).json({ 
       message: 'Failed to add used items', 
+      error: error.message 
+    });
+  }
+});
+
+router.put('/:consultationId', async (req, res) => {
+  try {
+    const { consultationId } = req.params;
+    const { age, courseAndYear } = req.body;
+
+    // Find the consultation
+    const consultation = await Consultation.findById(consultationId);
+    if (!consultation) {
+      return res.status(404).json({ message: "Consultation not found" });
+    }
+
+    // Find the associated patient
+    const patient = await Patient.findById(consultation.patientId);
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    // Update patient details
+    if (age !== undefined) {
+      patient.age = age;
+    }
+    if (courseAndYear !== undefined) {
+      // Split courseAndYear into course and year if needed
+      const [course, year] = courseAndYear.split(' ');
+      patient.course = course;
+      patient.year = year;
+    }
+
+    // Save patient updates
+    await patient.save();
+
+    res.status(200).json({ 
+      message: "Consultation details updated successfully",
+      patient: {
+        age: patient.age,
+        course: patient.course,
+        year: patient.year
+      }
+    });
+  } catch (error) {
+    console.error('Error updating consultation details:', error);
+    res.status(500).json({ 
+      message: "Failed to update consultation details", 
       error: error.message 
     });
   }

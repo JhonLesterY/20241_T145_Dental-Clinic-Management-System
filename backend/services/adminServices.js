@@ -804,12 +804,18 @@ async function getConfirmedAppointments(req, res) {
             .populate('patientId', 'fullname contact_number')
             .sort({ appointmentDate: 1 });
 
-        res.status(200).json(confirmedAppointments);
+        // Decrypt sensitive fields for each appointment
+        const decryptedAppointments = confirmedAppointments.map(appointment => 
+            appointment.decryptSensitiveFields()
+        );
+
+        res.status(200).json(decryptedAppointments);
     } catch (error) {
         console.error('Error fetching confirmed appointments:', error);
         res.status(500).json({ message: 'Failed to retrieve confirmed appointments', error: error.message });
     }
 }
+// Add this route before module.exports
 
 module.exports = {
     getAllPatients,
