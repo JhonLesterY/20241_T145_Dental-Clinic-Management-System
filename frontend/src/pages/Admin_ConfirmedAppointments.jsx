@@ -85,35 +85,50 @@ const Admin_ConfirmedAppointments = () => {
     }
   };
 
+
   const handleAssignDentist = async (appointmentId, dentistId) => {
     try {
+      // Ensure dentistId is a string
+      const dentistIdString = String(dentistId);
+
+      console.log('Assigning dentist:', { 
+        appointmentId, 
+        dentistId: dentistIdString, 
+        appointmentIdType: typeof appointmentId,
+        dentistIdType: typeof dentistIdString
+      });
+
       const response = await fetch('http://localhost:5000/admin/appointments/assign', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
-        body: JSON.stringify({ appointmentId, dentistId })
+        body: JSON.stringify({ 
+          appointmentId, 
+          dentistId: dentistIdString 
+        })
       });
   
+      // Detailed error handling
       if (!response.ok) {
-        const contentType = response.headers.get('content-type');
-        let errorMessage = 'Failed to assign dentist';
-  
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } else {
-          const errorText = await response.text();
-          console.error('Non-JSON error response:', errorText);
-        }
-  
-        throw new Error(errorMessage);
+        const errorText = await response.text();
+        console.error('Full error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
+        
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
   
       const data = await response.json();
+      console.log('Assign dentist response:', data);
+      
       alert('Dentist assigned successfully');
-      fetchConfirmedAppointments(); // Refresh the list
+      
+      // Refresh the appointments list after successful assignment
+      fetchConfirmedAppointments();
     } catch (error) {
       console.error('Error assigning dentist:', error);
       alert(error.message);

@@ -16,7 +16,6 @@ const menuItems = [
   { icons: <IoHomeOutline size={24} />, label: "Dashboard", path: "/dentist-dashboard" },
   { icons: <FaEye size={24} />, label: "View Appointments", path: "/dentist-viewAppointments" },
   { icons: <FaEye size={24} />, label: "View Consultation", path: "/dentist-viewConsultation" },
-  { icons: <MdOutlineDashboard size={24} />, label: "View Feedback", path: "/dentist-viewFeedback" },
   { icons: <FaPlusCircle size={24} />, label: "Add Consultation", path: "/dentist-addConsultation" },
   { icons: <CiSettings size={24} />, label: "Settings", path: "/dentist-settings" },
   { icons: <TbReportSearch size={24} />, label: "Reports", path: "/reports" },

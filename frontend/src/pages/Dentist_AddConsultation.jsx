@@ -17,7 +17,7 @@ const Dentist_AddConsultation = () => {
     patientName: "",
     consultationDate: "",
     consultationDetails: "",
-    contactNumber: "",
+    toothNumber: "", // Replace contactNumber with toothNumber
     prescription: []
   });
 
@@ -67,14 +67,14 @@ const Dentist_AddConsultation = () => {
 
   const handleAppointmentSelect = (event) => {
     const selectedAppointment = appointments.find(
-      app => app._id === event.target.value
+      app => app.appointmentId === event.target.value
     );
     if (selectedAppointment) {
       setFormData(prev => ({
         ...prev, 
-        appointmentId: selectedAppointment._id,
+        appointmentId: selectedAppointment.appointmentId,
         patientName: selectedAppointment.patientName,
-        contactNumber: selectedAppointment.contactNumber || '',
+        toothNumber: "", // Initialize tooth number as empty
         consultationDate: selectedAppointment.appointmentDate || new Date().toISOString().split('T')[0]
       }));
     }
@@ -125,24 +125,27 @@ const Dentist_AddConsultation = () => {
     setError("");
 
     try {
-      // Format the consultation date to ensure correct format
+      // Prepare form data for submission
       const formattedFormData = {
-        ...formData,
+        appointmentId: formData.appointmentId,
         consultationDate: formData.consultationDate 
           ? new Date(formData.consultationDate).toISOString().split('T')[0] 
-          : new Date().toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        consultationDetails: formData.consultationDetails,
+        toothNumber: formData.toothNumber,
+        prescription: formData.prescription
       };
 
       const response = await axios.post("http://localhost:5000/consultations", formattedFormData);
       console.log("Consultation Added:", response.data);
       
-      // Reset form with default values to prevent uncontrolled input
+      // Reset form with default values
       setFormData({
         appointmentId: "",
         patientName: "",
-        consultationDate: new Date().toISOString().split('T')[0], // Default to today's date
+        consultationDate: new Date().toISOString().split('T')[0],
         consultationDetails: "",
-        contactNumber: "",
+        toothNumber: "",
         prescription: []
       });
     } catch (error) {
@@ -201,13 +204,13 @@ const Dentist_AddConsultation = () => {
                   name="appointmentId"
                   value={formData.appointmentId}
                   onChange={handleAppointmentSelect}
-                  className={`mt-1 w-full border rounded-lg p-2 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
+                  className={`w-full px-3 py-2 border rounded-md ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
                   required
                 >
-                  <option value="">Select Appointment ID</option>
-                  {appointments.map(appointment => (
-                    <option key={appointment._id} value={appointment._id}>
-                      {appointment._id} - {appointment.patientName}
+                  <option value="">Select Appointment</option>
+                  {appointments.map(app => (
+                    <option key={app.appointmentId} value={app.appointmentId}>
+                      {app.appointmentId} - {app.patientName}
                     </option>
                   ))}
                 </select>
@@ -227,15 +230,15 @@ const Dentist_AddConsultation = () => {
               </div>
 
               <div>
-                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Contact Number</label>
+                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Tooth Number</label>
                 <input
-                  type="tel"
-                  name="contactNumber"
-                  value={formData.contactNumber}
+                  type="text"
+                  name="toothNumber"
+                  value={formData.toothNumber}
                   onChange={handleInputChange}
-                  className={`mt-1 w-full border rounded-lg p-2 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
-                  placeholder="Enter Contact Number"
-                  readOnly
+                  placeholder="Enter Tooth Number"
+                  className={`w-full px-3 py-2 border rounded-md ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-gray-300'}`}
+                  required
                 />
               </div>
 

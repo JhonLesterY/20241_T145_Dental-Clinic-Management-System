@@ -102,12 +102,6 @@ const Admin_ViewAppointment = () => {
   };
 
   const DocumentModal = ({ appointment, onClose }) => {
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [fileContent, setFileContent] = useState(null);
-    const [fileType, setFileType] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-
     const documents = [
       { type: 'School ID', data: appointment.requirements?.schoolId },
       { type: 'Registration Certificate', data: appointment.requirements?.registrationCert },
@@ -115,209 +109,66 @@ const Admin_ViewAppointment = () => {
     ];
 
     const handleViewFile = async (fileId) => {
-      setError(null);
       try {
-        setLoading(true);
-        console.log('Fetching file:', fileId);
-        
-        const fileUrl = `http://localhost:5000/upload/file/${fileId}`;
-        const response = await fetch(fileUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
-            'Accept': '*/*'
-          },
+        const response = await fetch(`http://localhost:5000/upload/file/${fileId}`, {
+          headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` }
         });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('File fetch error:', errorText);
-          throw new Error(`Failed to fetch file: ${response.status} ${errorText}`);
-        }
-
-        const fileData = await response.json(); // Expecting JSON response with base64 content
+        const data = await response.json();
         
-        // Validate file data
-        if (!fileData || !fileData.content || !fileData.mimeType) {
-          throw new Error('Invalid file data received');
+        if (data.viewLink) {
+          window.open(data.viewLink, '_blank');
         }
-
-        // Create data URL for image/pdf preview
-        const dataUrl = `data:${fileData.mimeType};base64,${fileData.content}`;
-        
-        setFileType(fileData.mimeType);
-        setFileContent(dataUrl);
-        setSelectedFile(fileId);
       } catch (error) {
         console.error('Error viewing file:', error);
-        setError(error.message || 'Failed to load file');
-      } finally {
-        setLoading(false);
       }
     };
-
-    const renderFilePreview = () => {
-      // Early return conditions
-      if (!selectedFile) return null;
-      if (loading) return <div className="text-center">Loading...</div>;
-      if (error) return <div className="text-red-500">{error}</div>;
-
-      // Validate fileContent and fileType
-      if (!fileContent || !fileType) {
-        return <div className="text-yellow-500">No file content available</div>;
-      }
-
-      try {
-        // Image preview
-        if (fileType.startsWith('image/')) {
-          return (
-            <div className="w-full h-full flex items-center justify-center bg-gray-100">
-              <div className="relative max-w-full max-h-[60vh]">
-                <img 
-                  src={fileContent} 
-                  alt="Document Preview" 
-                  className="object-contain w-full h-full"
-                  onError={(e) => {
-                    console.error('Image load error');
-                    e.target.style.display = 'none';
-                    setError('Failed to load image');
-                  }}
-                />
-              </div>
-            </div>
-          );
-        } 
-        // PDF preview
-        else if (fileType === 'application/pdf') {
-          return (
-            <div className="w-full h-[60vh]">
-              <iframe
-                src={fileContent}
-                width="100%"
-                height="100%"
-                title="PDF Preview"
-                frameBorder="0"
-              >
-                <div className="p-4 text-center">
-                  <p>Unable to display PDF directly.</p>
-                  <a 
-                    href={fileContent} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline"
-                  >
-                    Open PDF in new tab
-                  </a>
-                </div>
-              </iframe>
-            </div>
-          );
-        } 
-        // Generic file download
-        else {
-          return (
-            <div className="flex flex-col items-center justify-center h-full space-y-4">
-              <p className="text-gray-600">Unsupported file type: {fileType}</p>
-              <a 
-                href={fileContent} 
-                download 
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Download File
-              </a>
-            </div>
-          );
-        }
-      } catch (err) {
-        console.error('Preview rendering error:', err);
-        return (
-          <div className="text-red-500 flex flex-col items-center justify-center h-full">
-            <p>Error displaying preview</p>
-            <p className="text-sm">{err.message}</p>
-          </div>
-        );
-      }
-    };
-
-    useEffect(() => {
-      return () => {
-        // Cleanup function to revoke object URL when component unmounts
-        if (fileContent) {
-          URL.revokeObjectURL(fileContent);
-        }
-      };
-    }, [fileContent]);
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 h-[80vh] flex flex-col">
+        <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 flex flex-col">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Required Documents</h2>
             <button
-              onClick={() => {
-                setSelectedFile(null);
-                setFileContent(null);
-                onClose();
-              }}
+              onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
             >
               <FaTimes />
             </button>
           </div>
 
-          <div className="flex h-full">
-            {/* Document List */}
-            <div className="w-1/3 border-r pr-4 overflow-y-auto">
-              {documents.map((doc, index) => (
-                <div key={index} className="border rounded-lg p-4 mb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <FaFileAlt className="text-blue-500" />
-                      <span className="font-medium">{doc.type}</span>
-                    </div>
-                    {doc.data ? (
-                      <button
-                        onClick={() => handleViewFile(doc.data.fileId)}
-                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                      >
-                        <FaEye className="mr-2" />
-                        View File
-                      </button>
-                    ) : (
-                      <span className="text-red-500 text-sm">Not uploaded</span>
-                    )}
+          <div className="space-y-4">
+            {documents.map((doc, index) => (
+              <div key={index} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <FaFileAlt className="text-blue-500" />
+                    <span className="font-medium">{doc.type}</span>
                   </div>
-                  {doc.data && (
-                    <div className="mt-2 text-sm text-gray-500">
-                      <p>Filename: {doc.data.fileName}</p>
-                      <p>Uploaded: {new Date(doc.data.uploadedAt).toLocaleString()}</p>
-                    </div>
+                  {doc.data ? (
+                    <button
+                      onClick={() => handleViewFile(doc.data.fileId)}
+                      className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                    >
+                      <FaEye className="mr-2" />
+                      View File
+                    </button>
+                  ) : (
+                    <span className="text-red-500 text-sm">Not uploaded</span>
                   )}
                 </div>
-              ))}
-            </div>
-
-            {/* File Preview */}
-            <div className="w-2/3 pl-4 flex flex-col">
-              {loading ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                </div>
-              ) : selectedFile ? (
-                <div className="flex-1 flex items-center justify-center">
-                  {renderFilePreview()}
-                </div>
-              ) : (
-                <div className="flex-1 flex items-center justify-center text-gray-500">
-                  Select a file to preview
-                </div>
-              )}
-            </div>
+                {doc.data && (
+                  <div className="mt-2 text-sm text-gray-500">
+                    <p>Filename: {doc.data.fileName}</p>
+                    <p>Uploaded: {new Date(doc.data.uploadedAt).toLocaleString()}</p>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
     );
-  };
+};
 
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);

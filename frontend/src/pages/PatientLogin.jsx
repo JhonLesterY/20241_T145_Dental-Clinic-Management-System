@@ -150,6 +150,7 @@ const googleLogin = useGoogleLogin({
             sessionStorage.setItem('role', 'dentist');
             sessionStorage.setItem('dentist_id', data.user.id);
             sessionStorage.setItem('name', data.user.name);
+            sessionStorage.setItem('dentist_name', `${firstName} ${lastName}`);
             navigate('/dentist-dashboard');
         }
     } catch (error) {

@@ -4,6 +4,7 @@ import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import userIcon from "/src/images/user.png";
 import DentistSideBar from "../components/DentistSidebar";
+import DentistHeader from "../components/DentistHeader";
 import { useDentistTheme } from '../context/DentistThemeContext';
 
 const DentistDashboard = () => {
@@ -15,25 +16,7 @@ const DentistDashboard = () => {
       <DentistSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
       <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? 'ml-64' : 'ml-16'}`}>
-        <header className={`${isDarkMode ? 'bg-gray-800 shadow-gray-900' : 'bg-white'} shadow-md`}>
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center space-x-4">
-              <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
-              <h1 className={`text-2xl font-semibold ${isDarkMode ? 'text-white' : 'text-[#003367]'}`}>
-                Dentist Dashboard
-              </h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition`}>
-                <img className="w-6 h-6" src={bell} alt="Notifications" />
-              </button>
-              <Link to="/dentist-profile" className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition`}>
-                <img className="w-6 h-6" src={userIcon} alt="Profile" />
-              </Link>
-            </div>
-          </div>
-        </header>
+      <DentistHeader title="Dentist Dashboard" />
 
         <div className="p-6">
           <div className="space-y-4 mt-8 mx-auto w-full max-w-9xl px-8">

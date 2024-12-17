@@ -501,7 +501,7 @@ const AdminCalendar = () => {
         </div>
         <button
           onClick={() => setShowEventsModal(false)}
-          className="text-gray-500 hover:text-gray-700"
+          className="text-gray-500 hover:text-gray-700 text-black"
         >
           ✕
         </button>
@@ -528,9 +528,9 @@ const AdminCalendar = () => {
           {selectedDateEvents.length > 0 ? (
             selectedDateEvents.map((event, index) => (
               <div key={index} className="border-b border-gray-200 py-4 last:border-0">
-                <h4 className="font-semibold text-lg">{event.summary}</h4>
+                <h4 className="font-semibold text-lg text-black">{event.summary}</h4>
                 {event.description && (
-                  <p className="text-gray-600 mt-1">{event.description}</p>
+                  <p className="text-gray-600 mt-1 text-black">{event.description}</p>
                 )}
                 <div className="text-sm text-gray-500 mt-2">
                   {new Date(event.start.dateTime).toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila' })} - 
@@ -575,7 +575,7 @@ const AdminCalendar = () => {
             <textarea
               value={newEvent.description}
               onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white resize-none"
               rows="3"
             />
           </div>
