@@ -3,7 +3,6 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
-
 import "../App.css";
 
 const Login = () => {
@@ -150,7 +149,7 @@ const googleLogin = useGoogleLogin({
             sessionStorage.setItem('role', 'dentist');
             sessionStorage.setItem('dentist_id', data.user.id);
             sessionStorage.setItem('name', data.user.name);
-            sessionStorage.setItem('dentist_name', `${firstName} ${lastName}`);
+            sessionStorage.setItem('dentist_name', `${userInfo.given_name} ${userInfo.family_name}`);
             navigate('/dentist-dashboard');
         }
     } catch (error) {
