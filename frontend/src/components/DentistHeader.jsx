@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import bell from "/src/images/bell.png";
 import userIcon from "/src/images/user.png";
 import logo from "/src/images/Dental_logo.png";
-import { useTheme } from '../context/ThemeContext';
+import { useDentistTheme } from '../context/DentistThemeContext';
 
 const DentistHeader = ({ title, customButtons = [] }) => {
   const navigate = useNavigate();
   const [userProfilePic, setUserProfilePic] = useState(userIcon);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useDentistTheme();
 
   useEffect(() => {
     fetchDentistProfile();

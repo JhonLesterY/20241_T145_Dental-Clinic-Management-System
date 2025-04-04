@@ -48,6 +48,21 @@ export default function Sidebar() {
     fetchAdminData();
   }, []);
 
+  // Logout function to properly clear session data
+  const handleLogout = () => {
+    // Clear all user session storage
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("patient_id");
+    sessionStorage.removeItem("role");
+    sessionStorage.removeItem("email");
+    sessionStorage.removeItem("fullname");
+    sessionStorage.removeItem("profilePicture");
+    sessionStorage.clear(); // Clear any other items
+    
+    // Navigate to login page
+    navigate("/login");
+  };
+
   return (
     <nav
       className={`fixed top-0 left-0 shadow-lg h-screen flex flex-col transition-all duration-500 bg-[#1e2a4a] text-white ${
@@ -96,11 +111,11 @@ export default function Sidebar() {
       {/* Footer */}
       <div
         className="flex items-center gap-3 px-4 py-3 bg-[#1e2a4a] cursor-pointer hover:bg-[#2a3a63] transition duration-300"
-        onClick={() => navigate("/login")}
+        onClick={handleLogout}
       >
         <MdLogout size={30} />
         <div className={`text-sm transition-all duration-500 ${!open && "opacity-0 translate-x-10"}`}>
-          <p className="font-semibold">{adminData.email || "Sign Out"}</p>
+          <p className="font-semibold">{"Sign Out"}</p>
         </div>
       </div>
     </nav>

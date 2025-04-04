@@ -228,7 +228,35 @@ const ActivityLogs = () => {
         );
     };
 
-    if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    if (loading) {
+        return (
+            <div className={`flex h-screen w-screen overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-[#f0f4f8]'}`}>
+                <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
+                
+                <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'} transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"} relative`}>
+                    {/* Blurred overlay */}
+                    <div className="absolute inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-10">
+                        <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl p-8 shadow-xl flex flex-col items-center justify-center">
+                            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4"></div>
+                            <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Loading Activity Logs...</h2>
+                        </div>
+                    </div>
+                    
+                    {/* Placeholder header to maintain structure */}
+                    <div className={`flex items-center justify-between ${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-4 shadow-lg rounded-lg`}>
+                        <div className="flex items-center">
+                            <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+                            <span className={`ml-2 text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Activity Logs</span>
+                        </div>
+                    </div>
+                    
+                    {/* Placeholder main content */}
+                    <div className="flex-1 p-6"></div>
+                </div>
+            </div>
+        );
+    }
+
     if (error) return <div className="text-red-500">Error: {error}</div>;
 
     return (

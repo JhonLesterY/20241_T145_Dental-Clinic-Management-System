@@ -11,6 +11,32 @@ const ProtectedRoutes = ({ accountType }) => {
   const userRole = sessionStorage.getItem('role');
   const adminId = sessionStorage.getItem('admin_id');
 
+  // Add cache control to prevent browser caching of protected pages
+  useEffect(() => {
+    // Set cache control headers using meta tags
+    const metaCache = document.createElement('meta');
+    metaCache.httpEquiv = 'Cache-Control';
+    metaCache.content = 'no-store, no-cache, must-revalidate, proxy-revalidate';
+    document.head.appendChild(metaCache);
+
+    const metaPragma = document.createElement('meta');
+    metaPragma.httpEquiv = 'Pragma';
+    metaPragma.content = 'no-cache';
+    document.head.appendChild(metaPragma);
+
+    const metaExpires = document.createElement('meta');
+    metaExpires.httpEquiv = 'Expires';
+    metaExpires.content = '0';
+    document.head.appendChild(metaExpires);
+
+    // Clean up function to remove meta tags when component unmounts
+    return () => {
+      document.head.removeChild(metaCache);
+      document.head.removeChild(metaPragma);
+      document.head.removeChild(metaExpires);
+    };
+  }, []);
+
   useEffect(() => {
     const checkProfileStatus = async () => {
         if (accountType === 'admin') {

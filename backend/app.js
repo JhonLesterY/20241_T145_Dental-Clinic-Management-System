@@ -60,7 +60,7 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Import and use routes
 const authRoutes = require('./routes/authRoutes');

@@ -176,164 +176,185 @@ const Admin_ViewAppointment = () => {
 
   return (
     <div className={`flex h-screen w-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
-      <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
-      
-      {/* Main Content */}
-      <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'} transition-all duration-300`}>
-        <div className={`flex items-center justify-between p-4 shadow-md rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-          <div className="flex items-center">
-            <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
-            <span className={`ml-2 text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>View Appointments</span>
-          </div>
+      {isLoading ? (
+        <>
+          <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
           
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => navigate('/admin-confirmedAppointments')} // Correctly call navigate
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Confirmed Appointments
-            </button>
-            <div className={`flex items-center border rounded-lg px-3 py-1 ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
-              <FontAwesomeIcon icon={faSearch} className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-              <input
-                type="text"
-                placeholder="Search by name, ID, or email..."
-                value={searchQuery}
-                onChange={handleSearchChange}
-                className={`w-full px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isDarkMode ? 'bg-gray-700 text-gray-200 placeholder-gray-400' : 'bg-white'
-                }`}
-              />
+          <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'} transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"} relative`}>
+            {/* Blurred overlay */}
+            <div className="absolute inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-10">
+              <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl p-8 shadow-xl flex flex-col items-center justify-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4"></div>
+                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Loading Appointments...</h2>
+              </div>
+            </div>
+            
+            {/* Placeholder header */}
+            <div className={`flex items-center justify-between p-4 shadow-md rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className="flex items-center">
+                <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+                <span className={`ml-2 text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>View Appointments</span>
+              </div>
+            </div>
+            
+            {/* Placeholder main content */}
+            <div className="flex-1 p-6"></div>
+          </div>
+        </>
+      ) : (
+        <>
+          <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
+          
+          {/* Main Content */}
+          <div className={`flex-1 p-8 ${sidebarOpen ? 'ml-64' : 'ml-16'} transition-all duration-300`}>
+            <div className={`flex items-center justify-between p-4 shadow-md rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className="flex items-center">
+                <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+                <span className={`ml-2 text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>View Appointments</span>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => navigate('/admin-confirmedAppointments')} // Correctly call navigate
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Confirmed Appointments
+                </button>
+                <div className={`flex items-center border rounded-lg px-3 py-1 ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+                  <FontAwesomeIcon icon={faSearch} className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                  <input
+                    type="text"
+                    placeholder="Search by name, ID, or email..."
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    className={`ml-2 outline-none ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className={`rounded-lg shadow-md overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                  <tr>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
+                      Appointment ID
+                    </th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
+                      Patient Name
+                    </th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
+                      Date
+                    </th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
+                      Time
+                    </th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
+                      Status
+                    </th>
+                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                  {appointments.map((appointment) => (
+                    <tr key={appointment.appointmentId} className={`${
+                      isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                    }`}>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                        isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                      }`}>
+                        {appointment.appointmentId}
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                      }`}>
+                        {appointment.patientName}
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                      }`}>
+                        {new Date(appointment.appointmentDate).toLocaleDateString()}
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                      }`}>
+                        {appointment.appointmentTime}
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                      }`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                          ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                            appointment.status === 'declined' ? 'bg-red-100 text-red-800' : 
+                            'bg-yellow-100 text-yellow-800'}`}>
+                          {appointment.status}
+                        </span>
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                      }`}>
+                        {appointment.status === 'pending' && (
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleViewDocuments(appointment)}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                              <FaEye className="mr-2" />
+                              View Files
+                            </button>
+                            <button
+                              onClick={() => confirmStatusUpdate(appointment.appointmentId, 'confirmed')}
+                              disabled={updateStatus.loading}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                            >
+                              <FaCheck className="mr-2" />
+                              Accept
+                            </button>
+                            <button
+                              onClick={() => confirmStatusUpdate(appointment.appointmentId, 'declined')}
+                              disabled={updateStatus.loading}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                            >
+                              <FaTimes className="mr-2" />
+                              Decline
+                            </button>
+                          </div>
+                        )}
+                        {appointment.status !== 'pending' && (
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                            ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {appointments.length === 0 && (
+                <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  No appointments found
+                </div>
+              )}
             </div>
           </div>
-        </div>
-
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
-          <div className={`rounded-lg shadow-md overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                <tr>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                  }`}>
-                    Appointment ID
-                  </th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                  }`}>
-                    Patient Name
-                  </th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                  }`}>
-                    Date
-                  </th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                  }`}>
-                    Time
-                  </th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                  }`}>
-                    Status
-                  </th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                  }`}>
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                {appointments.map((appointment) => (
-                  <tr key={appointment.appointmentId} className={`${
-                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
-                  }`}>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                      isDarkMode ? 'text-gray-200' : 'text-gray-900'
-                    }`}>
-                      {appointment.appointmentId}
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                    }`}>
-                      {appointment.patientName}
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                    }`}>
-                      {new Date(appointment.appointmentDate).toLocaleDateString()}
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                    }`}>
-                      {appointment.appointmentTime}
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                    }`}>
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
-                          appointment.status === 'declined' ? 'bg-red-100 text-red-800' : 
-                          'bg-yellow-100 text-yellow-800'}`}>
-                        {appointment.status}
-                      </span>
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-500'
-                    }`}>
-                      {appointment.status === 'pending' && (
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleViewDocuments(appointment)}
-                            className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                          >
-                            <FaEye className="mr-2" />
-                            View Files
-                          </button>
-                          <button
-                            onClick={() => confirmStatusUpdate(appointment.appointmentId, 'confirmed')}
-                            disabled={updateStatus.loading}
-                            className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                          >
-                            <FaCheck className="mr-2" />
-                            Accept
-                          </button>
-                          <button
-                            onClick={() => confirmStatusUpdate(appointment.appointmentId, 'declined')}
-                            disabled={updateStatus.loading}
-                            className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                          >
-                            <FaTimes className="mr-2" />
-                            Decline
-                          </button>
-                        </div>
-                      )}
-                      {appointment.status !== 'pending' && (
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                          ${appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            {appointments.length === 0 && (
-              <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                No appointments found
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+        </>
+      )}
       {showDocumentModal && (
         <DocumentModal
           appointment={selectedAppointment}

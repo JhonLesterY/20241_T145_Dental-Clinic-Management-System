@@ -90,6 +90,14 @@ async function registerUser(userData) {
         };
     } catch (error) {
         console.error('Service error:', error);
+        
+        // Check for MongoDB duplicate key error
+        if (error.code === 11000 || (error.message && error.message.includes('E11000'))) {
+            // Extract the duplicate field name from error message if available
+            const field = Object.keys(error.keyPattern || {})[0] || 'email';
+            throw new Error(`A user with this ${field} already exists.`);
+        }
+        
         throw error;
     }
 }
@@ -167,6 +175,14 @@ async function registerWithGoogle(payload) {
         };
     } catch (error) {
         console.error('Google registration error:', error);
+        
+        // Check for MongoDB duplicate key error
+        if (error.code === 11000 || (error.message && error.message.includes('E11000'))) {
+            // Extract the duplicate field name from error message if available
+            const field = Object.keys(error.keyPattern || {})[0] || 'email';
+            throw new Error(`A user with this ${field} already exists.`);
+        }
+        
         throw new Error(error.message || 'Failed to register with Google');
     }
 }

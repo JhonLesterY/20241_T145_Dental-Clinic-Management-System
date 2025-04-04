@@ -13,6 +13,7 @@ const Admin_Inventory = () => {
     const [currentEditor, setCurrentEditor] = useState(null);
     const [isLocked, setIsLocked] = useState(false);
     const [inventoryItems, setInventoryItems] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [newItem, setNewItem] = useState({
         itemName: '',
         quantity: '',
@@ -155,6 +156,7 @@ const Admin_Inventory = () => {
     }, []);
 
     const fetchInventory = async () => {
+        setIsLoading(true);
         try {
             const response = await fetch('http://localhost:5000/admin/inventory', {
                 headers: {
@@ -165,6 +167,8 @@ const Admin_Inventory = () => {
             setInventoryItems(data);
         } catch (error) {
             console.error('Error fetching inventory:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -343,229 +347,252 @@ const Admin_Inventory = () => {
     };
 
     return (
-        <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+        <div className={`flex h-screen w-screen overflow-hidden ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'}`}>
             <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
-
-            <div className={`flex-1 flex flex-col transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
-                {/* Header */}
-                <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
-                    <div className="flex items-center justify-between px-6 py-4">
-                        <div className="flex items-center space-x-4">
-                            <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
-                            <h1 className={`text-2xl font-semibold ${isDarkMode ? 'text-white' : 'text-[#003367]'}`}>
-                                Inventory
-                            </h1>
-                        </div>
-
-                        <div className="flex items-center space-x-4">
-                            <button
-                                onClick={handleAddButtonClick}
-                                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                            >
-                                Add New Item
-                            </button>
-                            <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition`}>
-                                <img className="w-6 h-6" src={bell} alt="Notifications" />
-                            </button>
+            
+            {isLoading ? (
+                <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'} transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"} relative`}>
+                    {/* Blurred overlay */}
+                    <div className="absolute inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-10">
+                        <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl p-8 shadow-xl flex flex-col items-center justify-center">
+                            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4"></div>
+                            <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Loading Inventory Data...</h2>
                         </div>
                     </div>
-                </header>
-
-                {/* Main Content */}
-                <div className="flex-1 overflow-auto p-6">
-                    {/* Inventory Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                        {inventoryItems.map((item) => (
-                            <div key={item._id} className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow`}>
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                                        {item.itemName}
-                                    </h3>
-                                    <button
-                                        onClick={() => handleEditButtonClick(item)}
-                                        className={`${isDarkMode ? 'bg-gray-700 text-blue-400' : 'text-blue-500 bg-green-100'} hover:text-blue-700 p-2 rounded-md`}
-                                    >
-                                        <FaEdit />
-                                    </button>
-                                </div>
-                                <div className={`space-y-2 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                    <p>Quantity: {item.quantity} {item.unit}</p>
-                                    <p>Price: ₱{item.price.toFixed(2)}</p>
-                                    {item.expiryDate && (
-                                        <p>Expires: {new Date(item.expiryDate).toLocaleDateString()}</p>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+                    
+                    {/* Placeholder header */}
+                    <div className="p-4 border-b border-gray-200">
+                        <div className="flex items-center">
+                            <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+                            <span className={`ml-2 text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Inventory Management</span>
+                        </div>
                     </div>
+                    
+                    {/* Placeholder main content */}
+                    <div className="flex-1 p-6"></div>
                 </div>
+            ) : (
+                <div className={`flex-1 flex flex-col transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
+                    {/* Header */}
+                    <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
+                        <div className="flex items-center justify-between px-6 py-4">
+                            <div className="flex items-center space-x-4">
+                                <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
+                                <h1 className={`text-2xl font-semibold ${isDarkMode ? 'text-white' : 'text-[#003367]'}`}>
+                                    Inventory
+                                </h1>
+                            </div>
 
-                {/* Add Item Modal */}
-                {showAddModal && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                        <div className="bg-white p-6 rounded shadow-lg w-96">
-                            <h2 className="text-2xl font-bold mb-4 text-black">Add New Item</h2>
-                            {isLocked && (
-                                <div className="mb-4 text-red-500 text-sm">
-                                    Another admin is currently modifying inventory. Please try again later.
-                                </div>
-                            )}
-                            <form onSubmit={handleAddItem}>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Item Name</label>
-                                        <input
-                                            type="text"
-                                            value={newItem.itemName}
-                                            onChange={(e) => setNewItem({...newItem, itemName: e.target.value})}
-                                            className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                        />
+                            <div className="flex items-center space-x-4">
+                                <button
+                                    onClick={handleAddButtonClick}
+                                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                >
+                                    Add New Item
+                                </button>
+                                <button className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition`}>
+                                    <img className="w-6 h-6" src={bell} alt="Notifications" />
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <div className="flex-1 overflow-auto p-6">
+                        {/* Inventory Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                            {inventoryItems.map((item) => (
+                                <div key={item._id} className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow`}>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                            {item.itemName}
+                                        </h3>
+                                        <button
+                                            onClick={() => handleEditButtonClick(item)}
+                                            className={`${isDarkMode ? 'bg-gray-700 text-blue-400' : 'text-blue-500 bg-green-100'} hover:text-blue-700 p-2 rounded-md`}
+                                        >
+                                            <FaEdit />
+                                        </button>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Quantity</label>
-                                        <input
-                                            type="number"
-                                            value={newItem.quantity}
-                                            onChange={(e) => handleNumberInput(e, 'quantity')}
-                                            className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                            min="0"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Unit</label>
-                                        <input
-                                            type="text"
-                                            value={newItem.unit}
-                                            onChange={(e) => setNewItem({...newItem, unit: e.target.value})}
-                                            className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Price</label>
-                                        <input
-                                            type="number"
-                                            value={newItem.price}
-                                            onChange={(e) => handleNumberInput(e, 'price')}
-                                            className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                            min="0"
-                                            step="0.01"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Expiry Date</label>
-                                        <input
-                                            type="date"
-                                            value={newItem.expiryDate}
-                                            onChange={(e) => setNewItem({...newItem, expiryDate: e.target.value})}
-                                            className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
+                                    <div className={`space-y-2 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                        <p>Quantity: {item.quantity} {item.unit}</p>
+                                        <p>Price: ₱{item.price.toFixed(2)}</p>
+                                        {item.expiryDate && (
+                                            <p>Expires: {new Date(item.expiryDate).toLocaleDateString()}</p>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="flex justify-end space-x-3 mt-6">
-                                    <button
-                                        type="button"
-                                        onClick={handleCloseModal}
-                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={isLocked}
-                                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-                                    >
-                                        Add Item
-                                    </button>
-                                </div>
-                            </form>
+                            ))}
                         </div>
                     </div>
-                )}
 
-                {/* Edit Item Modal */}
-                {showEditModal && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                        <div className="bg-white p-6 rounded shadow-lg w-96">
-                            <h2 className="text-2xl font-bold mb-4 text-black">Edit Item</h2>
-                            <form onSubmit={handleUpdateItem}>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Item Name</label>
-                                        <input
-                                            type="text"
-                                            value={editingItem.itemName}
-                                            onChange={(e) => setEditingItem({...editingItem, itemName: e.target.value})}
-                                            className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                        />
+                    {/* Add Item Modal */}
+                    {showAddModal && (
+                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                            <div className="bg-white p-6 rounded shadow-lg w-96">
+                                <h2 className="text-2xl font-bold mb-4 text-black">Add New Item</h2>
+                                {isLocked && (
+                                    <div className="mb-4 text-red-500 text-sm">
+                                        Another admin is currently modifying inventory. Please try again later.
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Quantity</label>
-                                        <input
-                                            type="number"
-                                            value={editingItem.quantity}
-                                            onChange={(e) => setEditingItem({...editingItem, quantity: e.target.value})}
-                                            className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                            min="0"
-                                        />
+                                )}
+                                <form onSubmit={handleAddItem}>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Item Name</label>
+                                            <input
+                                                type="text"
+                                                value={newItem.itemName}
+                                                onChange={(e) => setNewItem({...newItem, itemName: e.target.value})}
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                                            <input
+                                                type="number"
+                                                value={newItem.quantity}
+                                                onChange={(e) => handleNumberInput(e, 'quantity')}
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                                min="0"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Unit</label>
+                                            <input
+                                                type="text"
+                                                value={newItem.unit}
+                                                onChange={(e) => setNewItem({...newItem, unit: e.target.value})}
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Price</label>
+                                            <input
+                                                type="number"
+                                                value={newItem.price}
+                                                onChange={(e) => handleNumberInput(e, 'price')}
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                                min="0"
+                                                step="0.01"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Expiry Date</label>
+                                            <input
+                                                type="date"
+                                                value={newItem.expiryDate}
+                                                onChange={(e) => setNewItem({...newItem, expiryDate: e.target.value})}
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Unit</label>
-                                        <input
-                                            type="text"
-                                            value={editingItem.unit}
-                                            onChange={(e) => setEditingItem({...editingItem, unit: e.target.value})}
-                                            className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                        />
+                                    <div className="flex justify-end space-x-3 mt-6">
+                                        <button
+                                            type="button"
+                                            onClick={handleCloseModal}
+                                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={isLocked}
+                                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                                        >
+                                            Add Item
+                                        </button>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Price</label>
-                                        <input
-                                            type="number"
-                                            value={editingItem.price}
-                                            onChange={(e) => setEditingItem({...editingItem, price: e.target.value})}
-                                            className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                            min="0"
-                                            step="0.01"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Expiry Date</label>
-                                        <input
-                                            type="date"
-                                            value={editingItem.expiryDate}
-                                            onChange={(e) => setEditingItem({...editingItem, expiryDate: e.target.value})}
-                                            className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex justify-end space-x-3 mt-6">
-                                    <button
-                                        type="button"
-                                        onClick={handleCloseModal}
-                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                                    >
-                                        Update Item
-                                    </button>
-                                </div>
-                            </form>
+                                </form>
+                            </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )}
+
+                    {/* Edit Item Modal */}
+                    {showEditModal && (
+                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                            <div className="bg-white p-6 rounded shadow-lg w-96">
+                                <h2 className="text-2xl font-bold mb-4 text-black">Edit Item</h2>
+                                <form onSubmit={handleUpdateItem}>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Item Name</label>
+                                            <input
+                                                type="text"
+                                                value={editingItem.itemName}
+                                                onChange={(e) => setEditingItem({...editingItem, itemName: e.target.value})}
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                                            <input
+                                                type="number"
+                                                value={editingItem.quantity}
+                                                onChange={(e) => setEditingItem({...editingItem, quantity: e.target.value})}
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                                min="0"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Unit</label>
+                                            <input
+                                                type="text"
+                                                value={editingItem.unit}
+                                                onChange={(e) => setEditingItem({...editingItem, unit: e.target.value})}
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Price</label>
+                                            <input
+                                                type="number"
+                                                value={editingItem.price}
+                                                onChange={(e) => setEditingItem({...editingItem, price: e.target.value})}
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                                min="0"
+                                                step="0.01"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Expiry Date</label>
+                                            <input
+                                                type="date"
+                                                value={editingItem.expiryDate}
+                                                onChange={(e) => setEditingItem({...editingItem, expiryDate: e.target.value})}
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end space-x-3 mt-6">
+                                        <button
+                                            type="button"
+                                            onClick={handleCloseModal}
+                                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                                        >
+                                            Update Item
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

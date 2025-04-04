@@ -2,6 +2,38 @@ const express = require('express');
 const D_route = express.Router();
 const dentistService = require('../services/dentistServices');
 const { authenticateDentist } = require('../middleware/authMiddleware');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = path.join(__dirname, '../uploads/profiles');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        cb(null, 'dentist-' + Date.now() + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|gif/;
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = filetypes.test(file.mimetype);
+        if (mimetype && extname) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Only images are allowed'));
+        }
+    }
+});
 
 // Profile endpoint
 D_route.get('/:dentist_id/profile', authenticateDentist, async (req, res) => {
@@ -12,6 +44,26 @@ D_route.get('/:dentist_id/profile', authenticateDentist, async (req, res) => {
     } catch (error) {
         console.error('Error fetching dentist profile:', error);
         res.status(500).json({ message: 'Failed to fetch dentist profile' });
+    }
+});
+
+// Update profile endpoint
+D_route.put('/:dentist_id/profile', authenticateDentist, upload.single('profilePicture'), async (req, res) => {
+    try {
+        const dentistId = req.params.dentist_id;
+        const updateData = { ...req.body };
+        
+        // Add profile picture path if uploaded
+        if (req.file) {
+            const serverUrl = `${req.protocol}://${req.get('host')}`;
+            updateData.profilePicture = `${serverUrl}/uploads/profiles/${req.file.filename}`;
+        }
+        
+        const updatedDentist = await dentistService.updateDentistProfile(dentistId, updateData);
+        res.status(200).json(updatedDentist);
+    } catch (error) {
+        console.error('Error updating dentist profile:', error);
+        res.status(500).json({ message: 'Failed to update dentist profile' });
     }
 });
 

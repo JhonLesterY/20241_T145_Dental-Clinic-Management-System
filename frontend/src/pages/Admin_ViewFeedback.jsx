@@ -233,13 +233,32 @@ const Admin_ViewFeedback = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-gray-100">
-        <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
-        <div className={`flex-1 flex items-center justify-center transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-900 mx-auto mb-4"></div>
-            <h2 className="text-2xl font-bold text-gray-800">Loading Feedback Data...</h2>
+      <div className={`flex h-screen w-screen overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-[#f0f4f8]'}`}>
+        <AdminSideBar isOpen={sidebarOpen} />
+        
+        <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'} transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"} relative`}>
+          {/* Blurred overlay */}
+          <div className="absolute inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-10">
+            <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl p-8 shadow-xl flex flex-col items-center justify-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4"></div>
+              <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Loading Feedback Data...</h2>
+            </div>
           </div>
+          
+          {/* Placeholder header to maintain structure */}
+          <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <div className="flex items-center justify-between px-6 py-4">
+              <div className="flex items-center space-x-4">
+                <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+                <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent'}`}>
+                  Feedback Management
+                </h1>
+              </div>
+            </div>
+          </header>
+          
+          {/* Placeholder main content */}
+          <main className="flex-1 p-6"></main>
         </div>
       </div>
     );

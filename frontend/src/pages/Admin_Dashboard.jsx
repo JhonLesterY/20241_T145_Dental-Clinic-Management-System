@@ -25,6 +25,7 @@ const AdminDashboard = () => {
     });
     const [error, setError] = useState(null);
     const { isDarkMode } = useTheme();
+    const [loading, setLoading] = useState(true);
     
     useEffect(() => {
         const fetchAdminData = async () => {
@@ -44,9 +45,11 @@ const AdminDashboard = () => {
 
                 setAdminData(adminData);
                 setDashboardMetrics(metricsData);
+                setLoading(false);
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
                 setError('Failed to load dashboard metrics');
+                setLoading(false);
             }
         };
 
@@ -83,6 +86,35 @@ const AdminDashboard = () => {
             }
         }
     };
+
+    if (loading) {
+        return (
+            <div className={`flex h-screen w-screen overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-[#f0f4f8]'}`}>
+                <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
+                
+                <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'} transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"} relative`}>
+                    {/* Blurred overlay */}
+                    <div className="absolute inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-10">
+                        <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl p-8 shadow-xl flex flex-col items-center justify-center">
+                            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4"></div>
+                            <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Loading Dashboard Data...</h2>
+                        </div>
+                    </div>
+                    
+                    {/* Placeholder header */}
+                    <div className="p-4">
+                        <div className="flex items-center">
+                            <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+                            <span className={`ml-2 text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Admin Dashboard</span>
+                        </div>
+                    </div>
+                    
+                    {/* Placeholder main content */}
+                    <div className="flex-1 p-6"></div>
+                </div>
+            </div>
+        );
+    }
 
     if (error) {
         return (

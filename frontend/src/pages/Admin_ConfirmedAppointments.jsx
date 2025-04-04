@@ -136,123 +136,144 @@ const Admin_ConfirmedAppointments = () => {
   };
 
   return (
-    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
+    <div className={`flex h-screen w-screen overflow-hidden ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
       <AdminSideBar 
         sidebarOpen={sidebarOpen} 
         setSidebarOpen={setSidebarOpen} 
       />
       
-      <div className={`flex-1 transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-20'} flex flex-col`}>
-        <AdminHeader 
-          title="Confirmed Appointments" 
-          sidebarOpen={sidebarOpen} 
-          setSidebarOpen={setSidebarOpen} 
-        />
-        
-        <div className="p-8 flex-1 overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
-              
-            </h1>
-            
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="Search appointments..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`
-                  pl-10 pr-4 py-2 rounded-lg border 
-                  ${isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-black'}
-                `}
-              />
-              <FontAwesomeIcon 
-                icon={faSearch} 
-                className={`absolute left-3 top-1/2 transform -translate-y-1/2 
-                  ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} 
-              />
+      {loading ? (
+        <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'} transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-20"} relative`}>
+          {/* Blurred overlay */}
+          <div className="absolute inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-10">
+            <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl p-8 shadow-xl flex flex-col items-center justify-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4"></div>
+              <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Loading Confirmed Appointments...</h2>
             </div>
           </div>
-
-          {loading ? (
-            <div className={`text-center ${isDarkMode ? 'text-white' : 'text-gray-500'}`}>Loading...</div>
-          ) : error ? (
-            <div className="text-red-500 p-4">Error: {error}</div>
-          ) : filteredAppointments.length === 0 ? (
-            <div className={`text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              No confirmed appointments
+          
+          {/* Placeholder header */}
+          <div className="p-4">
+            <div className="flex items-center">
+              <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+              <span className={`ml-2 text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Confirmed Appointments</span>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700 bg-gray-800' : 'divide-gray-200 bg-white'}`}>
-                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                  <tr>
-                    {['Appointment ID', 'Patient Name', 'Date', 'Time', 'Assign Dentist'].map((header, index) => (
-                      <th 
-                        key={index} 
-                        className={`
-                          px-6 py-3 text-left text-xs font-medium uppercase tracking-wider
-                          ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}
-                        `}
-                      >
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                  {filteredAppointments.map((appointment, index) => (
-                    <tr 
-                      key={appointment._id || `appointment-${index}`}
-                      className={`
-                        ${isDarkMode 
-                          ? 'hover:bg-gray-700 bg-gray-800' 
-                          : 'hover:bg-gray-100 bg-white'}
-                      `}
-                    >
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
-                        {appointment.appointmentId}
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                        {appointment.patientName}
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                        {new Date(appointment.appointmentDate).toLocaleDateString()}
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                        {appointment.appointmentTime}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <select 
-                          onChange={(e) => handleAssignDentist(appointment.appointmentId, e.target.value)}
+          </div>
+          
+          {/* Placeholder main content */}
+          <div className="flex-1 p-6"></div>
+        </div>
+      ) : (
+        <div className={`flex-1 transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-20'} flex flex-col`}>
+          <AdminHeader 
+            title="Confirmed Appointments" 
+            sidebarOpen={sidebarOpen} 
+            setSidebarOpen={setSidebarOpen} 
+          />
+          
+          <div className="p-8 flex-1 overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                
+              </h1>
+              
+              <div className="relative">
+                <input 
+                  type="text" 
+                  placeholder="Search appointments..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`
+                    pl-10 pr-4 py-2 rounded-lg border 
+                    ${isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-black'}
+                  `}
+                />
+                <FontAwesomeIcon 
+                  icon={faSearch} 
+                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 
+                    ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} 
+                />
+              </div>
+            </div>
+
+            {error ? (
+              <div className="text-red-500 p-4">Error: {error}</div>
+            ) : filteredAppointments.length === 0 ? (
+              <div className={`text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                No confirmed appointments
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700 bg-gray-800' : 'divide-gray-200 bg-white'}`}>
+                  <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                    <tr>
+                      {['Appointment ID', 'Patient Name', 'Date', 'Time', 'Assign Dentist'].map((header, index) => (
+                        <th 
+                          key={index} 
                           className={`
-                            w-full rounded-md p-2
-                            ${isDarkMode 
-                              ? 'bg-gray-700 text-white border-gray-600' 
-                              : 'bg-white text-black border-gray-300'}
+                            px-6 py-3 text-left text-xs font-medium uppercase tracking-wider
+                            ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}
                           `}
                         >
-                          <option value="">Select Dentist</option>
-                          {dentists.map((dentist, dentistIndex) => (
-                            <option 
-                              key={`dentist-${dentist.dentist_id || dentistIndex}-${appointment.appointmentId}`} 
-                              value={dentist.dentist_id}
-                            >
-                              {dentist.name || `Dentist ${dentistIndex + 1}`}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
+                          {header}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                    {filteredAppointments.map((appointment, index) => (
+                      <tr 
+                        key={appointment._id || `appointment-${index}`}
+                        className={`
+                          ${isDarkMode 
+                            ? 'hover:bg-gray-700 bg-gray-800' 
+                            : 'hover:bg-gray-100 bg-white'}
+                        `}
+                      >
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                          {appointment.appointmentId}
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                          {appointment.patientName}
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                          {new Date(appointment.appointmentDate).toLocaleDateString()}
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                          {appointment.appointmentTime}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <select 
+                            onChange={(e) => handleAssignDentist(appointment.appointmentId, e.target.value)}
+                            className={`
+                              w-full rounded-md p-2
+                              ${isDarkMode 
+                                ? 'bg-gray-700 text-white border-gray-600' 
+                                : 'bg-white text-black border-gray-300'}
+                            `}
+                          >
+                            <option value="">Select Dentist</option>
+                            {dentists.map((dentist, dentistIndex) => (
+                              <option 
+                                key={`dentist-${dentist.dentist_id || dentistIndex}-${appointment.appointmentId}`} 
+                                value={dentist.dentist_id}
+                              >
+                                {dentist.name || `Dentist ${dentistIndex + 1}`}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import "../App.css";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isVerified, setIsVerified] = useState(false);
   const [showCaptcha, setShowCaptcha] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const recaptchaRef = useRef();
   const navigate = useNavigate();
 
@@ -30,11 +32,13 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     try {
         const recaptchaToken = recaptchaRef.current.getValue();
         if (!recaptchaToken) {
             setError('Please complete the reCAPTCHA verification');
+            setIsLoading(false);
             return;
         }
 
@@ -69,20 +73,29 @@ const Login = () => {
             if (data.user.profilePicture) {
                 sessionStorage.setItem("profilePicture", data.user.profilePicture);
             }
-            navigate("/admin-dashboard");
+            
+            // Clear history and navigate, preventing back button
+            window.history.replaceState(null, '', '/login');
+            navigate("/admin-dashboard", { replace: true });
         }
         else if (data.user.role === 'dentist') {
             sessionStorage.setItem("token", data.token);
             sessionStorage.setItem("role", "dentist");
             sessionStorage.setItem("dentist_id", data.user.id);
             sessionStorage.setItem("name", data.user.name);
-            navigate('/dentist-dashboard');
+            
+            // Clear history and navigate, preventing back button
+            window.history.replaceState(null, '', '/login');
+            navigate('/dentist-dashboard', { replace: true });
         } else if (data.user.role === 'patient') {
             sessionStorage.setItem("token", data.token);
             sessionStorage.setItem("role", "patient");
             sessionStorage.setItem("patient_id", data.user.id);
             sessionStorage.setItem("name", data.user.name);
-            navigate('/dashboard');
+            
+            // Clear history and navigate, preventing back button
+            window.history.replaceState(null, '', '/login');
+            navigate('/dashboard', { replace: true });
         } else {
             throw new Error('Invalid user role');
         }
@@ -92,6 +105,8 @@ const Login = () => {
         setError(error.message || 'Failed to login');
         recaptchaRef.current?.reset();
         setIsVerified(false);
+    } finally {
+        setIsLoading(false);
     }
 };
 
@@ -99,6 +114,7 @@ const Login = () => {
 const googleLogin = useGoogleLogin({
   onSuccess: async (response) => {
     try {
+        setIsLoading(true);
         console.log('Google response:', response);
         
         // Get user info from Google
@@ -136,26 +152,52 @@ const googleLogin = useGoogleLogin({
             sessionStorage.setItem('role', 'admin');
             sessionStorage.setItem('admin_id', data.user.admin_id);
             sessionStorage.setItem('name', data.user.fullname);
-            navigate('/admin-dashboard');
+            
+            // Clear history and navigate, preventing back button
+            window.history.replaceState(null, '', '/login');
+            navigate('/admin-dashboard', { replace: true });
         } else if (data.user.role === 'patient') {
             sessionStorage.setItem('token', data.token);
             sessionStorage.setItem('role', 'patient');
             sessionStorage.setItem('patient_id', data.user.id);
             sessionStorage.setItem('name', data.user.name);
-            navigate('/dashboard');
+            
+            // Clear history and navigate, preventing back button
+            window.history.replaceState(null, '', '/login');
+            navigate('/dashboard', { replace: true });
         }
         else if (data.user.role === 'dentist') {
+            // Save all necessary dentist information
             sessionStorage.setItem('token', data.token);
             sessionStorage.setItem('role', 'dentist');
             sessionStorage.setItem('dentist_id', data.user.id);
-            sessionStorage.setItem('name', data.user.name);
-            sessionStorage.setItem('dentist_name', `${userInfo.given_name} ${userInfo.family_name}`);
-            navigate('/dentist-dashboard');
+            sessionStorage.setItem('name', data.user.name || `${userInfo.given_name} ${userInfo.family_name}`);
+            
+            // Store Google user profile information
+            sessionStorage.setItem('email', userInfo.email);
+            sessionStorage.setItem('fullname', `${userInfo.given_name} ${userInfo.family_name}`);
+            
+            // Store profile picture if available
+            if (userInfo.picture) {
+                sessionStorage.setItem('profilePicture', userInfo.picture);
+            }
+            
+            // Add additional Google profile data
+            if (data.user.isGoogleUser) {
+                sessionStorage.setItem('isGoogleUser', 'true');
+                sessionStorage.setItem('googleId', userInfo.sub);
+            }
+            
+            // Clear history and navigate, preventing back button
+            window.history.replaceState(null, '', '/login');
+            navigate('/dentist-dashboard', { replace: true });
         }
     } catch (error) {
         console.error('Google login error:', error);
         setError(error.message);
         recaptchaRef.current?.reset();
+    } finally {
+        setIsLoading(false);
     }
   },
   onError: (error) => {
@@ -165,7 +207,9 @@ const googleLogin = useGoogleLogin({
 });
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-100">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-100 relative">
+      {isLoading && <LoadingOverlay message="Logging in..." fullScreen={true} />}
+      
       {/* Main Content */}
       <div className="flex flex-1">
         {/* Left Section with Background Image */}

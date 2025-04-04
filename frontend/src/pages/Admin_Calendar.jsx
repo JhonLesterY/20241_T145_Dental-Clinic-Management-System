@@ -107,19 +107,28 @@ const AdminCalendar = () => {
 
     if (isLoading) {
         return (
-            <div className="flex h-screen w-screen bg-white">
+            <div className={`flex h-screen w-screen overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-[#f0f4f8]'}`}>
                 <AdminSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
-                <div className="flex-1 flex justify-center items-center">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-                        <p className="mt-4 text-gray-600">Loading calendar events...</p>
-                        <button 
-                            onClick={() => window.location.reload()}
-                            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                        >
-                            Refresh Page
-                        </button>
+                
+                <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'} transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"} relative`}>
+                    {/* Blurred overlay */}
+                    <div className="absolute inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-10">
+                        <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl p-8 shadow-xl flex flex-col items-center justify-center">
+                            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4"></div>
+                            <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Loading Calendar Events...</h2>
+                        </div>
                     </div>
+                    
+                    {/* Placeholder header */}
+                    <div className="p-4">
+                        <div className="flex items-center">
+                            <img src="/src/assets/unicare.png" alt="UniCare Logo" className="h-10" />
+                            <span className={`ml-2 text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Calendar</span>
+                        </div>
+                    </div>
+                    
+                    {/* Placeholder main content */}
+                    <div className="flex-1 p-6"></div>
                 </div>
             </div>
         );

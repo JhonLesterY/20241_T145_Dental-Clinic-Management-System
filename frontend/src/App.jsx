@@ -1,5 +1,6 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { useEffect } from 'react';
 import About_us from "./pages/About_us";
 import Landing_Page from "./pages/DentalClinicLanding";
 import Login from "./pages/PatientLogin";
@@ -45,6 +46,47 @@ import { DentistThemeProvider } from './context/DentistThemeContext';
 
 function App() {
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID); 
+  const navigate = useNavigate();
+
+  // Set up global fetch interceptor to handle unauthorized responses
+  useEffect(() => {
+    // Save the original fetch function
+    const originalFetch = window.fetch;
+
+    // Override the fetch function
+    window.fetch = async (...args) => {
+      // Call the original fetch
+      const response = await originalFetch(...args);
+
+      // Check for unauthorized response
+      if (response.status === 401) {
+        console.log('Detected unauthorized request, logging out');
+        
+        // Clear all session data
+        sessionStorage.clear();
+        localStorage.clear();
+        
+        // Add cache control headers
+        document.querySelector('meta[http-equiv="Cache-Control"]')?.remove();
+        const metaCache = document.createElement('meta');
+        metaCache.httpEquiv = 'Cache-Control';
+        metaCache.content = 'no-store, no-cache, must-revalidate, proxy-revalidate';
+        document.head.appendChild(metaCache);
+        
+        // Redirect to login
+        window.history.replaceState(null, '', '/login');
+        navigate('/login', { replace: true });
+      }
+
+      return response;
+    };
+
+    // Cleanup function to restore original fetch
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [navigate]);
+
   return (
     <ThemeProvider>
       <UserThemeProvider>

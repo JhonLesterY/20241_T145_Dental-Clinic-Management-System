@@ -53,6 +53,15 @@ const client = new OAuth2Client({
 
     } catch (error) {
         console.error('Registration route error:', error);
+        
+        // Format MongoDB duplicate key errors
+        if (error.code === 11000 || (error.message && error.message.includes('E11000'))) {
+            return res.status(400).json({
+                error: 'A user with this email already exists'
+            });
+        }
+        
+        // Return other errors
         res.status(400).json({
             error: error.message || 'Registration failed'
         });
@@ -84,6 +93,14 @@ router.post('/google-signup', async (req, res) => {
       res.status(200).json(result);
   } catch (error) {
       console.error('Google signup route error:', error);
+      
+      // Format MongoDB duplicate key errors
+      if (error.code === 11000 || (error.message && error.message.includes('E11000'))) {
+          return res.status(400).json({
+              error: 'A user with this email already exists'
+          });
+      }
+      
       res.status(400).json({ 
           error: error.message || 'Failed to process signup' 
       });

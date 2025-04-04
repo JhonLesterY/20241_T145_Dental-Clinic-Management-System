@@ -21,6 +21,48 @@ const getDentistProfile = async (dentistId) => {
     }
 };
 
+// Update dentist profile
+const updateDentistProfile = async (dentistId, updateData) => {
+    try {
+        console.log('Updating dentist profile:', { dentistId, updateData });
+        
+        // Validate the dentist exists
+        const dentist = await Dentist.findById(dentistId);
+        if (!dentist) {
+            throw new Error('Dentist not found');
+        }
+
+        // Update the dentist profile
+        const updatedDentist = await Dentist.findByIdAndUpdate(
+            dentistId,
+            { 
+                ...updateData,
+                updatedAt: new Date()
+            },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!updatedDentist) {
+            throw new Error('Failed to update dentist profile');
+        }
+
+        await logActivity(
+            dentistId,
+            'dentist',
+            'updateProfile',
+            { 
+                dentistId,
+                timestamp: new Date()
+            }
+        );
+
+        return updatedDentist;
+    } catch (error) {
+        console.error('Error updating dentist profile:', error);
+        throw error;
+    }
+};
+
 // Get appointments for dentist
 const getAppointments = async (dentistId) => {
     try {
@@ -177,6 +219,7 @@ const generateReport = async (dentistId, reportType = 'monthly') => {
 
 module.exports = {
     getDentistProfile,
+    updateDentistProfile,
     getAppointments,
     getConsultationHistory,
     addConsultation,
