@@ -1025,13 +1025,20 @@ const AdminUserManagement = () => {
                             <div className="mb-4">
                                 <input
                                 type="tel"
-                                placeholder="Phone Number"
+                                placeholder="09123456789"
                                 className="w-full px-3 py-2 border rounded-md bg-white"
                                 value={dentistFormData.phoneNumber}
                                 onChange={(e) => setDentistFormData({
                                     ...dentistFormData,
                                     phoneNumber: e.target.value
                                 })}
+                                onKeyPress={(e) => {
+                                    if (!/[0-9]/.test(e.key)) {
+                                      e.preventDefault();
+                                    }
+                                }}
+                                maxLength={11}
+                                pattern="[0-9]*"
                                 required
                                 />
                             </div>

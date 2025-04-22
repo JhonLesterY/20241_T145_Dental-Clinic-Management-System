@@ -375,9 +375,17 @@ const Profile = () => {
               <div className="flex-1">
                 <label className="block text-gray-600">Contact Number*</label>
                 <input
-                  type="text"
+                  type="tel"
                   value={userData.phoneNumber}
                   onChange={(e) => setUserData({ ...userData, phoneNumber: e.target.value })}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  maxLength={11}
+                  pattern="[0-9]*"
+                  placeholder="09123456789"
                   className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
