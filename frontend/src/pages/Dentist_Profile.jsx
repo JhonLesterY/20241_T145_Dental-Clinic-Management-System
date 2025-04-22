@@ -4,6 +4,8 @@ import User_Profile from "/src/images/user.png";
 import DentistSideBar from "../components/DentistSidebar";
 import { useDentistTheme } from '../context/DentistThemeContext';
 import LoadingOverlay from "../components/LoadingOverlay";
+import CustomModal from "../components/CustomModal";
+import Toast from "../components/Toast";
 
 const DentistProfile = () => {
   const navigate = useNavigate();
@@ -23,6 +25,30 @@ const DentistProfile = () => {
   const [previewUrl, setPreviewUrl] = useState(sessionStorage.getItem('profilePicture') || User_Profile);
   const fileInputRef = useRef(null);
   const isGoogleUser = sessionStorage.getItem('isGoogleUser') === 'true';
+  
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalType, setModalType] = useState('success');
+
+  // Toast state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success');
+
+  const showModal = (title, message, type = 'success') => {
+    setModalTitle(title);
+    setModalMessage(message);
+    setModalType(type);
+    setModalOpen(true);
+  };
+
+  const showToast = (message, type = 'success') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  };
 
   useEffect(() => {
     fetchDentistProfile();    
@@ -32,12 +58,12 @@ const DentistProfile = () => {
     const file = e.target.files[0];
     if (file) {
         if (file.size > 5000000) { // 5MB limit
-            alert('File size must be less than 5MB');
+            showToast('File size must be less than 5MB', 'error');
             return;
         }
        
         if (!file.type.startsWith('image/')) {
-            alert('File must be an image');
+            showToast('File must be an image', 'error');
             return;
         }
 
@@ -55,56 +81,49 @@ const DentistProfile = () => {
       const dentistId = sessionStorage.getItem('dentist_id');
       const token = sessionStorage.getItem('token');
       
-      setIsLoading(true);
-      
-      // Use Google profile data if available
-      if (isGoogleUser) {
-        console.log('Using Google profile data');
-        // Already loaded from sessionStorage in the initial state
-        setIsLoading(false);
-        return;
-      }
-      
-      if (!dentistId) {
-          throw new Error('Dentist ID not found in session');
+      if (!dentistId || !token) {
+        throw new Error('Authentication credentials missing');
       }
 
-      console.log('Fetching dentist profile from API:', dentistId);
+      console.log('Fetching dentist profile:', dentistId);
+      
       const response = await fetch(`http://localhost:5000/dentists/${dentistId}/profile`, {
-          headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-          }
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `Failed to fetch dentist profile: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to fetch profile: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Dentist profile data:', data);
-      
+      console.log('Fetched profile data:', data);
+
       // Update user data
       setUserData({
-          fullname: data.fullname || data.name || userData.fullname,
-          email: data.email || userData.email,
-          phoneNumber: data.phoneNumber || '',
-          sex: data.sex || '',
-          birthday: data.birthday ? new Date(data.birthday).toISOString().split('T')[0] : ''
+        fullname: data.fullname || data.name || '',
+        email: data.email || '',
+        phoneNumber: data.phoneNumber || '',
+        sex: data.sex || '',
+        birthday: data.birthday ? new Date(data.birthday).toISOString().split('T')[0] : ''
       });
 
-      // If profile picture is available in response, update it
+      // Update profile picture
       if (data.profilePicture) {
-          setPreviewUrl(data.profilePicture);
-          sessionStorage.setItem('profilePicture', data.profilePicture);
+        setPreviewUrl(data.profilePicture);
+        sessionStorage.setItem('profilePicture', data.profilePicture);
       }
+
+      // Update session storage
+      sessionStorage.setItem('name', data.fullname || data.name || '');
+      sessionStorage.setItem('fullname', data.fullname || data.name || '');
+      sessionStorage.setItem('email', data.email || '');
     } catch (error) {
-      console.error('Error fetching dentist profile:', error);
-      setError(error.message);
-      
-      // Fall back to session storage data
-      console.log('Using fallback data from session storage');
+      console.error('Error fetching profile:', error);
+      setError(error.message || 'Failed to load profile data');
     } finally {
       setIsLoading(false);
     }
@@ -112,65 +131,171 @@ const DentistProfile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    
+    if (!validateForm()) {
+      return;
+    }
     
     try {
       setIsLoading(true);
       const dentistId = sessionStorage.getItem('dentist_id');
       const token = sessionStorage.getItem('token');
       
-      if (!dentistId) {
-        throw new Error('Dentist ID not found');
-      }
-      
-      const formData = new FormData();
-      formData.append('fullname', userData.fullname);
-      formData.append('email', userData.email);
-      formData.append('phoneNumber', userData.phoneNumber);
-      formData.append('sex', userData.sex);
-      formData.append('birthday', userData.birthday);  
-      
-      if (profilePicture) {
-        formData.append('profilePicture', profilePicture);
+      if (!dentistId || !token) {
+        throw new Error('Authentication credentials missing');
       }
 
-      console.log('Submitting profile data:', Object.fromEntries(formData));
+      // Prepare the profile data
+      const profileData = new FormData();
+      profileData.append('fullname', userData.fullname.trim());
+      profileData.append('email', userData.email);
+      profileData.append('phoneNumber', userData.phoneNumber.trim());
+      profileData.append('sex', userData.sex);
+      profileData.append('birthday', userData.birthday);
+
+      // Add profile picture if it exists
+      if (profilePicture) {
+        profileData.append('profilePicture', profilePicture);
+      }
+
+      console.log('Updating profile for dentist:', dentistId);
+      console.log('Profile data:', Object.fromEntries(profileData));
 
       const response = await fetch(`http://localhost:5000/dentists/${dentistId}/profile`, {
-          method: 'PUT',
-          headers: {
-              'Authorization': `Bearer ${token}`
-          },
-          body: formData
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: profileData
       });
 
+      const responseData = await response.json();
+      
       if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Failed to update profile');
+        console.error('Update failed:', responseData);
+        throw new Error(responseData.message || `Failed to update profile: ${response.status}`);
       }
 
-      const data = await response.json();
+      console.log('Profile update response:', responseData);
+
+      // Update session storage
+      sessionStorage.setItem('name', responseData.fullname || responseData.name || userData.fullname.trim());
+      sessionStorage.setItem('fullname', responseData.fullname || responseData.name || userData.fullname.trim());
+      sessionStorage.setItem('email', responseData.email || userData.email);
+
+      if (responseData.profilePicture) {
+        sessionStorage.setItem('profilePicture', responseData.profilePicture);
+        setPreviewUrl(responseData.profilePicture);
+      }
+
+      // Update local state
+      setUserData(prevData => ({
+        ...prevData,
+        fullname: responseData.fullname || responseData.name || prevData.fullname,
+        email: responseData.email || prevData.email,
+        phoneNumber: responseData.phoneNumber || prevData.phoneNumber,
+        sex: responseData.sex || prevData.sex,
+        birthday: responseData.birthday ? new Date(responseData.birthday).toISOString().split('T')[0] : prevData.birthday
+      }));
+
+      // Show success toast
+      showToast('Profile updated successfully!');
       
-      // Update session storage with new data
-      sessionStorage.setItem('name', userData.fullname);
-      sessionStorage.setItem('fullname', userData.fullname);
-      sessionStorage.setItem('email', userData.email);
+      // Refresh the profile data
+      await fetchDentistProfile();
       
-      setUserData({
-        ...userData,
-        ...data
-      });
-      
-      alert('Profile updated successfully');
-      
-      // Redirect to dashboard
-      navigate('/dentist-dashboard');
+      // Navigate to dashboard after a delay
+      setTimeout(() => {
+        navigate('/dentist-dashboard');
+      }, 2000);
     } catch (error) {
       console.error('Error updating profile:', error);
-      setError(error.message);
-      alert(`Error: ${error.message}`);
+      showToast(error.message || 'Failed to update profile. Please try again.', 'error');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleUpdateSuccess = (data) => {
+    // Update session storage
+    sessionStorage.setItem('name', data.fullname || data.name);
+    sessionStorage.setItem('fullname', data.fullname || data.name);
+    sessionStorage.setItem('email', data.email);
+    
+    if (data.profilePicture) {
+      sessionStorage.setItem('profilePicture', data.profilePicture);
+      setPreviewUrl(data.profilePicture);
+    }
+    
+    // Update local state
+    setUserData(prevData => ({
+      ...prevData,
+      fullname: data.fullname || data.name,
+      email: data.email,
+      phoneNumber: data.phoneNumber,
+      sex: data.sex,
+      birthday: data.birthday ? new Date(data.birthday).toISOString().split('T')[0] : prevData.birthday
+    }));
+    
+    alert('Profile updated successfully');
+    navigate('/dentist-dashboard');
+  };
+
+  const validateForm = () => {
+    // Validate required fields
+    if (!userData.fullname?.trim()) {
+      showToast('Full name is required', 'error');
+      return false;
+    }
+
+    if (!userData.phoneNumber?.trim()) {
+      showToast('Contact number is required', 'error');
+      return false;
+    }
+
+    // Validate phone number format
+    if (!/^09\d{9}$/.test(userData.phoneNumber)) {
+      showToast('Contact number must be 11 digits starting with 09', 'error');
+      return false;
+    }
+
+    if (!userData.sex) {
+      showToast('Sex at birth is required', 'error');
+      return false;
+    }
+
+    if (!userData.birthday) {
+      showToast('Birthday is required', 'error');
+      return false;
+    }
+
+    // Validate birthday
+    try {
+      const birthDate = new Date(userData.birthday);
+      const today = new Date();
+      
+      if (isNaN(birthDate.getTime())) {
+        showToast('Invalid birth date', 'error');
+        return false;
+      }
+      
+      if (birthDate > today) {
+        showToast('Birthday cannot be in the future', 'error');
+        return false;
+      }
+      
+      const year = birthDate.getFullYear();
+      if (year < 1900 || year > today.getFullYear()) {
+        showToast('Invalid birth year', 'error');
+        return false;
+      }
+    } catch (err) {
+      showToast('Invalid date format', 'error');
+      return false;
+    }
+
+    return true;
   };
 
   const handleLogout = () => {
@@ -178,7 +303,10 @@ const DentistProfile = () => {
     sessionStorage.removeItem('dentist_id');
     sessionStorage.removeItem('role');
     sessionStorage.clear();
-    navigate('/login');
+    showToast('Logged out successfully!');
+    setTimeout(() => {
+      navigate('/login');
+    }, 1500);
   };
 
   return (
@@ -309,6 +437,23 @@ const DentistProfile = () => {
             </div>
           </form>
         </div>
+
+        {/* Add the CustomModal component */}
+        <CustomModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          title={modalTitle}
+          message={modalMessage}
+          type={modalType}
+        />
+
+        {/* Add the Toast component */}
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          isVisible={toastVisible}
+          onClose={() => setToastVisible(false)}
+        />
       </div>
     </div>
   );

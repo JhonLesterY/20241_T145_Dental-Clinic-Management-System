@@ -11,6 +11,7 @@ const Admin_ViewAppointment = () => {
   const navigate = useNavigate(); // Initialize useNavigate
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [appointments, setAppointments] = useState([]);
+  const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updateStatus, setUpdateStatus] = useState({ loading: false, error: null });
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -28,6 +29,24 @@ const Admin_ViewAppointment = () => {
     return () => clearInterval(refreshInterval);
   }, []);
 
+  // Add useEffect for filtering appointments based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredAppointments(appointments);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    const filtered = appointments.filter(appointment => 
+      appointment.appointmentId?.toLowerCase().includes(query) ||
+      appointment.patientName?.toLowerCase().includes(query) ||
+      new Date(appointment.appointmentDate).toLocaleDateString().toLowerCase().includes(query) ||
+      appointment.appointmentTime?.toLowerCase().includes(query) ||
+      appointment.status?.toLowerCase().includes(query)
+    );
+    setFilteredAppointments(filtered);
+  }, [searchQuery, appointments]);
+
   const fetchAppointments = async () => {
     try {
       const response = await fetch('http://localhost:5000/admin/appointments', {
@@ -41,6 +60,7 @@ const Admin_ViewAppointment = () => {
       const data = await response.json();
       console.log('Fetched appointments:', data);
       setAppointments(data);
+      setFilteredAppointments(data); // Initialize filtered appointments with all appointments
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -270,7 +290,7 @@ const Admin_ViewAppointment = () => {
                   </tr>
                 </thead>
                 <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                  {appointments.map((appointment) => (
+                  {filteredAppointments.map((appointment) => (
                     <tr key={appointment.appointmentId} className={`${
                       isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
                     }`}>
@@ -346,7 +366,7 @@ const Admin_ViewAppointment = () => {
                 </tbody>
               </table>
               
-              {appointments.length === 0 && (
+              {filteredAppointments.length === 0 && (
                 <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   No appointments found
                 </div>

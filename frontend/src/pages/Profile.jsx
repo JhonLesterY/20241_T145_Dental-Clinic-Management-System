@@ -32,6 +32,7 @@ const Profile = () => {
     newPassword: '',
     confirmPassword: ''
   });
+  const [phoneError, setPhoneError] = useState("");
 
   useEffect(() => {
     fetchUserProfile();
@@ -153,8 +154,23 @@ const Profile = () => {
     navigate('/login');
   };
 
+  const validatePhoneNumber = (number) => {
+    if (!number) return "Phone number is required";
+    if (!/^[0-9]+$/.test(number)) return "Only numbers are allowed";
+    if (!number.startsWith('09')) return "Phone number must start with 09";
+    if (number.length !== 11) return "Phone number must be exactly 11 digits";
+    return "";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate phone number before submission
+    const phoneError = validatePhoneNumber(userData.phoneNumber);
+    if (phoneError) {
+      setPhoneError(phoneError);
+      return;
+    }
 
     if (requiresPasswordChange && !userData.hasChangedPassword) {
       alert('Please change your temporary password before updating your profile.');
@@ -316,41 +332,47 @@ const Profile = () => {
         />
     </div>
 </div>
-          <div className="text-center text-2xl font-semibold text-blue-900">
+          <div className={`text-center text-2xl font-semibold ${isDarkMode ? 'text-white' : 'text-blue-900'}`}>
             {`${userData.firstName} ${userData.lastName}`}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 mt-8">
             <div className="flex gap-4">
               <div className="flex-1">
-                <label className="block text-gray-600">First Name*</label>
+                <label className={`block ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>First Name*</label>
                 <input
                   type="text"
                   value={userData.firstName}
                   onChange={(e) => setUserData({ ...userData, firstName: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isDarkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'
+                  }`}
                   required
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-gray-600">Middle Name</label>
+                <label className={`block ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>Middle Name</label>
                 <input
                   type="text"
                   value={userData.middleName}
                   onChange={(e) => setUserData({ ...userData, middleName: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isDarkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'
+                  }`}
                 />
               </div>
             </div>
 
             <div className="flex gap-4">
               <div className="flex-1">
-                <label className="block text-gray-600">Last Name*</label>
+                <label className={`block ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>Last Name*</label>
                 <input
                   type="text"
                   value={userData.lastName}
                   onChange={(e) => setUserData({ ...userData, lastName: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isDarkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'
+                  }`}
                   required
                 />
               </div>
@@ -373,22 +395,52 @@ const Profile = () => {
 
             <div className="flex gap-4">
               <div className="flex-1">
-                <label className="block text-gray-600">Contact Number*</label>
+                <label className={`block ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>Contact Number*</label>
                 <input
                   type="tel"
                   value={userData.phoneNumber}
-                  onChange={(e) => setUserData({ ...userData, phoneNumber: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow numeric values and proper length
+                    if (/^[0-9]*$/.test(value) && value.length <= 11) {
+                      setUserData({ ...userData, phoneNumber: value });
+                      setPhoneError(validatePhoneNumber(value));
+                    }
+                  }}
                   onKeyPress={(e) => {
-                    if (!/[0-9]/.test(e.key)) {
+                    const value = e.target.value;
+                    // Prevent non-numeric input and enforce 09 prefix
+                    if (
+                      !/[0-9]/.test(e.key) || 
+                      value.length >= 11 ||
+                      (value.length === 0 && e.key !== '0') ||
+                      (value.length === 1 && value === '0' && e.key !== '9')
+                    ) {
                       e.preventDefault();
                     }
                   }}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const pastedText = e.clipboardData.getData('text');
+                    if (/^09[0-9]{9}$/.test(pastedText)) {
+                      setUserData({ ...userData, phoneNumber: pastedText });
+                      setPhoneError("");
+                    } else {
+                      setPhoneError("Invalid phone number format");
+                    }
+                  }}
                   maxLength={11}
-                  pattern="[0-9]*"
                   placeholder="09123456789"
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isDarkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'
+                  } ${phoneError ? 'border-red-500' : ''}`}
                   required
                 />
+                {phoneError && (
+                  <p className={`mt-1 text-sm ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                    {phoneError}
+                  </p>
+                )}
               </div>
               <div className="flex-1">
                 <label className={`block ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>Email</label>
@@ -396,7 +448,7 @@ const Profile = () => {
                   type="email"
                   value={userData.email}
                   className={`w-full px-4 py-3 border rounded-lg cursor-not-allowed ${
-                    isDarkMode ? 'bg-gray-600 text-gray-300 border-gray-600' : 'bg-gray-100 text-gray-500 border-gray-300'
+                    isDarkMode ? 'bg-gray-600 text-white border-gray-600' : 'bg-gray-100 text-gray-500 border-gray-300'
                   }`}
                   required
                   readOnly
@@ -425,9 +477,15 @@ const Profile = () => {
                 <input
                   type="date"
                   value={userData.birthday}
-                  onChange={(e) => setUserData({ ...userData, birthday: e.target.value })}
+                  onChange={(e) => {
+                    const date = new Date(e.target.value);
+                    if (date instanceof Date && !isNaN(date)) {
+                      setUserData({ ...userData, birthday: e.target.value });
+                    }
+                  }}
+                  max={new Date().toISOString().split('T')[0]}
                   className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isDarkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'
+                    isDarkMode ? 'bg-gray-700 text-white border-gray-600 [color-scheme:dark]' : 'bg-white text-gray-900 border-gray-300'
                   }`}
                   required
                 />

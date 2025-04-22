@@ -51,6 +51,9 @@ const AdminUserManagement = () => {
       });
       const [currentAdmin, setCurrentAdmin] = useState(null);
       const [selectedTable, setSelectedTable] = useState('patients');
+      const [allPatients, setAllPatients] = useState([]);
+      const [filteredPatients, setFilteredPatients] = useState([]);
+      const [originalPatients, setOriginalPatients] = useState([]);
 
       
 
@@ -474,15 +477,62 @@ const AdminUserManagement = () => {
   };
 
   useEffect(() => {
-    fetchAllPatients();
-  }, []);
-  useEffect(() => {
-    fetchDentists();
-  }, []);
+    const fetchData = async () => {
+        try {
+            setIsLoading(true);
+            await Promise.all([
+                fetchAllPatients(),
+                fetchDentists(),
+                fetchAdmins()
+            ]);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            setError(error.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-  useEffect(() => {
-    fetchAdmins();
-  }, []);
+    fetchData();
+}, []); // Run once on component mount
+
+useEffect(() => {
+    console.log('Search query changed:', searchQuery);
+    console.log('Current patients:', patients);
+    
+    // No need to filter if data is still loading
+    if (isLoading) return;
+    
+    // Update filtered results based on selected table
+    switch (selectedTable) {
+        case 'patients':
+            const filteredPatients = filterPatients(patients);
+            console.log('Filtered patients:', filteredPatients);
+            setPatients(prevPatients => {
+                // Only update if the filter actually changed something
+                const currentFiltered = filterPatients(prevPatients);
+                return currentFiltered.length === filteredPatients.length &&
+                       currentFiltered.every((p, i) => p.patient_id === filteredPatients[i].patient_id)
+                    ? prevPatients
+                    : filteredPatients;
+            });
+            break;
+        case 'dentists':
+            setDentists(prevDentists => {
+                const filtered = filterDentists(prevDentists);
+                return filtered;
+            });
+            break;
+        case 'admins':
+            setAdmins(prevAdmins => {
+                const filtered = filterAdmins(prevAdmins);
+                return filtered;
+            });
+            break;
+        default:
+            break;
+    }
+}, [searchQuery, selectedTable]);
 
   useEffect(() => {
       const fetchCurrentAdmin = async () => {

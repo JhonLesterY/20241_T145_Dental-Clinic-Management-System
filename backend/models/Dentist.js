@@ -12,6 +12,10 @@ const dentistSchema = new Schema({
         type: String,
         required: true
     },
+    fullname: {
+        type: String,
+        required: true
+    },
     email: {
         type: String,
         required: true,
@@ -21,9 +25,18 @@ const dentistSchema = new Schema({
         type: String,
         required: true
     },
+    sex: {
+        type: String,
+        enum: ['Male', 'Female'],
+        required: true
+    },
+    birthday: {
+        type: Date,
+        required: true
+    },
     isGoogleUser: {
         type: Boolean,
-        default: true
+        default: false
     },
     googleId: {
         type: String
@@ -66,6 +79,7 @@ dentistSchema.pre('save', async function(next) {
             next(error);
         }
     } else {
+        this.updatedAt = new Date();
         next();
     }
 });

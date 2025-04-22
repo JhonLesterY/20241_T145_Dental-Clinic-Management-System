@@ -51,7 +51,13 @@ D_route.get('/:dentist_id/profile', authenticateDentist, async (req, res) => {
 D_route.put('/:dentist_id/profile', authenticateDentist, upload.single('profilePicture'), async (req, res) => {
     try {
         const dentistId = req.params.dentist_id;
-        const updateData = { ...req.body };
+        const updateData = {
+            fullname: req.body.fullname,
+            email: req.body.email,
+            phoneNumber: req.body.phoneNumber,
+            sex: req.body.sex,
+            birthday: req.body.birthday
+        };
         
         // Add profile picture path if uploaded
         if (req.file) {
@@ -59,11 +65,20 @@ D_route.put('/:dentist_id/profile', authenticateDentist, upload.single('profileP
             updateData.profilePicture = `${serverUrl}/uploads/profiles/${req.file.filename}`;
         }
         
+        console.log('Updating dentist profile with data:', updateData);
         const updatedDentist = await dentistService.updateDentistProfile(dentistId, updateData);
+        
+        if (!updatedDentist) {
+            throw new Error('Failed to update profile');
+        }
+        
         res.status(200).json(updatedDentist);
     } catch (error) {
         console.error('Error updating dentist profile:', error);
-        res.status(500).json({ message: 'Failed to update dentist profile' });
+        res.status(500).json({ 
+            message: error.message || 'Failed to update dentist profile',
+            error: error.toString()
+        });
     }
 });
 

@@ -32,19 +32,39 @@ const updateDentistProfile = async (dentistId, updateData) => {
             throw new Error('Dentist not found');
         }
 
+        // Prepare update data
+        const updateFields = {
+            fullname: updateData.fullname,
+            email: updateData.email,
+            phoneNumber: updateData.phoneNumber,
+            sex: updateData.sex,
+            birthday: new Date(updateData.birthday),
+            updatedAt: new Date()
+        };
+
+        // Add profile picture if provided
+        if (updateData.profilePicture) {
+            updateFields.profilePicture = updateData.profilePicture;
+        }
+
+        console.log('Update fields:', updateFields);
+
         // Update the dentist profile
         const updatedDentist = await Dentist.findByIdAndUpdate(
             dentistId,
+            updateFields,
             { 
-                ...updateData,
-                updatedAt: new Date()
-            },
-            { new: true, runValidators: true }
+                new: true, 
+                runValidators: true,
+                context: 'query'
+            }
         ).select('-password');
 
         if (!updatedDentist) {
             throw new Error('Failed to update dentist profile');
         }
+
+        console.log('Successfully updated dentist profile:', updatedDentist);
 
         await logActivity(
             dentistId,
