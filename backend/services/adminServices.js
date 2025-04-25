@@ -181,13 +181,16 @@ async function addDentist(req, res) {
         const newDentist = new Dentist({
             dentist_id: nextDentistId,
             name,
+            fullname: name, // Set fullname to name initially
             email,
             phoneNumber,
             isGoogleUser: true,
             verificationToken: verificationToken,
             verificationExpiry: verificationExpiry,
-            isVerified: false
-           
+            isVerified: false,
+            // Add default values for required fields
+            sex: 'Male', // Default value
+            birthday: new Date('1990-01-01') // Default value
         });
 
         const savedDentist = await newDentist.save();

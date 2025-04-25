@@ -123,7 +123,10 @@ const User_Appointment = () => {
       } catch (error) {
         console.error('Error checking date:', error);
       } finally {
-        setIsLoading(false);
+        // Simulate loading data completion with a slight delay
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 1500);
       }
     };
 
@@ -326,121 +329,121 @@ const User_Appointment = () => {
   }
 
   return (
-    <div className={`flex h-screen overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`flex h-screen w-screen overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <UserSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
-      <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"} relative`}>
+      <div className={`flex-1 flex flex-col transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
         <User_Profile_Header />
         
-        {isLoading && (
-          <div className="absolute inset-0 bg-gray-900 bg-opacity-90 z-50 flex items-center justify-center">
-            <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl p-8 shadow-xl flex flex-col items-center justify-center">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4"></div>
-              <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Loading Appointment Data...</h2>
-            </div>
-          </div>
-        )}
-        
-        {!isLoading && !isDateBlocked && !showUnavailableModal && (
-          <>
-            <div className="w-[78rem] mx-auto my-4"></div>
+        <div className="flex-1 relative">
+          {isLoading ? (
+            <LoadingOverlay 
+              message="Loading Appointment Data..." 
+              isDarkMode={isDarkMode} 
+              isTransparent={true}
+              fullScreen={false}
+            />
+          ) : !isDateBlocked && !showUnavailableModal && (
+            <div className="p-6 h-full overflow-y-auto">
+              <div className="w-[78rem] mx-auto my-4"></div>
 
-            {/* Date Section */}
-            <div className="flex flex-col items-center mb-4">
-              <div className="flex gap-2 items-center">
-                <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl shadow-md w-full max-w-md">
-                  Today: {formatDate(new Date())}
-                </div>
-              </div>
-            </div>
-
-            {/* Appointment Slot Section */}
-            <div className={`w-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} rounded-xl shadow-lg max-w-4xl mx-auto p-6`}>
-              <div className="flex items-center justify-between mb-5">
-                <div className={`text-lg font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                  {formatDate(currentDate)}
+              {/* Date Section */}
+              <div className="flex flex-col items-center mb-4">
+                <div className="flex gap-2 items-center">
+                  <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl shadow-md w-full max-w-md">
+                    Today: {formatDate(new Date())}
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                {TIME_SLOTS.map((slot) => {
-                  const slotData = availableSlots.find(s => s.id === slot.id) || {};
-                  const isAvailable = slotData.available;
-                  const remainingSlots = slotData.remainingSlots || 0;
-                  
-                  return (
-                    <div
-                      key={slot.id}
-                      className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
-                        isDarkMode 
-                          ? 'border-gray-700 hover:bg-gray-700' 
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <input
-                          type="radio"
-                          id={`slot-${slot.id}`}
-                          name="timeSlot"
-                          value={slot.id}
-                          checked={selectedSlot === slot.id}
-                          onChange={() => handleSlotSelection(slot.id)}
-                          disabled={!isAvailable}
-                          className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
-                        />
-                        <label
-                          htmlFor={`slot-${slot.id}`}
-                          className={`flex-1 flex items-center justify-between cursor-pointer ${
-                            !isAvailable 
-                              ? 'cursor-not-allowed text-gray-400' 
-                              : isDarkMode 
-                                ? 'text-gray-200' 
-                                : 'text-gray-700'
-                          }`}
-                        >
-                          <span className="font-medium">{slot.time}</span>
-                          <span 
-                            className={`text-sm font-medium ${
-                              isAvailable ? 'text-blue-500' : 'text-red-500'
+              {/* Appointment Slot Section */}
+              <div className={`w-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} rounded-xl shadow-lg max-w-4xl mx-auto p-6`}>
+                <div className="flex items-center justify-between mb-5">
+                  <div className={`text-lg font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    {formatDate(currentDate)}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {TIME_SLOTS.map((slot) => {
+                    const slotData = availableSlots.find(s => s.id === slot.id) || {};
+                    const isAvailable = slotData.available;
+                    const remainingSlots = slotData.remainingSlots || 0;
+                    
+                    return (
+                      <div
+                        key={slot.id}
+                        className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                          isDarkMode 
+                            ? 'border-gray-700 hover:bg-gray-700' 
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <input
+                            type="radio"
+                            id={`slot-${slot.id}`}
+                            name="timeSlot"
+                            value={slot.id}
+                            checked={selectedSlot === slot.id}
+                            onChange={() => handleSlotSelection(slot.id)}
+                            disabled={!isAvailable}
+                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <label
+                            htmlFor={`slot-${slot.id}`}
+                            className={`flex-1 flex items-center justify-between cursor-pointer ${
+                              !isAvailable 
+                                ? 'cursor-not-allowed text-gray-400' 
+                                : isDarkMode 
+                                  ? 'text-gray-200' 
+                                  : 'text-gray-700'
                             }`}
                           >
-                            {isAvailable 
-                              ? `Available Slots: ${remainingSlots}` 
-                              : 'Fully Booked'}
-                          </span>
-                        </label>
+                            <span className="font-medium">{slot.time}</span>
+                            <span 
+                              className={`text-sm font-medium ${
+                                isAvailable ? 'text-blue-500' : 'text-red-500'
+                              }`}
+                            >
+                              {isAvailable 
+                                ? `Available Slots: ${remainingSlots}` 
+                                : 'Fully Booked'}
+                            </span>
+                          </label>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+
+                {selectedSlot === null && (
+                  <div className={`mt-4 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Please select a time slot to continue
+                  </div>
+                )}
               </div>
 
-              {selectedSlot === null && (
-                <div className={`mt-4 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Please select a time slot to continue
-                </div>
-              )}
+              {/* Next Button */}
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={handleNext}
+                  disabled={!selectedSlot || isSubmitting}
+                  className={`
+                    cursor-pointer shadow-sm rounded-xl px-5 py-2 text-white
+                    ${selectedSlot && !isSubmitting
+                      ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg transform hover:scale-105 transition-transform duration-200 ease-in-out' 
+                      : 'bg-gray-400 cursor-not-allowed'
+                    }
+                    shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500
+                  `}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Next'}
+                </button>
+              </div>
             </div>
-
-            {/* Next Button */}
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={handleNext}
-                disabled={!selectedSlot || isSubmitting}
-                className={`
-                  cursor-pointer shadow-sm rounded-xl px-5 py-2 text-white
-                  ${selectedSlot && !isSubmitting
-                    ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg transform hover:scale-105 transition-transform duration-200 ease-in-out' 
-                    : 'bg-gray-400 cursor-not-allowed'
-                  }
-                  shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500
-                `}
-              >
-                {isSubmitting ? 'Submitting...' : 'Next'}
-              </button>
-            </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ const { authenticateAdmin } = require('../middleware/authMiddleware');
 const { checkAdminLevel } = require('../middleware/adminLevelMiddleware');
 const { checkPermission } = require('../middleware/checkPermissionMiddleware');
 const { logActivity, ACTIONS } = require('../services/activitylogServices');
-const { sendAdminVerificationEmail } = require('../emailService');
+const { sendAdminVerificationEmail, sendDentistVerificationEmail } = require('../emailService');
 const Admin = require('../models/Admin');
 const Patient = require('../models/Patient');
 const ActivityLog = require('../models/ActivityLog');
@@ -20,6 +20,7 @@ const reportService = require('../services/reportService');
 const BlockedDate = require('../models/BlockedDate');
 const Appointment = require('../models/Appointment');
 const Dentist = require('../models/Dentist');
+const crypto = require('crypto');
 
 
 const storage = multer.diskStorage({
@@ -191,7 +192,71 @@ A_route.delete('/admins/:admin_id', authenticateAdmin, deadlockPreventionMiddlew
 A_route.delete('/patients/:patient_id', authenticateAdmin, deadlockPreventionMiddleware, adminService.deletePatient);
 A_route.delete('/dentists/:dentist_id', authenticateAdmin, deadlockPreventionMiddleware, adminService.deleteDentist);    
 
-A_route.post('/add-dentist', authenticateAdmin, adminService.addDentist);
+A_route.post('/add-dentist', authenticateAdmin, async (req, res) => {
+    const { name, email, phoneNumber, sex, birthday } = req.body;
+
+    try {
+        const existingDentist = await Dentist.findOne({ email });
+        if (existingDentist) {
+            return res.status(400).json({ message: 'Dentist already exists' });
+        }
+
+        // Get the last dentist to determine the next dentist_id
+        const lastDentist = await Dentist.findOne().sort({ dentist_id: -1 });
+        const nextDentistId = lastDentist ? lastDentist.dentist_id + 1 : 1;
+
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        const newDentist = new Dentist({
+            dentist_id: nextDentistId,
+            name,
+            fullname: name, // Set fullname to name initially
+            email,
+            phoneNumber,
+            isGoogleUser: true,
+            verificationToken: verificationToken,
+            verificationExpiry: verificationExpiry,
+            isVerified: false,
+            // Use provided values or defaults
+            sex: sex || 'Male',
+            birthday: birthday ? new Date(birthday) : new Date('1990-01-01')
+        });
+
+        const savedDentist = await newDentist.save();
+
+        // Send verification email
+        await sendDentistVerificationEmail({
+            email: savedDentist.email,
+            name: savedDentist.name,
+            token: verificationToken
+        });
+
+        // Log activity
+        await logActivity({
+            userId: req.user._id,
+            userRole: 'admin',
+            action: 'addDentist',
+            details: { dentist_id: newDentist.dentist_id, name: newDentist.name, email: newDentist.email }
+        });
+
+        res.status(201).json({ 
+            message: 'Dentist added successfully. Verification email sent.',
+            dentist: {
+                dentist_id: newDentist.dentist_id,
+                name: newDentist.name,
+                email: newDentist.email,
+                phoneNumber: newDentist.phoneNumber,
+                sex: newDentist.sex,
+                birthday: newDentist.birthday
+            }
+        });
+    } catch (error) {
+        console.error('Error adding dentist:', error);
+        res.status(500).json({ message: 'Failed to add dentist: ' + error.message });
+    }
+});
+
 A_route.post('/create', authenticateAdmin, checkPermission('manageAdmins'), adminService.createAdmin);
 
 A_route.get('/appointments', authenticateAdmin, adminService.getAllAppointments);
