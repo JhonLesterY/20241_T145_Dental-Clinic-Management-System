@@ -22,7 +22,12 @@ const AdminHeader = ({ title, customButtons = [] }) => {
       const token = sessionStorage.getItem('token');
       const email = sessionStorage.getItem('email');
 
-      if (!token || !adminId) return;
+      if (!token || !adminId) {
+        // Set default values if no token or adminId
+        setUserName(adminId || 'Admin');
+        setUserEmail(email || 'admin@clinic.com');
+        return;
+      }
 
       const response = await fetch(`http://localhost:5000/admin/${adminId}/profile`, {
         headers: {
@@ -44,6 +49,7 @@ const AdminHeader = ({ title, customButtons = [] }) => {
       const displayName = data.fullname || data.username || adminId || 'Admin';
       
       if (data.profilePicture) {
+        // Only update if the profile picture URL is not empty
         setUserProfilePic(data.profilePicture);
       }
 
@@ -99,28 +105,33 @@ const AdminHeader = ({ title, customButtons = [] }) => {
         />
         
         <div 
-  onClick={handleProfileClick} 
-  className="cursor-pointer flex items-center space-x-3"
->
-        <div className="text-right">
-          <h2 className={`text-sm font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-            {userName || 'Admin'}
-          </h2>
-          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            {userEmail || 'admin@example.com'}
-          </p>
-        </div>
+          onClick={handleProfileClick} 
+          className="cursor-pointer flex items-center space-x-3"
+        >
+          <div className="text-right">
+            <h2 className={`text-sm font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+              {userName || 'Admin'}
+            </h2>
+            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {userEmail || 'admin@example.com'}
+            </p>
+          </div>
 
-        <img 
-          src={userProfilePic} 
-          alt="Profile" 
-          className={`w-10 h-10 rounded-full border-2 ${
-            isDarkMode 
-              ? 'border-gray-700 hover:border-gray-600' 
-              : 'border-gray-300 hover:border-gray-400'
-          }`} 
-        />
-      </div>
+          <img 
+            src={userProfilePic} 
+            alt="Profile" 
+            className={`w-10 h-10 rounded-full border-2 object-cover ${
+              isDarkMode 
+                ? 'border-gray-700 hover:border-gray-600' 
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+            onError={(e) => {
+              console.log('Error loading profile image, using fallback');
+              e.target.onerror = null; // Prevent infinite loop
+              e.target.src = userIcon;
+            }}
+          />
+        </div>
       </div>
     </header>
   );

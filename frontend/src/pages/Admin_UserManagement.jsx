@@ -34,7 +34,9 @@ const AdminUserManagement = () => {
     const [dentistFormData, setDentistFormData] = useState({
       name: '',
       email: '',
-      phoneNumber: ''
+      phoneNumber: '',
+      sex: 'Male',
+      birthday: new Date().toISOString().split('T')[0]
     });
       const [error, setError] = useState(null);
       const [isLocked, setIsLocked] = useState(false);
@@ -297,7 +299,9 @@ const AdminUserManagement = () => {
         const requestData = {
             name: dentistFormData.name,
             email: dentistFormData.email,
-            phoneNumber: dentistFormData.phoneNumber
+            phoneNumber: dentistFormData.phoneNumber,
+            sex: dentistFormData.sex,
+            birthday: dentistFormData.birthday
         };
 
         const createResponse = await fetch('http://localhost:5000/admin/add-dentist', {
@@ -319,7 +323,9 @@ const AdminUserManagement = () => {
         setDentistFormData({
             name: '',
             email: '',
-            phoneNumber: ''
+            phoneNumber: '',
+            sex: 'Male',
+            birthday: new Date().toISOString().split('T')[0]
         });
         fetchDentists();
         alert('Dentist created successfully! Verification email has been sent.');
@@ -956,8 +962,8 @@ useEffect(() => {
 
                 {/* Add Admin Modal */}
                             {isModalOpen && (
-                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                            <div className="bg-white p-6 rounded shadow-lg w-96">
+                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                            <div className="bg-white p-6 rounded shadow-lg w-96 z-50" style={{position: 'relative', top: '-10%'}}>
                             <h2 className="text-2xl font-bold mb-4 text-black">Add New Admin</h2>
                             <form onSubmit={handleSubmit}>
                                 <div className="mb-4">
@@ -1038,8 +1044,8 @@ useEffect(() => {
                         )}
                  {/* Create Dentist Modal */}
                     {showDentistModal && (
-                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-                        <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+                        <div className="p-5 border w-96 shadow-lg rounded-md bg-white z-50" style={{position: 'relative', top: '-10%'}}>
                         <div className="mt-3">
                             <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Add Dentist</h3>
                             <p className="text-sm text-gray-500 mb-4">
@@ -1089,6 +1095,32 @@ useEffect(() => {
                                 }}
                                 maxLength={11}
                                 pattern="[0-9]*"
+                                required
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <select
+                                className="w-full px-3 py-2 border rounded-md bg-white"
+                                value={dentistFormData.sex}
+                                onChange={(e) => setDentistFormData({
+                                    ...dentistFormData,
+                                    sex: e.target.value
+                                })}
+                                required
+                                >
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                </select>
+                            </div>
+                            <div className="mb-4">
+                                <input
+                                type="date"
+                                className="w-full px-3 py-2 border rounded-md bg-white"
+                                value={dentistFormData.birthday}
+                                onChange={(e) => setDentistFormData({
+                                    ...dentistFormData,
+                                    birthday: e.target.value
+                                })}
                                 required
                                 />
                             </div>

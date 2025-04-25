@@ -21,6 +21,21 @@ const DentistHeader = ({ title, customButtons = [] }) => {
       const dentistId = sessionStorage.getItem('dentist_id');
       const token = sessionStorage.getItem('token');
       const email = sessionStorage.getItem('email');
+      const storedName = sessionStorage.getItem('fullname') || sessionStorage.getItem('name');
+      const profilePic = sessionStorage.getItem('profilePicture');
+
+      // Set name and email from session storage right away
+      if (storedName) {
+        setUserName(storedName);
+      }
+      
+      if (email) {
+        setUserEmail(email);
+      }
+      
+      if (profilePic) {
+        setUserProfilePic(profilePic);
+      }
 
       if (!token || !dentistId) return;
 
@@ -32,27 +47,32 @@ const DentistHeader = ({ title, customButtons = [] }) => {
       });
 
       if (!response.ok) {
-        // If profile fetch fails, use fallback data from session storage
-        setUserName(dentistId || 'Dentist');
-        setUserEmail(email || 'dentist@clinic.com');
         return;
       }
 
       const data = await response.json();
       
-      // Use fullname if available, otherwise use username or fallback
-      const displayName = data.fullname || data.username || dentistId || 'Dentist';
+      // Use fullname or name from API data
+      const displayName = data.fullname || data.name || storedName || 'Dentist';
       
       if (data.profilePicture) {
         setUserProfilePic(data.profilePicture);
+        sessionStorage.setItem('profilePicture', data.profilePicture);
       }
 
       setUserName(displayName);
+      sessionStorage.setItem('fullname', displayName);
+      sessionStorage.setItem('name', displayName);
+      
       setUserEmail(data.email || email || 'dentist@clinic.com');
+      if (data.email) {
+        sessionStorage.setItem('email', data.email);
+      }
     } catch (error) {
       console.error('Error fetching dentist profile:', error);
       // Fallback to session storage values
-      setUserName(sessionStorage.getItem('dentist_id') || 'Dentist');
+      const storedName = sessionStorage.getItem('fullname') || sessionStorage.getItem('name');
+      setUserName(storedName || 'Dentist');
       setUserEmail(sessionStorage.getItem('email') || 'dentist@clinic.com');
     }
   };

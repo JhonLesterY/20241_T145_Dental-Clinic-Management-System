@@ -269,7 +269,7 @@ const googleLogin = useGoogleLogin({
                 <Link to="/forgot-password" className="hover:underline">
                   Forgot Password?
                 </Link>
-                <span className="mx-2">or</span>
+                <span className="mx-2"></span>
                 <Link to="/SignUp" className="hover:underline">
                   Create Account
                 </Link>
@@ -289,7 +289,7 @@ const googleLogin = useGoogleLogin({
             </form>
 
             <div className="relative my-4 text-center">
-              <span className="text-gray-500">or continue with</span>
+              <span className="text-gray-500">or</span>
             </div>
 
             <button

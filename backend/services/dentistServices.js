@@ -194,46 +194,105 @@ const getFeedback = async (dentistId) => {
 // Generate report
 const generateReport = async (dentistId, reportType = 'monthly') => {
     try {
+      console.log('Generating report for dentist:', dentistId);
+      
       const dentist = await Dentist.findById(dentistId);
       if (!dentist) {
         throw new Error('Dentist not found');
       }
-  
-      // Fetch consultations with detailed population
+      console.log('Found dentist:', dentist);
+
+      // Fetch consultations with detailed population and error handling
       const consultations = await Consultation.find({ 
         dentistId: dentist._id 
       })
       .populate({
         path: 'patientId',
-        select: 'firstName lastName middleName age course year'
+        select: 'firstName lastName middleName age course year',
+        options: { strictPopulate: false }  // Add this option
       })
       .populate({
         path: 'prescription.medicineId',
-        select: 'itemName'
+        select: 'itemName',
+        options: { strictPopulate: false }  // Add this option
+      })
+      .lean(); // Use lean() for better performance
+
+      console.log('Raw consultations:', consultations);
+
+      if (!consultations || consultations.length === 0) {
+        console.log('No consultations found for dentist');
+        return {
+          dentistName: dentist.name || 'Unknown',
+          specialization: dentist.specialization || 'Not specified',
+          reports: []
+        };
+      }
+  
+      // Transform consultations for dentist report with null checks
+      const dentistReports = consultations.map(consultation => {
+        try {
+          // Safely access nested properties
+          const patientName = consultation.patientId ? 
+            `${consultation.patientId.firstName || ''} ${consultation.patientId.middleName || ''} ${consultation.patientId.lastName || ''}`.trim() : 
+            'Unknown Patient';
+
+          const prescriptionInfo = Array.isArray(consultation.prescription) ?
+            consultation.prescription.reduce((acc, p) => {
+              if (p && p.medicineId) {
+                acc.medicines.push(p.medicineId.itemName || 'Unknown Medicine');
+                acc.quantities.push(p.quantity?.toString() || '0');
+              }
+              return acc;
+            }, { medicines: [], quantities: [] }) :
+            { medicines: [], quantities: [] };
+
+          const report = {
+            consultationId: consultation._id?.toString() || 'Unknown ID',
+            date: consultation.consultationDate || new Date(),
+            toothNumber: consultation.toothNumber || 'Not specified',
+            patientName: patientName,
+            age: consultation.patientId?.age || '',
+            courseAndYear: consultation.patientId ? 
+              `${consultation.patientId.course || ''} ${consultation.patientId.year || ''}`.trim() : 
+              '',
+            treatment: consultation.notes || 'No treatment notes',
+            medicine: prescriptionInfo.medicines.join(', ') || 'No medicines prescribed',
+            quantity: prescriptionInfo.quantities.join(', ') || 'N/A',
+            signature: dentist.name || 'Unknown Dentist'
+          };
+
+          console.log('Processed report:', report);
+          return report;
+        } catch (err) {
+          console.error('Error processing consultation:', err, consultation);
+          // Return a default report object instead of failing
+          return {
+            consultationId: consultation._id?.toString() || 'Unknown ID',
+            date: new Date(),
+            toothNumber: 'Error processing',
+            patientName: 'Error processing',
+            age: '',
+            courseAndYear: '',
+            treatment: 'Error processing consultation data',
+            medicine: '',
+            quantity: '',
+            signature: dentist.name || 'Unknown Dentist'
+          };
+        }
       });
   
-      // Transform consultations for dentist report
-      const dentistReports = consultations.map(consultation => ({
-        consultationId: consultation._id,
-        date: consultation.consultationDate,
-        toothNumber: consultation.toothNumber,
-        patientName: `${consultation.patientId.firstName} ${consultation.patientId.middleName || ''} ${consultation.patientId.lastName}`.trim(),
-        age: consultation.patientId.age,
-        courseAndYear: `${consultation.patientId.course || ''} ${consultation.patientId.year || ''}`.trim(),
-        treatment: consultation.notes,
-        medicine: consultation.prescription.map(p => p.medicineId.itemName).join(', '),
-        quantity: consultation.prescription.map(p => p.quantity).join(', '),
-        signature: dentist.name // You might want to replace this with an actual signature mechanism
-      }));
-  
-      return {
-        dentistName: dentist.name,
-        specialization: dentist.specialization,
+      const result = {
+        dentistName: dentist.name || 'Unknown',
+        specialization: dentist.specialization || 'Not specified',
         reports: dentistReports
       };
+
+      console.log('Final report result:', result);
+      return result;
     } catch (error) {
       console.error('Error generating dentist report:', error);
-      throw error;
+      throw new Error(`Failed to generate report: ${error.message}`);
     }
   };
 

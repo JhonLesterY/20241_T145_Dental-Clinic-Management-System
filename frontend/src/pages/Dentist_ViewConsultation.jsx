@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import Logo from "/src/images/Dental_logo.png";
 import bell from "/src/images/bell.png";
 import DentistSideBar from "../components/DentistSidebar";
+import DentistHeader from "../components/DentistHeader";
 import { useDentistTheme } from '../context/DentistThemeContext';
+import LoadingOverlay from "../components/LoadingOverlay";
 
 // Helper function to format dates
 const formatDate = (date) => {
@@ -86,7 +88,10 @@ const Dentist_ViewConsultation = () => {
       console.error('Error fetching consultations:', error);
       setError(error.message || 'An unknown error occurred while fetching consultations');
     } finally {
-      setIsLoading(false);
+      // Add a slight delay to ensure smooth loading transition
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
     }
   };
 
@@ -290,286 +295,259 @@ const submitUsedItems = async () => {
   }, []);
 
   return (  
-    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`flex h-screen w-screen overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
       {/* Sidebar */}
       <DentistSideBar open={sidebarOpen} setOpen={setSidebarOpen} />
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"}`}>
+      <div className={`flex-1 flex flex-col transition-all duration-500 ${sidebarOpen ? "ml-64" : "ml-16"} relative`}>
         {/* Header */}
-        <header className={`${isDarkMode ? 'bg-gray-800 shadow-gray-900' : 'bg-white'} shadow-md`}>
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center space-x-4">
-              <img className="w-10 h-10" src={Logo} alt="Dental Logo" />
-              <h1 className={`text-2xl font-semibold ${isDarkMode ? 'text-white' : 'text-[#003367]'}`}>View Consultations</h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {/* Search Bar */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className={`pl-10 pr-4 py-2 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                />
-                {/* New Search Icon (Magnifying Glass) */}
-                <svg
-                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M21 21l-4.35-4.35M16 10a6 6 0 1112 0 6 6 0 01-12 0z"
-                  />
-                </svg>
-              </div>
-
-              <button className="p-2 rounded-full hover:bg-gray-100 transition" aria-label="Notifications">
-                <img className="w-6 h-6" src={bell} alt="Notifications" />
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <div className="w-[78rem] mx-auto my-4"></div>
-
-        {/* Date Section */}
-        <div className="flex flex-col items-center mb-4">
-          <div className="flex gap-2 items-center">
-            <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-xl shadow-md w-full max-w-md">
-              Today: {formatDate(new Date())}
-            </div>
-          </div>
-        </div>
-
-         {/* Consultations List */}
-         <div className="flex flex-col items-center mt-6 mx-auto w-full max-w-7xl">
-          <div className={`w-full border rounded-xl shadow-lg max-w-6xl mx-auto p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            {error ? (
-              <div className={`text-center text-red-500 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
-                {error}
-              </div>
-            ) : isLoading ? (
-              <div className={`text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Loading...</div>
-            ) : consultations.length === 0 ? (
-              <div className={`text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>No upcoming consultations</div>
-            ) : (
-              <div className="space-y-4">
-               {consultations.map((consultation, index) => (
-                  <div
-                    key={consultation._id || `consultation-${index}`}
-                    className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
-                      isDarkMode 
-                        ? 'border-gray-700 hover:bg-gray-700' 
-                        : 'border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                        Consultation #{consultation._id.slice(-6)}
-                      </div>
-                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Patient: {consultation.patientName || 'Unknown Patient'}
-                      </div>
-                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Scheduled on: {formatDate(new Date(consultation.consultationDate))}
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                    <button
-                      onClick={() => openConsultationModal(consultation)}
-                      className="text-blue-500 hover:text-blue-400 transition"
-                    >
-                      View Details
-                    </button>
-                    <button 
-                          onClick={() => openUsedItemsModal(consultation)} 
-                          className={`px-3 py-1 rounded ${isDarkMode 
-                            ? 'bg-blue-700 hover:bg-blue-600 text-white' 
-                            : 'bg-blue-500 hover:bg-blue-400 text-white'
-                          }`}
-                        >
-                          Add Used Items
-                        </button>
-                  </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {selectedConsultation && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                <div className={`w-96 p-6 rounded-lg shadow-xl ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Consultation Details</h2>
-                    <button 
-                      onClick={closeConsultationModal}
-                      className={`text-xl ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}
-                    >
-                      &times;
-                    </button>
-                    
-                  </div>
-                  <div className="space-y-2">
-                  <p><strong>Consultation ID:</strong> {selectedConsultation._id}</p>
-                    <p><strong>Patient Name:</strong> {selectedConsultation.patientName || 'Unknown Patient'}</p>
-                    {/* Remove the consultation date line */}
-                    <p><strong>Notes:</strong> {selectedConsultation.notes || 'No notes available'}</p>
-                    {/* Add prescription line */}
-                    <div>
-                      <strong>Prescription:</strong> 
-                      {selectedConsultation.prescription && selectedConsultation.prescription.length > 0 ? (
-                          <ul className="list-disc pl-5">
-                            {selectedConsultation.prescription.map((med, index) => (
-                              <li key={index}>
-                                Medicine Name: {med.medicineName || med.medicineId} 
-                                (Quantity: {med.quantity})
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p>No prescription provided</p>
-                        )}
-                    </div>
-                    {/* Used Items Section */}
-                    {selectedConsultation.usedItems && selectedConsultation.usedItems.length > 0 && (
-                      <div className="mt-4">
-                        <h3 className="text-lg font-semibold mb-2">Used Items</h3>
-                        <div className={`border rounded p-2 ${isDarkMode 
-                          ? 'border-gray-700 bg-gray-800' 
-                          : 'border-gray-200 bg-gray-50'
-                        }`}>
-                          <table className="w-full">
-                            <thead>
-                              <tr className={`border-b ${isDarkMode 
-                                ? 'border-gray-700 text-gray-300' 
-                                : 'border-gray-200 text-gray-600'
-                              }`}>
-                                <th className="py-1 text-left">Item Name</th>
-                                <th className="py-1 text-right">Quantity</th>
-                                <th className="py-1 text-right">Date Used</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {selectedConsultation.usedItems.map((item, index) => (
-                                <tr key={index} className={`${isDarkMode 
-                                  ? 'text-gray-200 hover:bg-gray-700' 
-                                  : 'hover:bg-gray-100'
-                                }`}>
-                                  <td className="py-1">{item.itemName}</td>
-                                  <td className="py-1 text-right">{item.quantity}</td>
-                                  <td className="py-1 text-right">
-                                    {formatDate(new Date(item.dateUsed))}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
+        <DentistHeader title="View Consultations" />
+        
+        <div className="flex-1 relative">
+          {isLoading ? (
+            <LoadingOverlay 
+              message="Loading Consultations..." 
+              isDarkMode={isDarkMode} 
+              isTransparent={true}
+              fullScreen={false}
+            />
+          ) : (
+            <div className="p-6 h-full overflow-y-auto">
+              {/* Date Section */}
+              <div className="flex flex-col items-center mb-4">
+                <div className="flex gap-2 items-center">
+                  <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-xl shadow-md w-full max-w-md">
+                    Today: {formatDate(new Date())}
                   </div>
                 </div>
               </div>
-            )}
-            {/* Used Items Modal */}
-            {usedItemsModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                <div className={`w-[500px] p-6 rounded-lg shadow-xl ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Add Used Items</h2>
-                    <button 
-                      onClick={() => setUsedItemsModal(false)}
-                      className={`text-xl ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}
-                    >
-                      &times;
-                    </button>
-                  </div>
 
-                  {/* Used Items List */}
-                  <div className="space-y-4">
-                    {selectedUsedItems.map((item, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <select
-                          value={item.itemId}
-                          onChange={(e) => updateUsedItem(index, 'itemId', e.target.value)}
-                          className={`flex-grow p-2 rounded ${isDarkMode 
-                            ? 'bg-gray-700 border-gray-600 text-white' 
-                            : 'bg-white border-gray-300'
-                          }`}
-                        >
-                          <option value="">Select Item</option>
-                          {inventoryItems.map(invItem => (
-                            <option key={invItem._id} value={invItem._id}>
-                              {invItem.itemName} (Available: {invItem.quantity})
-                            </option>
-                          ))}
-                        </select>
-                        <input 
-                          type="number" 
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => updateUsedItem(index, 'quantity', parseInt(e.target.value))}
-                          className={`w-24 p-2 rounded ${isDarkMode 
-                            ? 'bg-gray-700 border-gray-600 text-white' 
-                            : 'bg-white border-gray-300'
-                          }`}
-                          placeholder="Qty"
-                        />
-                        <button 
-                          onClick={() => removeUsedItem(index)}
-                          className={`p-2 rounded ${isDarkMode 
-                            ? 'bg-red-700 hover:bg-red-600 text-white' 
-                            : 'bg-red-500 hover:bg-red-400 text-white'
-                          }`}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Add Item Button */}
-                  <button 
-                    onClick={addUsedItem}
-                    className={`mt-4 w-full py-2 rounded ${isDarkMode 
-                      ? 'bg-green-700 hover:bg-green-600 text-white' 
-                      : 'bg-green-500 hover:bg-green-400 text-white'
-                    }`}
-                  >
-                    Add Another Item
-                  </button>
-
-                  {/* Submit Button */}
-                  <button 
-                    onClick={submitUsedItems}
-                    className={`mt-4 w-full py-2 rounded ${isDarkMode 
-                      ? 'bg-blue-700 hover:bg-blue-600 text-white' 
-                      : 'bg-blue-500 hover:bg-blue-400 text-white'
-                    }`}
-                  >
-                    Submit Used Items
-                  </button>
-
-                  {/* Error Display */}
-                  {error && (
-                    <div className={`mt-4 p-2 rounded text-center ${isDarkMode 
-                      ? 'bg-red-900 text-red-300' 
-                      : 'bg-red-100 text-red-700'
-                    }`}>
+              {/* Consultations List */}
+              <div className="flex flex-col items-center mt-6 mx-auto w-full max-w-7xl">
+                <div className={`w-full border rounded-xl shadow-lg max-w-6xl mx-auto p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                  {error ? (
+                    <div className={`text-center text-red-500 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
                       {error}
+                    </div>
+                  ) : consultations.length === 0 ? (
+                    <div className={`text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>No upcoming consultations</div>
+                  ) : (
+                    <div className="space-y-4">
+                      {consultations.map((consultation, index) => (
+                        <div
+                          key={consultation._id || `consultation-${index}`}
+                          className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                            isDarkMode 
+                              ? 'border-gray-700 hover:bg-gray-700' 
+                              : 'border-gray-200 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              Consultation #{consultation._id.slice(-6)}
+                            </div>
+                            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              Patient: {consultation.patientName || 'Unknown Patient'}
+                            </div>
+                            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              Scheduled on: {formatDate(new Date(consultation.consultationDate))}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => openConsultationModal(consultation)}
+                              className="text-blue-500 hover:text-blue-400 transition"
+                            >
+                              View Details
+                            </button>
+                            <button 
+                              onClick={() => openUsedItemsModal(consultation)} 
+                              className={`px-3 py-1 rounded ${isDarkMode 
+                                ? 'bg-blue-700 hover:bg-blue-600 text-white' 
+                                : 'bg-blue-500 hover:bg-blue-400 text-white'
+                              }`}
+                            >
+                              Add Used Items
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
               </div>
+
+              {/* Keep the existing modal code */}
+              {selectedConsultation && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                  <div className={`w-96 p-6 rounded-lg shadow-xl ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl font-semibold">Consultation Details</h2>
+                      <button 
+                        onClick={closeConsultationModal}
+                        className={`text-xl ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}
+                      >
+                        &times;
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                    <p><strong>Consultation ID:</strong> {selectedConsultation._id}</p>
+                      <p><strong>Patient Name:</strong> {selectedConsultation.patientName || 'Unknown Patient'}</p>
+                      {/* Remove the consultation date line */}
+                      <p><strong>Notes:</strong> {selectedConsultation.notes || 'No notes available'}</p>
+                      {/* Add prescription line */}
+                      <div>
+                        <strong>Prescription:</strong> 
+                        {selectedConsultation.prescription && selectedConsultation.prescription.length > 0 ? (
+                            <ul className="list-disc pl-5">
+                              {selectedConsultation.prescription.map((med, index) => (
+                                <li key={index}>
+                                  Medicine Name: {med.medicineName || med.medicineId} 
+                                  (Quantity: {med.quantity})
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p>No prescription provided</p>
+                          )}
+                      </div>
+                      {/* Used Items Section */}
+                      {selectedConsultation.usedItems && selectedConsultation.usedItems.length > 0 && (
+                        <div className="mt-4">
+                          <h3 className="text-lg font-semibold mb-2">Used Items</h3>
+                          <div className={`border rounded p-2 ${isDarkMode 
+                            ? 'border-gray-700 bg-gray-800' 
+                            : 'border-gray-200 bg-gray-50'
+                          }`}>
+                            <table className="w-full">
+                              <thead>
+                                <tr className={`border-b ${isDarkMode 
+                                  ? 'border-gray-700 text-gray-300' 
+                                  : 'border-gray-200 text-gray-600'
+                                }`}>
+                                  <th className="py-1 text-left">Item Name</th>
+                                  <th className="py-1 text-right">Quantity</th>
+                                  <th className="py-1 text-right">Date Used</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedConsultation.usedItems.map((item, index) => (
+                                  <tr key={index} className={`${isDarkMode 
+                                    ? 'text-gray-200 hover:bg-gray-700' 
+                                    : 'hover:bg-gray-100'
+                                  }`}>
+                                    <td className="py-1">{item.itemName}</td>
+                                    <td className="py-1 text-right">{item.quantity}</td>
+                                    <td className="py-1 text-right">
+                                      {formatDate(new Date(item.dateUsed))}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Used Items Modal - Keep outside the main content flow for proper stacking */}
+      {usedItemsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className={`w-[500px] p-6 rounded-lg shadow-xl ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Add Used Items</h2>
+              <button 
+                onClick={() => setUsedItemsModal(false)}
+                className={`text-xl ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}
+              >
+                &times;
+              </button>
+            </div>
+            {/* Modal content */}
+            <div className="space-y-4">
+              {selectedUsedItems.map((item, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <select
+                    value={item.itemId}
+                    onChange={(e) => updateUsedItem(index, 'itemId', e.target.value)}
+                    className={`flex-grow p-2 rounded ${isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select Item</option>
+                    {inventoryItems.map(invItem => (
+                      <option key={invItem._id} value={invItem._id}>
+                        {invItem.itemName} (Available: {invItem.quantity})
+                      </option>
+                    ))}
+                  </select>
+                  <input 
+                    type="number" 
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => updateUsedItem(index, 'quantity', parseInt(e.target.value))}
+                    className={`w-24 p-2 rounded ${isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300'
+                    }`}
+                    placeholder="Qty"
+                  />
+                  <button 
+                    onClick={() => removeUsedItem(index)}
+                    className={`p-2 rounded ${isDarkMode 
+                      ? 'bg-red-700 hover:bg-red-600 text-white' 
+                      : 'bg-red-500 hover:bg-red-400 text-white'
+                    }`}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Add Item Button */}
+            <button 
+              onClick={addUsedItem}
+              className={`mt-4 w-full py-2 rounded ${isDarkMode 
+                ? 'bg-green-700 hover:bg-green-600 text-white' 
+                : 'bg-green-500 hover:bg-green-400 text-white'
+              }`}
+            >
+              Add Another Item
+            </button>
+
+            {/* Submit Button */}
+            <button 
+              onClick={submitUsedItems}
+              className={`mt-4 w-full py-2 rounded ${isDarkMode 
+                ? 'bg-blue-700 hover:bg-blue-600 text-white' 
+                : 'bg-blue-500 hover:bg-blue-400 text-white'
+              }`}
+            >
+              Submit Used Items
+            </button>
+
+            {/* Error Display */}
+            {error && (
+              <div className={`mt-4 p-2 rounded text-center ${isDarkMode 
+                ? 'bg-red-900 text-red-300' 
+                : 'bg-red-100 text-red-700'
+              }`}>
+                {error}
+              </div>
             )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
